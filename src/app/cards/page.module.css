@@ -1032,7 +1032,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
+  overflow-y: auto;
+  padding: 20px;
 }
 
 /* Ambient particles (CSS only) */
@@ -1059,6 +1060,7 @@
   padding: 30px 20px;
   position: relative;
   z-index: 1;
+  margin: auto;
 }
 
 .lootboxArea {
@@ -1157,9 +1159,41 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   perspective: 1200px;
   margin: 10px 0;
+  width: 100%;
+}
+
+@media (max-width: 650px) {
+  .gachaCardsGrid {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .gachaCardsGrid .cardFlipContainer {
+    width: 140px;
+    height: 250px;
+  }
+  .gachaCardsGrid .cardTitle {
+    font-size: 0.75rem;
+    min-height: 24px;
+  }
+  .gachaCardsGrid .cardDesc {
+    font-size: 0.65rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .gachaCardsGrid .cardBody {
+    padding: 8px;
+    gap: 3px;
+  }
+  .gachaCardsGrid .cardRarityBadge,
+  .gachaCardsGrid .cardPointsBadge {
+    font-size: 0.55rem;
+    padding: 2px 4px;
+  }
 }
 
 /* CARD FLIP */
