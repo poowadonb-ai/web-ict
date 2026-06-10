@@ -1134,7 +1134,7 @@ class MockDbService {
     }
   }
 
-  public exchangeCommonCards(studentUid: string): Card | null {
+  public exchangeCommonCards(studentUid: string): Card[] | null {
     const students = this.getRegisteredStudents();
     const student = students.find(s => s.uid === studentUid);
     if (!student) return null;
@@ -1196,13 +1196,16 @@ class MockDbService {
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
     };
 
-    const newCard = drawRandomCard();
+    const newCards = [drawRandomCard(), drawRandomCard()];
     const updatedColl = profiles[foundEmail].cardsCollected;
-    const existing = updatedColl.find((c: any) => c.cardId === newCard.id);
-    if (existing) {
-      existing.count = (existing.count || 0) + 1;
-    } else {
-      updatedColl.push({ cardId: newCard.id, count: 1, redeemedCount: 0 });
+    
+    for (const newCard of newCards) {
+      const existing = updatedColl.find((c: any) => c.cardId === newCard.id);
+      if (existing) {
+        existing.count = (existing.count || 0) + 1;
+      } else {
+        updatedColl.push({ cardId: newCard.id, count: 1, redeemedCount: 0 });
+      }
     }
 
     this.setItem("mock_profiles", profiles);
@@ -1216,7 +1219,7 @@ class MockDbService {
       this.emit("authChange", this.currentUser);
     }
 
-    return newCard;
+    return newCards;
   }
 
 }
@@ -1974,7 +1977,7 @@ export const cardService = {
     });
   },
 
-  exchangeCommonCards: async (studentUid: string): Promise<Card> => {
+  exchangeCommonCards: async (studentUid: string): Promise<Card[]> => {
     if (isMockMode()) {
       const res = mockDb.exchangeCommonCards(studentUid);
       if (!res) throw new Error("Not enough common cards");
@@ -1998,7 +2001,7 @@ export const cardService = {
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
     };
 
-    const newCard = drawRandomCard();
+    const newCards = [drawRandomCard(), drawRandomCard()];
 
     await runTransaction(db, async (transaction) => {
       const snap = await transaction.get(userRef);
@@ -2034,17 +2037,19 @@ export const cardService = {
 
       const updatedColl = coll.filter((item: any) => item.count > 0 || item.redeemedCount > 0);
 
-      const existing = updatedColl.find((c: any) => c.cardId === newCard.id);
-      if (existing) {
-        existing.count = (existing.count || 0) + 1;
-      } else {
-        updatedColl.push({ cardId: newCard.id, count: 1, redeemedCount: 0 });
+      for (const newCard of newCards) {
+        const existing = updatedColl.find((c: any) => c.cardId === newCard.id);
+        if (existing) {
+          existing.count = (existing.count || 0) + 1;
+        } else {
+          updatedColl.push({ cardId: newCard.id, count: 1, redeemedCount: 0 });
+        }
       }
 
       transaction.update(userRef, { cardsCollected: updatedColl });
     });
 
-    return newCard;
+    return newCards;
   }
 };
 

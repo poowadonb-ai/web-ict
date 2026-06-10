@@ -48,8 +48,8 @@ export default function StudentCardsPage() {
   // Exchange Gacha states
   const [isExchangeMode, setIsExchangeMode] = useState(false);
   const [isExchangingPack, setIsExchangingPack] = useState(false);
-  const [exchangeResultCard, setExchangeResultCard] = useState<Card | null>(null);
-  const [exchangeCardFlipped, setExchangeCardFlipped] = useState(false);
+  const [exchangeResultCards, setExchangeResultCards] = useState<Card[]>([]);
+  const [exchangeCardsFlipped, setExchangeCardsFlipped] = useState<boolean[]>([false, false]);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "student")) {
@@ -168,8 +168,8 @@ export default function StudentCardsPage() {
     if (!user) return;
     setIsExchangeMode(true);
     setIsExchangingPack(true);
-    setExchangeResultCard(null);
-    setExchangeCardFlipped(false);
+    setExchangeResultCards([]);
+    setExchangeCardsFlipped([false, false]);
 
     // Play shake sound repeatedly during the 2s shake animation
     const intervalId = setInterval(() => {
@@ -181,10 +181,11 @@ export default function StudentCardsPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       clearInterval(intervalId);
       
-      const newCard = await cardService.exchangeCommonCards(user.uid);
-      if (newCard) {
-        setExchangeResultCard(newCard);
-        setSuccessRedeemMsg(`🎉 ยินดีด้วย! คุณได้รับการ์ดใหม่จากการย่อยการ์ด: ${newCard.name}`);
+      const newCards = await cardService.exchangeCommonCards(user.uid);
+      if (newCards && newCards.length > 0) {
+        setExchangeResultCards(newCards);
+        const cardNames = newCards.map(c => c.name).join(", ");
+        setSuccessRedeemMsg(`🎉 ยินดีด้วย! คุณได้รับการ์ดใหม่จากการย่อยการ์ด: ${cardNames}`);
         setTimeout(() => setSuccessRedeemMsg(""), 6000);
       } else {
         setIsExchangeMode(false);
@@ -199,10 +200,25 @@ export default function StudentCardsPage() {
     }
   };
 
+  const handleFlipExchangeCard = (index: number) => {
+    if (exchangeCardsFlipped[index]) return;
+    setExchangeCardsFlipped(prev => {
+      const updated = [...prev];
+      updated[index] = true;
+      return updated;
+    });
+
+    const card = exchangeResultCards[index];
+    if (card) {
+      audioSynth.playFlip();
+      audioSynth.playReveal(card.rarity);
+    }
+  };
+
   const handleCloseExchange = async () => {
     setIsExchangeMode(false);
-    setExchangeResultCard(null);
-    setExchangeCardFlipped(false);
+    setExchangeResultCards([]);
+    setExchangeCardsFlipped([false, false]);
     await loadData();
   };
 
@@ -380,14 +396,13 @@ export default function StudentCardsPage() {
                                 <div className={styles.cyberHoloSymbol}>✨</div>
                               </div>
                             ) : (
-                              <img 
-                                src={card.imageUrl} 
-                                alt={card.name} 
-                                className={styles.cardImg} 
-                                onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
-                              />
-                            )}
-
+                               <img
+                                 src={card.imageUrl}
+                                 alt={card.name}
+                                 className={styles.cardImg}
+                                 onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
+                               />
+                             )}
                             <div className={styles.cardBody}>
                               <div className={styles.cardHeader}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
@@ -430,13 +445,16 @@ export default function StudentCardsPage() {
                 <p>ลุ้นรับการ์ดใบใหม่ที่อาจจะแรร์กว่าเดิม!</p>
                 <div className={styles.spinner}></div>
               </div>
-            ) : exchangeResultCard ? (
+            ) : exchangeResultCards.length > 0 ? (
               <div className={styles.revealArea}>
-                <h2>หลอมการ์ดสำเร็จ! คลิกเพื่อดูการ์ดใหม่ของคุณ</h2>
+                <h2>
+                  {exchangeCardsFlipped.every(f => f === true)
+                    ? 'หลอมการ์ดสำเร็จและได้รับการ์ดใหม่!'
+                    : 'หลอมการ์ดสำเร็จ! คลิกเพื่อเปิดดูการ์ดทีละใบ'}
+                </h2>
                 
-                <div className={styles.gachaCardsGrid} style={{ display: 'flex', justifyContent: 'center' }}>
-                  {(() => {
-                    const card = exchangeResultCard;
+                <div className={styles.gachaCardsGrid}>
+                  {exchangeResultCards.map((card, idx) => {
                     let rarityClass = styles.rarityCommon;
                     let rarityText = "ทั่วไป";
                     if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
@@ -444,78 +462,72 @@ export default function StudentCardsPage() {
                     else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
                     else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
 
+                    const isFlipped = exchangeCardsFlipped[idx];
+
                     return (
                       <div 
-                        className={`${styles.cardFlipContainer} ${exchangeCardFlipped ? styles.flipped : ""}`}
-                        onClick={() => {
-                          if (!exchangeCardFlipped) {
-                            setExchangeCardFlipped(true);
-                            audioSynth.playFlip();
-                            audioSynth.playReveal(card.rarity);
-                          }
-                        }}
-                        style={{ maxWidth: '280px', width: '100%' }}
+                        key={idx} 
+                        className={`${styles.exchangeRevealWrapper} ${rarityClass}`}
+                        onClick={() => handleFlipExchangeCard(idx)}
+                        style={{ cursor: isFlipped ? 'default' : 'pointer' }}
                       >
-                        <div className={styles.cardInner}>
-                          {/* Card Back */}
-                          <div className={styles.cardBack}>
+                        {!isFlipped && (
+                          <div className={styles.exchangeCover}>
                             <div className={styles.cardBackDesign}>
                               <div className={styles.cardBackLogo}>♻️</div>
-                              <p>NEW CARD</p>
+                              <p>แตะเพื่อเปิด</p>
+                              <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>TAP TO REVEAL</p>
                             </div>
                           </div>
-                          
-                          {/* Card Front */}
-                          <div className={`${styles.cardFront} ${rarityClass}`}>
-                            <div className={styles.bgGlow} />
-                            {card.rarity === "legendary" && <div className={styles.legendaryRays} />}
-                            {card.rarity === "holographic" && <div className={styles.holoFoil} />}
-                            {(card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
-                              <div className={styles.particles}>
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                              </div>
-                            )}
-                            <div className={styles.shineSweep} />
-                            <div className={styles.cardOverlay}></div>
-
-                            {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
-                              <div className={styles.cyberHoloFallback}>
-                                <div className={styles.cyberGrid} />
-                                <div className={styles.cyberHoloRing} />
-                                <div className={styles.cyberHoloSymbol}>✨</div>
-                              </div>
-                            ) : (
-                              <img 
-                                src={card.imageUrl} 
-                                alt={card.name} 
-                                className={styles.cardImg} 
-                                onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
-                              />
-                            )}
-
-                            <div className={styles.cardBody}>
-                              <div className={styles.cardHeader}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                                  <span className={styles.cardRarityBadge}>{rarityText}</span>
-                                  {renderStars(card.rarity)}
-                                </div>
-                                {card.bonusPoints > 0 && (
-                                  <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
-                                )}
-                              </div>
-                              <h3 className={styles.cardTitle}>{card.name}</h3>
-                              <p className={styles.cardDesc}>{card.description}</p>
+                        )}
+                        <div className={`${styles.exchangeCardDisplay} ${isFlipped ? styles.exchangeCardRevealed : ''}`}>
+                          <div className={styles.bgGlow} />
+                          {card.rarity === "legendary" && <div className={styles.legendaryRays} />}
+                          {card.rarity === "holographic" && <div className={styles.holoFoil} />}
+                          {(card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
+                            <div className={styles.particles}>
+                              <span></span>
+                              <span></span>
+                              <span></span>
                             </div>
+                          )}
+                          <div className={styles.shineSweep} />
+                          <div className={styles.cardOverlay}></div>
+                          
+                          {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
+                            <div className={styles.cyberHoloFallback} style={{ height: '220px' }}>
+                              <div className={styles.cyberGrid} />
+                              <div className={styles.cyberHoloRing} />
+                              <div className={styles.cyberHoloSymbol}>✨</div>
+                            </div>
+                          ) : (
+                            <img
+                              src={card.imageUrl}
+                              alt={card.name}
+                              style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }}
+                              onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
+                            />
+                          )}
+                          <div className={styles.cardBody}>
+                            <div className={styles.cardHeader}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                                <span className={styles.cardRarityBadge}>{rarityText}</span>
+                                {renderStars(card.rarity)}
+                              </div>
+                              {card.bonusPoints > 0 && (
+                                <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
+                              )}
+                            </div>
+                            <h3 className={styles.cardTitle}>{card.name}</h3>
+                            <p className={styles.cardDesc}>{card.description}</p>
                           </div>
                         </div>
                       </div>
                     );
-                  })()}
+                  })}
                 </div>
 
-                {exchangeCardFlipped && (
+                {exchangeCardsFlipped.every(f => f === true) && (
                   <button onClick={handleCloseExchange} className={styles.closeGachaBtn}>
                     🎒 เก็บเข้าคลังสะสม
                   </button>

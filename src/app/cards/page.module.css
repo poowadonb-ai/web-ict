@@ -336,22 +336,14 @@
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  overflow: visible; /* allow aura glow to bleed outside */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
-  /* Clip the image/content visually while aura bleeds out */
   isolation: isolate;
-}
-
-/* Inner clip so images don't overflow */
-.galleryCard > .cardImg,
-.galleryCard > .silhouetteArea,
-.galleryCard > .cyberHoloFallback {
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  overflow: hidden;
+  transform: translateZ(0);
 }
 
 .galleryCard:hover {
@@ -449,6 +441,12 @@
   transform: skewX(-25deg);
   z-index: 3;
   pointer-events: none;
+}
+
+@keyframes sweep {
+  0%   { left: -150%; }
+  60%  { left: 150%; }
+  100% { left: 150%; }
 }
 
 /* Background Ambient Glow */
@@ -662,8 +660,8 @@
 .rarityHolographic .shineSweep { animation: sweep 2.5s infinite ease-in-out; }
 
 /* ══════════════════════════════════════════════
-   GALLERY CARD AURA — only .galleryCard gets glow, aura, rings
-   (keeps gacha flip 3D cards and modal bigCard clean)
+   GALLERY CARD AURA — box-shadow glow only
+   (works safely with overflow:hidden, no ::after rings needed)
    ══════════════════════════════════════════════ */
 
 /* RARE — Blue Cyber Aura */
@@ -683,32 +681,8 @@
     0 0 100px rgba(59, 130, 246, 0.12);
 }
 @keyframes auraRare {
-  0% {
-    box-shadow:
-      0 0 0 1px rgba(59, 130, 246, 0.15),
-      0 0 12px rgba(59, 130, 246, 0.25),
-      0 0 30px rgba(59, 130, 246, 0.08);
-  }
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(96, 165, 250, 0.35),
-      0 0 28px rgba(59, 130, 246, 0.55),
-      0 0 55px rgba(59, 130, 246, 0.18);
-  }
-}
-.galleryCard.rarityRare::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: calc(var(--radius-md) + 4px);
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  pointer-events: none;
-  animation: auraRareRing 3.5s ease-in-out infinite alternate;
-  z-index: 0;
-}
-@keyframes auraRareRing {
-  0%   { opacity: 0.3; transform: scale(1); }
-  100% { opacity: 0.75; transform: scale(1.015); }
+  0%   { box-shadow: 0 0 0 1px rgba(59,130,246,0.15), 0 0 12px rgba(59,130,246,0.25), 0 0 30px rgba(59,130,246,0.08); }
+  100% { box-shadow: 0 0 0 2px rgba(96,165,250,0.35), 0 0 28px rgba(59,130,246,0.55), 0 0 60px rgba(59,130,246,0.2); }
 }
 
 /* EPIC — Purple/Pink Neon Aura */
@@ -716,8 +690,7 @@
   box-shadow:
     0 0 0 1px rgba(168, 85, 247, 0.25),
     0 0 22px rgba(168, 85, 247, 0.5),
-    0 0 50px rgba(168, 85, 247, 0.18),
-    0 0 80px rgba(236, 72, 153, 0.08);
+    0 0 50px rgba(168, 85, 247, 0.18);
   animation: auraEpic 2.8s ease-in-out infinite alternate;
 }
 .galleryCard.rarityEpic:hover {
@@ -729,36 +702,8 @@
     0 0 120px rgba(236, 72, 153, 0.2);
 }
 @keyframes auraEpic {
-  0% {
-    box-shadow:
-      0 0 0 1px rgba(168, 85, 247, 0.2),
-      0 0 15px rgba(168, 85, 247, 0.4),
-      0 0 40px rgba(168, 85, 247, 0.12),
-      0 0 65px rgba(236, 72, 153, 0.06);
-    border-color: rgba(168, 85, 247, 0.55) !important;
-  }
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(192, 132, 252, 0.45),
-      0 0 32px rgba(168, 85, 247, 0.7),
-      0 0 65px rgba(168, 85, 247, 0.25),
-      0 0 95px rgba(236, 72, 153, 0.12);
-    border-color: rgba(236, 72, 153, 0.8) !important;
-  }
-}
-.galleryCard.rarityEpic::after {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: calc(var(--radius-md) + 5px);
-  border: 1px solid rgba(192, 132, 252, 0.35);
-  pointer-events: none;
-  animation: auraEpicRing 2.8s ease-in-out infinite alternate;
-  z-index: 0;
-}
-@keyframes auraEpicRing {
-  0%   { opacity: 0.3; transform: scale(1); border-color: rgba(168, 85, 247, 0.3); }
-  100% { opacity: 0.85; transform: scale(1.02); border-color: rgba(236, 72, 153, 0.55); }
+  0%   { box-shadow: 0 0 0 1px rgba(168,85,247,0.2), 0 0 15px rgba(168,85,247,0.4), 0 0 40px rgba(168,85,247,0.12); border-color: rgba(168,85,247,0.55) !important; }
+  100% { box-shadow: 0 0 0 2px rgba(192,132,252,0.45), 0 0 32px rgba(168,85,247,0.7), 0 0 70px rgba(168,85,247,0.28); border-color: rgba(236,72,153,0.8) !important; }
 }
 
 /* LEGENDARY — Golden Fire Aura */
@@ -779,36 +724,8 @@
     0 0 130px rgba(239, 68, 68, 0.2);
 }
 @keyframes auraLegendary {
-  0% {
-    box-shadow:
-      0 0 0 1px rgba(245, 158, 11, 0.25),
-      0 0 18px rgba(245, 158, 11, 0.5),
-      0 0 45px rgba(245, 158, 11, 0.2),
-      0 0 80px rgba(239, 68, 68, 0.08);
-    border-color: rgba(245, 158, 11, 0.6) !important;
-  }
-  100% {
-    box-shadow:
-      0 0 0 3px rgba(251, 191, 36, 0.5),
-      0 0 38px rgba(245, 158, 11, 0.85),
-      0 0 75px rgba(245, 158, 11, 0.35),
-      0 0 110px rgba(239, 68, 68, 0.15);
-    border-color: rgba(251, 191, 36, 1) !important;
-  }
-}
-.galleryCard.rarityLegendary::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: calc(var(--radius-md) + 6px);
-  border: 1.5px solid rgba(251, 191, 36, 0.5);
-  pointer-events: none;
-  animation: auraLegendaryRing 2s ease-in-out infinite alternate;
-  z-index: 0;
-}
-@keyframes auraLegendaryRing {
-  0%   { opacity: 0.35; transform: scale(1); box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
-  100% { opacity: 1; transform: scale(1.025); box-shadow: 0 0 24px rgba(245, 158, 11, 0.7); }
+  0%   { box-shadow: 0 0 0 1px rgba(245,158,11,0.25), 0 0 18px rgba(245,158,11,0.5), 0 0 45px rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.6) !important; }
+  100% { box-shadow: 0 0 0 3px rgba(251,191,36,0.5), 0 0 38px rgba(245,158,11,0.85), 0 0 80px rgba(245,158,11,0.38); border-color: rgba(251,191,36,1) !important; }
 }
 
 /* HOLOGRAPHIC — Rainbow Cosmic Aura */
@@ -816,8 +733,7 @@
   box-shadow:
     0 0 0 1px rgba(236, 72, 153, 0.4),
     0 0 28px rgba(236, 72, 153, 0.6),
-    0 0 60px rgba(139, 92, 246, 0.3),
-    0 0 100px rgba(6, 182, 212, 0.15);
+    0 0 60px rgba(139, 92, 246, 0.3);
   animation: auraHolo 3s linear infinite;
 }
 .galleryCard.rarityHolographic:hover {
@@ -828,37 +744,13 @@
     0 0 150px rgba(6, 182, 212, 0.3);
 }
 @keyframes auraHolo {
-  0%   { border-color: #ec4899; box-shadow: 0 0 0 1px rgba(236,72,153,0.35), 0 0 25px rgba(236,72,153,0.55), 0 0 55px rgba(139,92,246,0.25), 0 0 90px rgba(6,182,212,0.12); }
-  16%  { border-color: #8b5cf6; box-shadow: 0 0 0 1px rgba(139,92,246,0.35), 0 0 25px rgba(139,92,246,0.55), 0 0 55px rgba(6,182,212,0.25), 0 0 90px rgba(236,72,153,0.12); }
-  33%  { border-color: #06b6d4; box-shadow: 0 0 0 1px rgba(6,182,212,0.35), 0 0 25px rgba(6,182,212,0.55), 0 0 55px rgba(16,185,129,0.25), 0 0 90px rgba(139,92,246,0.12); }
-  50%  { border-color: #10b981; box-shadow: 0 0 0 1px rgba(16,185,129,0.35), 0 0 25px rgba(16,185,129,0.55), 0 0 55px rgba(234,179,8,0.25), 0 0 90px rgba(6,182,212,0.12); }
-  66%  { border-color: #eab308; box-shadow: 0 0 0 1px rgba(234,179,8,0.35), 0 0 25px rgba(234,179,8,0.55), 0 0 55px rgba(239,68,68,0.25), 0 0 90px rgba(16,185,129,0.12); }
-  83%  { border-color: #ef4444; box-shadow: 0 0 0 1px rgba(239,68,68,0.35), 0 0 25px rgba(239,68,68,0.55), 0 0 55px rgba(236,72,153,0.25), 0 0 90px rgba(234,179,8,0.12); }
-  100% { border-color: #ec4899; box-shadow: 0 0 0 1px rgba(236,72,153,0.35), 0 0 25px rgba(236,72,153,0.55), 0 0 55px rgba(139,92,246,0.25), 0 0 90px rgba(6,182,212,0.12); }
-}
-.galleryCard.rarityHolographic::after {
-  content: '';
-  position: absolute;
-  inset: -7px;
-  border-radius: calc(var(--radius-md) + 7px);
-  background: conic-gradient(
-    from 0deg,
-    #ec4899, #8b5cf6, #06b6d4, #10b981, #eab308, #ef4444, #ec4899
-  );
-  opacity: 0;
-  pointer-events: none;
-  z-index: 0;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  -webkit-mask-composite: destination-out;
-  padding: 2px;
-  animation: auraHoloRing 3s linear infinite;
-}
-@keyframes auraHoloRing {
-  0%   { opacity: 0.5; transform: rotate(0deg) scale(1); }
-  50%  { opacity: 0.85; transform: rotate(180deg) scale(1.02); }
-  100% { opacity: 0.5; transform: rotate(360deg) scale(1); }
+  0%   { border-color: #ec4899; box-shadow: 0 0 0 1px rgba(236,72,153,0.35), 0 0 25px rgba(236,72,153,0.55), 0 0 55px rgba(139,92,246,0.25); }
+  16%  { border-color: #8b5cf6; box-shadow: 0 0 0 1px rgba(139,92,246,0.35), 0 0 25px rgba(139,92,246,0.55), 0 0 55px rgba(6,182,212,0.25); }
+  33%  { border-color: #06b6d4; box-shadow: 0 0 0 1px rgba(6,182,212,0.35), 0 0 25px rgba(6,182,212,0.55), 0 0 55px rgba(16,185,129,0.25); }
+  50%  { border-color: #10b981; box-shadow: 0 0 0 1px rgba(16,185,129,0.35), 0 0 25px rgba(16,185,129,0.55), 0 0 55px rgba(234,179,8,0.25); }
+  66%  { border-color: #eab308; box-shadow: 0 0 0 1px rgba(234,179,8,0.35), 0 0 25px rgba(234,179,8,0.55), 0 0 55px rgba(239,68,68,0.25); }
+  83%  { border-color: #ef4444; box-shadow: 0 0 0 1px rgba(239,68,68,0.35), 0 0 25px rgba(239,68,68,0.55), 0 0 55px rgba(236,72,153,0.25); }
+  100% { border-color: #ec4899; box-shadow: 0 0 0 1px rgba(236,72,153,0.35), 0 0 25px rgba(236,72,153,0.55), 0 0 55px rgba(139,92,246,0.25); }
 }
 
 
@@ -1399,3 +1291,56 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── CARD FUSION / RECYCLE STYLES ── */
+.exchangeRevealWrapper {
+  width: 190px;
+  height: 300px;
+  position: relative;
+  perspective: 1200px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+  isolation: isolate;
+  transform: translateZ(0);
+  border: 2px solid var(--glass-border);
+}
+
+.exchangeRevealWrapper:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.8);
+}
+
+.exchangeCover {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: linear-gradient(135deg, #0d0722 0%, #160e32 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: calc(var(--radius-md) - 2px);
+  transition: opacity 0.5s ease;
+}
+
+.exchangeCardDisplay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0d0722;
+  border-radius: calc(var(--radius-md) - 2px);
+  overflow: hidden;
+  position: relative;
+  opacity: 0.15;
+  transform: scale(0.92) rotateY(-180deg);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.exchangeCardRevealed {
+  opacity: 1;
+  transform: scale(1) rotateY(0deg);
+}
+
