@@ -1226,6 +1226,25 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid var(--glass-border);
+  transition: opacity 0s 0.25s, visibility 0s 0.25s;
+}
+
+/* Hide front by default when not flipped */
+.cardFront {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Show front when flipped */
+.flipped .cardFront {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Hide back when flipped */
+.flipped .cardBack {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .cardBack {
@@ -1360,6 +1379,9 @@
 }
 
 .closeGachaBtn {
+  display: block;
+  position: relative;
+  margin: 30px auto 10px;
   padding: 13px 40px;
   font-size: 1rem;
   font-weight: 700;
@@ -1371,7 +1393,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   transition: var(--transition-smooth);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-  z-index: 10;
+  z-index: 100;
 }
 
 .closeGachaBtn:hover {
