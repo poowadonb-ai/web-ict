@@ -773,7 +773,7 @@ export default function StudentCardsPage() {
                           <div className={styles.cardOverlay} />
                           
                           {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
-                            <div className={styles.cyberHoloFallback} style={{ height: '220px' }}>
+                            <div className={styles.cyberHoloFallback} style={{ width: '100%', aspectRatio: '3/4', height: 'auto' }}>
                               <div className={styles.cyberGrid} />
                               <div className={styles.cyberHoloRing} />
                               <div className={styles.cyberHoloSymbol}>✨</div>
@@ -782,7 +782,7 @@ export default function StudentCardsPage() {
                             <img
                               src={card.imageUrl}
                               alt={card.name}
-                              style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }}
+                              style={{ width: '100%', aspectRatio: '3/4', height: 'auto', objectFit: 'fill', display: 'block' }}
                               onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
                             />
                           )}
