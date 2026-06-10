@@ -504,12 +504,41 @@ if (isFirebaseConfigured) {
 export async function saveCardsToFirestore(): Promise<void> {
   if (typeof window === "undefined" || !isFirebaseConfigured || !db) return;
   try {
-    const { doc, setDoc } = await import("firebase/firestore");
-    const docRef = doc(db, "settings", "cards");
-    const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
-    const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
+    const { doc, setDoc, deleteDoc, collection, getDocs } = await import("firebase/firestore");
+    
+    // Save drop rates in settings/cards (and overwrite to clean up old large overrides/custom fields)
     const dropRates = JSON.parse(localStorage.getItem(DROP_RATES_KEY) || "null");
-    await setDoc(docRef, { overrides, custom, dropRates }, { merge: true });
+    await setDoc(doc(db, "settings", "cards"), { dropRates });
+
+    // Save Overrides in settings/cards/overrides subcollection
+    const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
+    for (const cardId of Object.keys(overrides)) {
+      await setDoc(doc(db, "settings", "cards", "overrides", cardId), overrides[cardId]);
+    }
+    // Delete old overrides in Firestore that are no longer present
+    const overridesCol = collection(db, "settings", "cards", "overrides");
+    const overridesSnap = await getDocs(overridesCol);
+    for (const d of overridesSnap.docs) {
+      if (!overrides[d.id]) {
+        await deleteDoc(doc(db, "settings", "cards", "overrides", d.id));
+      }
+    }
+
+    // Save Custom Cards in settings/cards/custom subcollection
+    const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
+    const customMap: Record<string, Card> = {};
+    for (const card of custom) {
+      customMap[card.id] = card;
+      await setDoc(doc(db, "settings", "cards", "custom", card.id), card);
+    }
+    // Delete old custom cards in Firestore that are no longer present
+    const customCol = collection(db, "settings", "cards", "custom");
+    const customSnap = await getDocs(customCol);
+    for (const d of customSnap.docs) {
+      if (!customMap[d.id]) {
+        await deleteDoc(doc(db, "settings", "cards", "custom", d.id));
+      }
+    }
   } catch (e) {
     console.error("saveCardsToFirestore error:", e);
     throw e;
@@ -520,22 +549,46 @@ export async function saveCardsToFirestore(): Promise<void> {
 export async function syncCardsFromFirestore(): Promise<void> {
   if (typeof window === "undefined" || !isFirebaseConfigured || !db) return;
   try {
-    const { doc, getDoc } = await import("firebase/firestore");
+    const { doc, getDoc, collection, getDocs } = await import("firebase/firestore");
+    
+    // 1. Fetch drop rates and check old structure for migration
     const docRef = doc(db, "settings", "cards");
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const data = snap.data();
-      if (data.overrides) {
-        localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(data.overrides));
-      }
-      if (data.custom) {
-        localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(data.custom));
-      }
       if (data.dropRates) {
         localStorage.setItem(DROP_RATES_KEY, JSON.stringify(data.dropRates));
       }
-      window.dispatchEvent(new Event("storage"));
+      // Migrate old data if present to keep it compatible!
+      if (data.overrides && Object.keys(data.overrides).length > 0) {
+        localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(data.overrides));
+      }
+      if (data.custom && data.custom.length > 0) {
+        localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(data.custom));
+      }
     }
+
+    // 2. Fetch overrides from `settings/cards/overrides` subcollection
+    const overridesSnap = await getDocs(collection(db, "settings", "cards", "overrides"));
+    const overrides: Record<string, Partial<Card>> = {};
+    overridesSnap.forEach((d) => {
+      overrides[d.id] = d.data() as Partial<Card>;
+    });
+    if (!overridesSnap.empty) {
+      localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+    }
+
+    // 3. Fetch custom cards from `settings/cards/custom` subcollection
+    const customSnap = await getDocs(collection(db, "settings", "cards", "custom"));
+    const custom: Card[] = [];
+    customSnap.forEach((d) => {
+      custom.push(d.data() as Card);
+    });
+    if (!customSnap.empty) {
+      localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(custom));
+    }
+
+    window.dispatchEvent(new Event("storage"));
   } catch (e) {
     console.error("syncCardsFromFirestore error:", e);
   }
