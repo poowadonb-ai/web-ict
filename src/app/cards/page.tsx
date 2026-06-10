@@ -225,6 +225,52 @@ export default function StudentCardsPage() {
         </div>
       )}
 
+      {/* My Stats Panel */}
+      {studentProfile && (() => {
+        const coll = studentProfile.cardsCollected || [];
+        const countByRarity = (r: string) => coll.reduce((acc, item) => {
+          const card = CARD_POOL.find(c => c.id === item.cardId);
+          return card?.rarity === r ? acc + (item.count || 0) : acc;
+        }, 0);
+        const totalOwned = coll.reduce((acc, item) => acc + (item.count || 0), 0);
+        const uniqueOwned = CARD_POOL.filter(c => coll.some(item => item.cardId === c.id && (item.count || 0) > 0)).length;
+        const completionPct = Math.round((uniqueOwned / CARD_POOL.length) * 100);
+        return (
+          <div className={`${styles.statsPanel} glass-container`} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "16px", padding: "20px 24px", borderRadius: "16px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>อัลบั้ม</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--accent-cyan)" }}>{uniqueOwned}/{CARD_POOL.length}</div>
+              <div style={{ height: "4px", borderRadius: "4px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${completionPct}%`, background: "linear-gradient(90deg, var(--accent-cyan), var(--accent-purple))", borderRadius: "4px" }} />
+              </div>
+              <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{completionPct}% สมบูรณ์</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>การ์ดทั้งหมด</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900 }}>{totalOwned} ใบ</div>
+            </div>
+            {countByRarity("holographic") > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div style={{ fontSize: "0.8rem", color: "#e879f9" }}>✨ Holographic</div>
+                <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#e879f9" }}>{countByRarity("holographic")}</div>
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "0.8rem", color: "#fbbf24" }}>🟠 ตำนาน</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#fbbf24" }}>{countByRarity("legendary")}</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "0.8rem", color: "#a855f7" }}>🟣 มหากาพย์</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#a855f7" }}>{countByRarity("epic")}</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontSize: "0.8rem", color: "#3b82f6" }}>🔵 หายาก</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#3b82f6" }}>{countByRarity("rare")}</div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Gacha Opening overlay */}
       {isGachaMode && (
         <div className={styles.gachaOverlay}>
@@ -256,6 +302,7 @@ export default function StudentCardsPage() {
                     if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
                     else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
                     else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
+                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
 
                     return (
                       <div 
@@ -327,6 +374,7 @@ export default function StudentCardsPage() {
                     if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
                     else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
                     else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
+                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
 
                     return (
                       <div 
@@ -495,6 +543,7 @@ export default function StudentCardsPage() {
               if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
               else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
               else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
+              else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
 
               return (
                 <div 
@@ -552,6 +601,7 @@ export default function StudentCardsPage() {
         if (selectedCard.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
         else if (selectedCard.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
         else if (selectedCard.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
+        else if (selectedCard.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
 
         return (
           <div className={styles.modalOverlay} onClick={() => setSelectedCard(null)}>

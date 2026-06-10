@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import styles from "./page.module.css";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 export default function ClassroomPage() {
   const { user, loading } = useAuth();
@@ -262,6 +263,8 @@ export default function ClassroomPage() {
           </button>
         )}
       </div>
+
+      <AnnouncementBanner />
 
       {lessons.length === 0 ? (
         <div className={`${styles.emptyState} glass-container`}>

@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, BookOpen, Layers, User, Award, ClipboardList, Gift } from "lucide-react";
+import { LogOut, BookOpen, Layers, User, Award, ClipboardList, Gift, BarChart3, Trophy } from "lucide-react";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
@@ -54,6 +54,20 @@ export default function Navbar() {
                 <Gift size={18} />
                 <span>การ์ดของฉัน</span>
               </Link>
+              <Link 
+                href="/album" 
+                className={`${styles.navLink} ${isActive("/album") ? styles.active : ""}`}
+              >
+                <BookOpen size={18} />
+                <span>อัลบั้ม</span>
+              </Link>
+              <Link 
+                href="/leaderboard" 
+                className={`${styles.navLink} ${isActive("/leaderboard") ? styles.active : ""}`}
+              >
+                <Trophy size={18} />
+                <span>ตารางผู้นำ</span>
+              </Link>
             </>
           )}
           {user?.role === "teacher" && (
@@ -66,11 +80,32 @@ export default function Navbar() {
                 <span>สมุดคะแนน</span>
               </Link>
               <Link 
+                href="/teacher/dashboard" 
+                className={`${styles.navLink} ${isActive("/teacher/dashboard") ? styles.active : ""}`}
+              >
+                <BarChart3 size={18} />
+                <span>แดชบอร์ด</span>
+              </Link>
+              <Link 
+                href="/teacher/students" 
+                className={`${styles.navLink} ${isActive("/teacher/students") ? styles.active : ""}`}
+              >
+                <User size={18} />
+                <span>นักเรียน</span>
+              </Link>
+              <Link 
                 href="/teacher/cards" 
                 className={`${styles.navLink} ${isActive("/teacher/cards") ? styles.active : ""}`}
               >
                 <Gift size={18} />
                 <span>แจกการ์ด</span>
+              </Link>
+              <Link 
+                href="/leaderboard" 
+                className={`${styles.navLink} ${isActive("/leaderboard") ? styles.active : ""}`}
+              >
+                <Trophy size={18} />
+                <span>ตารางผู้นำ</span>
               </Link>
             </>
           )}

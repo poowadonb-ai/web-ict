@@ -1,0 +1,270 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  color: var(--text-primary);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerIcon {
+  color: #fbbf24;
+  width: 44px;
+  height: 44px;
+  filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* Filter */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filterSelect option { background: #111827; }
+
+.myRankBadge {
+  margin-left: auto;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Podium */
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 20px;
+}
+
+.podiumItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.podiumFirst {
+  order: 2;
+}
+.podiumSecond { order: 1; }
+.podiumThird { order: 3; }
+
+.crownGold {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.7));
+  animation: floatCrown 2s ease-in-out infinite;
+}
+
+@keyframes floatCrown {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.medalSilver { color: #d1d5db; filter: drop-shadow(0 0 6px rgba(209, 213, 219, 0.5)); }
+.medalBronze { color: #cd7c3a; filter: drop-shadow(0 0 6px rgba(205, 124, 58, 0.5)); }
+
+.podiumName {
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podiumRoom {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.podiumCards {
+  font-size: 0.85rem;
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.holoBadge {
+  font-size: 0.75rem;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6, #06b6d4);
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  animation: holoPulse 2s infinite ease-in-out;
+}
+
+@keyframes holoPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(139, 92, 246, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.8); }
+}
+
+.podiumBase {
+  font-size: 1.4rem;
+  font-weight: 900;
+  padding: 12px 28px;
+  border-radius: 12px 12px 0 0;
+  text-align: center;
+  min-width: 100px;
+}
+
+.podiumBase1 {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.podiumBase2 {
+  background: linear-gradient(135deg, #6b7280, #374151);
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.podiumBase3 {
+  background: linear-gradient(135deg, #92400e, #78350f);
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table */
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 16px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.table th {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.table td {
+  padding: 14px 12px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.rankCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40px;
+}
+
+.rankNum {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.nameCell {
+  text-align: left;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meBadge {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.holoCell {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1));
+  color: #e879f9;
+  font-weight: 700;
+}
+
+.myRow {
+  background: rgba(6, 182, 212, 0.06) !important;
+  border-left: 3px solid var(--accent-cyan);
+}
+
+/* Loading */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  gap: 20px;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #fbbf24;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }

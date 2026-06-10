@@ -41,6 +41,7 @@ export default function PadletBoardPage() {
   const [gradeMaxScore, setGradeMaxScore] = useState("10");
   const [gradeStatus, setGradeStatus] = useState<"graded" | "resubmit">("graded");
   const [gradeFeedback, setGradeFeedback] = useState("");
+  const [awardPack, setAwardPack] = useState(false);
   const [isGradingSubmitting, setIsGradingSubmitting] = useState(false);
 
   useEffect(() => {
@@ -223,6 +224,7 @@ export default function PadletBoardPage() {
     setGradeMaxScore(sub.maxScore !== undefined ? String(sub.maxScore) : "10");
     setGradeStatus(sub.status === "resubmit" ? "resubmit" : "graded");
     setGradeFeedback(sub.teacherFeedback || "");
+    setAwardPack(false);
     setShowGradeModal(true);
   };
 
@@ -249,7 +251,8 @@ export default function PadletBoardPage() {
         scoreNum,
         maxScoreNum,
         gradeStatus,
-        gradeFeedback.trim()
+        gradeFeedback.trim(),
+        awardPack
       );
       setShowGradeModal(false);
     } catch {
@@ -834,6 +837,20 @@ export default function PadletBoardPage() {
                   rows={3}
                   disabled={isGradingSubmitting}
                 />
+              </div>
+
+              <div className={styles.formGroup} style={{ flexDirection: "row", alignItems: "center", gap: "10px", marginTop: "8px", background: "rgba(16, 185, 129, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
+                <input
+                  type="checkbox"
+                  id="awardPackCheck"
+                  checked={awardPack}
+                  onChange={(e) => setAwardPack(e.target.checked)}
+                  disabled={isGradingSubmitting}
+                  style={{ width: "20px", height: "20px", cursor: "pointer" }}
+                />
+                <label htmlFor="awardPackCheck" style={{ marginBottom: 0, cursor: "pointer", color: "#34d399", fontWeight: "bold" }}>
+                  🎁 มอบรางวัลพิเศษ 1 ซอง (ชิ้นงานคุณภาพดีเยี่ยม)
+                </label>
               </div>
 
               <footer className={styles.modalFooter}>

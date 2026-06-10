@@ -46,6 +46,16 @@ export interface UserProfile {
   packsCount?: number;
   bonusPoints?: number;
   lastLoginDate?: string;
+  totalPacksOpened?: number;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  authorName: string;
+  createdAt: number;
+  pinned?: boolean;
 }
 
 export interface Lesson {
@@ -103,7 +113,7 @@ export interface Submission {
 export interface Card {
   id: string;
   name: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
+  rarity: "common" | "rare" | "epic" | "legendary" | "holographic";
   imageUrl: string;
   description: string;
   bonusPoints: number;
@@ -127,7 +137,7 @@ export interface RedemptionRequest {
   studentRoom: string;
   cardId: string;
   cardName: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
+  rarity: "common" | "rare" | "epic" | "legendary" | "holographic";
   bonusPoints: number;
   status: "pending" | "approved" | "rejected";
   createdAt: number;
@@ -276,6 +286,15 @@ export const CARD_POOL: Card[] = [
     imageUrl: "/cards/meme_legendary.png",
     description: "เขียนโค้ดรวดเดียวจบ ไร้บั๊ก ไร้เออเร่อ พลังสมองกลระดับกุมชะตาจักรวาล! (+5 คะแนนโบนัส)",
     bonusPoints: 5,
+    type: "bonus"
+  },
+  {
+    id: "card-holo-1",
+    name: "✨ มังกรไซเบอร์ (Cyber Dragon Holographic)",
+    rarity: "holographic",
+    imageUrl: "__HOLOGRAPHIC__",
+    description: "การ์ดโฮโลกราฟิกหายากที่สุดในโลก! ผู้โชคดี 1 ใน 500 คนเท่านั้น! พลังงานดิจิทัลสูงสุด! (+10 คะแนนโบนัส)",
+    bonusPoints: 10,
     type: "bonus"
   }
 ];
@@ -617,14 +636,37 @@ class MockDbService {
     };
 
     // Reward: 1 Pack for submitting
+    // Reward: 1 Pack for submitting
     const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
-    if (user.email && profiles[user.email]) {
-      profiles[user.email].packsCount = (profiles[user.email].packsCount || 0) + 1;
-      this.setItem("mock_profiles", profiles);
-      const updatedUser = { ...user, packsCount: profiles[user.email].packsCount };
-      this.setItem("mock_current_user", updatedUser);
-      this.emit("authChange", updatedUser);
+    
+    const rewardUser = (emailToReward: string) => {
+      if (profiles[emailToReward]) {
+        profiles[emailToReward].packsCount = (profiles[emailToReward].packsCount || 0) + 1;
+        if (user.email === emailToReward) {
+          const updatedUser = { ...user, packsCount: profiles[emailToReward].packsCount };
+          this.setItem("mock_current_user", updatedUser);
+          this.emit("authChange", updatedUser);
+        }
+      }
+    };
+
+    if (isGroup && members && members.length > 0) {
+      Object.keys(profiles).forEach(email => {
+        const p = profiles[email];
+        const matchedMember = members.find(m => String(m.room) === String(p.room) && String(m.studentNo) === String(p.studentNo));
+        if (matchedMember) {
+          rewardUser(email);
+        }
+      });
+      // Safety fallback
+      if (user.email && !members.find(m => String(m.room) === String(user.room) && String(m.studentNo) === String(user.studentNo))) {
+        rewardUser(user.email);
+      }
+    } else {
+      if (user.email) rewardUser(user.email);
     }
+    
+    this.setItem("mock_profiles", profiles);
 
     this.setItem("mock_submissions", [newSubmission, ...allSubmissions]);
   }
@@ -680,11 +722,14 @@ class MockDbService {
     score: number,
     maxScore: number,
     status: "graded" | "resubmit",
-    teacherFeedback: string
+    teacherFeedback: string,
+    awardPack?: boolean
   ) {
     const allSubmissions = this.getItem<Submission[]>("mock_submissions", []);
+    let targetSub: Submission | null = null;
     const updated = allSubmissions.map(sub => {
       if (sub.id === submissionId) {
+        targetSub = sub;
         return {
           ...sub,
           score,
@@ -696,6 +741,31 @@ class MockDbService {
       return sub;
     });
     this.setItem("mock_submissions", updated);
+
+    if (awardPack && targetSub) {
+      const sub = targetSub as Submission;
+      const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
+      const rewardUser = (emailToReward: string) => {
+        if (profiles[emailToReward]) {
+          profiles[emailToReward].packsCount = (profiles[emailToReward].packsCount || 0) + 1;
+        }
+      };
+      
+      if (sub.isGroup && sub.members && sub.members.length > 0) {
+        Object.keys(profiles).forEach(email => {
+          const p = profiles[email];
+          if (sub.members!.find(m => String(m.room) === String(p.room) && String(m.studentNo) === String(p.studentNo))) {
+            rewardUser(email);
+          }
+        });
+      } else {
+         Object.keys(profiles).forEach(email => {
+            const mockUid = `mock-student-${email.replace(/[^a-zA-Z0-9]/g, "-")}`;
+            if (mockUid === sub.uid) rewardUser(email);
+         });
+      }
+      this.setItem("mock_profiles", profiles);
+    }
   }
 
   public getRegisteredStudents(): UserProfile[] {
@@ -764,7 +834,27 @@ class MockDbService {
       }
     }
 
-    return students;
+    return students.sort((a, b) => Number(a.studentNo || 0) - Number(b.studentNo || 0));
+  }
+
+  public updateStudentProfile(uid: string, updates: { fullName?: string; room?: string; studentNo?: string }) {
+    const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
+    const targetEmail = Object.keys(profiles).find(email => {
+      return `mock-student-${email.replace(/[^a-zA-Z0-9]/g, "-")}` === uid;
+    });
+
+    if (targetEmail) {
+      profiles[targetEmail] = { ...profiles[targetEmail], ...updates };
+      this.setItem("mock_profiles", profiles);
+
+      // If updating current user, update session too
+      const user = this.currentUser;
+      if (user && user.email === targetEmail) {
+        const updatedUser = { ...user, ...updates };
+        this.setItem("mock_current_user", updatedUser);
+        this.emit("authChange", updatedUser);
+      }
+    }
   }
 
   // CARDS & GACHA API
@@ -832,12 +922,14 @@ class MockDbService {
 
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
-      let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 1) {
+      let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
+      if (rand < 0.2) {
+        selectedRarity = "holographic";
+      } else if (rand < 0.7) {
         selectedRarity = "legendary";
-      } else if (rand < 8) {
+      } else if (rand < 3.7) {
         selectedRarity = "epic";
-      } else if (rand < 23) {
+      } else if (rand < 13.7) {
         selectedRarity = "rare";
       } else {
         selectedRarity = "common";
@@ -1092,10 +1184,11 @@ class MockDbService {
 
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
-      let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 1) selectedRarity = "legendary";
-      else if (rand < 8) selectedRarity = "epic";
-      else if (rand < 23) selectedRarity = "rare";
+      let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
+      if (rand < 0.2) selectedRarity = "holographic";
+      else if (rand < 0.7) selectedRarity = "legendary";
+      else if (rand < 3.7) selectedRarity = "epic";
+      else if (rand < 13.7) selectedRarity = "rare";
       else selectedRarity = "common";
       const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
@@ -1290,14 +1383,28 @@ export const authService = {
     if (isMockMode()) {
       return mockDb.getRegisteredStudents();
     }
-    const { getDocs, query, where } = await import("firebase/firestore");
-    const q = query(collection(db, "users"), where("role", "==", "student"), where("isRegistered", "==", true));
-    const snapshot = await getDocs(q);
-    const students: UserProfile[] = [];
-    snapshot.forEach((doc) => {
-      students.push({ uid: doc.id, ...doc.data() } as UserProfile);
-    });
-    return students;
+    try {
+      const { getDocs, query, where } = await import("firebase/firestore");
+      const q = query(collection(db, "users"), where("role", "==", "student"), where("isRegistered", "==", true));
+      const snapshot = await getDocs(q);
+      const students: UserProfile[] = [];
+      snapshot.forEach((doc) => {
+        students.push({ uid: doc.id, ...doc.data() } as UserProfile);
+      });
+      return students.sort((a, b) => Number(a.studentNo || 0) - Number(b.studentNo || 0));
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      return [];
+    }
+  },
+
+  updateStudentProfile: async (uid: string, updates: { fullName?: string; room?: string; studentNo?: string }): Promise<void> => {
+    if (isMockMode()) {
+      mockDb.updateStudentProfile(uid, updates);
+      return;
+    }
+    const userDocRef = doc(db, "users", uid);
+    await updateDoc(userDocRef, updates);
   }
 };
 
@@ -1494,11 +1601,34 @@ export const submissionService = {
     });
 
     // Reward: 1 Pack for submitting
-    const userDocRef = doc(db, "users", currentUserProfile.uid);
-    const { increment } = await import("firebase/firestore");
-    await updateDoc(userDocRef, {
-      packsCount: increment(1)
-    });
+    // Reward: 1 Pack for submitting
+    const { increment, query, where, getDocs } = await import("firebase/firestore");
+    
+    if (isGroup && members && members.length > 0) {
+      const promises = members.map(async (m) => {
+        const q = query(
+          collection(db, "users"),
+          where("room", "==", String(m.room)),
+          where("studentNo", "==", String(m.studentNo))
+        );
+        const snapshot = await getDocs(q);
+        const updatePromises: any[] = [];
+        snapshot.forEach((docSnap) => {
+           updatePromises.push(updateDoc(docSnap.ref, { packsCount: increment(1) }));
+        });
+        await Promise.all(updatePromises);
+      });
+      await Promise.all(promises);
+      
+      const submitterInGroup = members.find(m => String(m.room) === String(currentUserProfile.room) && String(m.studentNo) === String(currentUserProfile.studentNo));
+      if (!submitterInGroup) {
+         const userDocRef = doc(db, "users", currentUserProfile.uid);
+         await updateDoc(userDocRef, { packsCount: increment(1) });
+      }
+    } else {
+      const userDocRef = doc(db, "users", currentUserProfile.uid);
+      await updateDoc(userDocRef, { packsCount: increment(1) });
+    }
   },
 
   deleteSubmission: async (submissionId: string): Promise<void> => {
@@ -1572,10 +1702,11 @@ export const submissionService = {
     score: number, 
     maxScore: number, 
     status: "graded" | "resubmit", 
-    teacherFeedback: string
+    teacherFeedback: string,
+    awardPack?: boolean
   ): Promise<void> => {
     if (isMockMode()) {
-      mockDb.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback);
+      mockDb.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack);
       return;
     }
     await updateDoc(doc(db, "submissions", submissionId), {
@@ -1584,6 +1715,24 @@ export const submissionService = {
       status,
       teacherFeedback
     });
+
+    if (awardPack) {
+      const subSnap = await getDoc(doc(db, "submissions", submissionId));
+      if (subSnap.exists()) {
+         const sub = subSnap.data() as Submission;
+         const { increment, query, where, getDocs } = await import("firebase/firestore");
+         if (sub.isGroup && sub.members && sub.members.length > 0) {
+            const promises = sub.members.map(async (m) => {
+              const q = query(collection(db, "users"), where("room", "==", String(m.room)), where("studentNo", "==", String(m.studentNo)));
+              const snapshot = await getDocs(q);
+              snapshot.forEach((docSnap) => { updateDoc(docSnap.ref, { packsCount: increment(1) }); });
+            });
+            await Promise.all(promises);
+         } else {
+            await updateDoc(doc(db, "users", sub.uid), { packsCount: increment(1) });
+         }
+      }
+    }
   },
 
   subscribeAllSubmissions: (callback: (submissions: Submission[]) => void) => {
@@ -1666,12 +1815,14 @@ export const cardService = {
 
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
-      let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 1) {
+      let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
+      if (rand < 0.2) {
+        selectedRarity = "holographic";
+      } else if (rand < 0.7) {
         selectedRarity = "legendary";
-      } else if (rand < 8) {
+      } else if (rand < 3.7) {
         selectedRarity = "epic";
-      } else if (rand < 23) {
+      } else if (rand < 13.7) {
         selectedRarity = "rare";
       } else {
         selectedRarity = "common";
@@ -1833,10 +1984,11 @@ export const cardService = {
 
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
-      let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 1) selectedRarity = "legendary";
-      else if (rand < 8) selectedRarity = "epic";
-      else if (rand < 23) selectedRarity = "rare";
+      let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
+      if (rand < 0.2) selectedRarity = "holographic";
+      else if (rand < 0.7) selectedRarity = "legendary";
+      else if (rand < 3.7) selectedRarity = "epic";
+      else if (rand < 13.7) selectedRarity = "rare";
       else selectedRarity = "common";
       const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
@@ -1892,4 +2044,72 @@ export const cardService = {
   }
 };
 
+// ============================================================
+// ANNOUNCEMENT SERVICE
+// ============================================================
 
+export const announcementService = {
+  getAnnouncements: async (): Promise<Announcement[]> => {
+    if (isMockMode()) {
+      const data = localStorage.getItem("mock_announcements");
+      return data ? JSON.parse(data) : [];
+    }
+    try {
+      const { getDocs, query, orderBy } = await import("firebase/firestore");
+      const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      const results: Announcement[] = [];
+      snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() } as Announcement));
+      return results;
+    } catch {
+      return [];
+    }
+  },
+
+  subscribeAnnouncements: (callback: (list: Announcement[]) => void) => {
+    if (isMockMode()) {
+      const data = localStorage.getItem("mock_announcements");
+      callback(data ? JSON.parse(data) : []);
+      // Poll every 3s for mock
+      const id = setInterval(() => {
+        const d = localStorage.getItem("mock_announcements");
+        callback(d ? JSON.parse(d) : []);
+      }, 3000);
+      return () => clearInterval(id);
+    }
+    const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
+    return onSnapshot(q, (snapshot) => {
+      const results: Announcement[] = [];
+      snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() } as Announcement));
+      callback(results);
+    });
+  },
+
+  addAnnouncement: async (title: string, content: string, authorName: string, pinned = false): Promise<void> => {
+    const newAnn: Announcement = {
+      id: "ann-" + Math.random().toString(36).substr(2, 9),
+      title: title.trim(),
+      content: content.trim(),
+      authorName,
+      createdAt: Date.now(),
+      pinned
+    };
+    if (isMockMode()) {
+      const data = localStorage.getItem("mock_announcements");
+      const list: Announcement[] = data ? JSON.parse(data) : [];
+      localStorage.setItem("mock_announcements", JSON.stringify([newAnn, ...list]));
+      return;
+    }
+    await addDoc(collection(db, "announcements"), { ...newAnn, id: undefined });
+  },
+
+  deleteAnnouncement: async (id: string): Promise<void> => {
+    if (isMockMode()) {
+      const data = localStorage.getItem("mock_announcements");
+      const list: Announcement[] = data ? JSON.parse(data) : [];
+      localStorage.setItem("mock_announcements", JSON.stringify(list.filter(a => a.id !== id)));
+      return;
+    }
+    await deleteDoc(doc(db, "announcements", id));
+  }
+};
