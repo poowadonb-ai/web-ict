@@ -137,7 +137,7 @@ export const CARD_POOL: Card[] = [
     id: "card-1",
     name: "บั๊กตัวเบ้อเริ่ม (Missing Semicolon)",
     rarity: "common",
-    imageUrl: "/cards/meme_common.png",
+    imageUrl: "/cards/card_missing_semi.png",
     description: "หาให้ตายก็ไม่เจอ สุดท้ายแค่ลืมใส่ ; ไปตัวเดียว! (ประดับคลังการ์ด)",
     bonusPoints: 0,
     type: "cosmetic"
@@ -146,7 +146,7 @@ export const CARD_POOL: Card[] = [
     id: "card-2",
     name: "คอมแฮงก์ (Blue Screen of Death)",
     rarity: "common",
-    imageUrl: "/cards/meme_common.png",
+    imageUrl: "/cards/card_bsod.png",
     description: "ทำงานมา 3 ชั่วโมง... อ้าว ยังไม่ได้กดเซฟ! น้ำตาจะไหล (ประดับคลังการ์ด)",
     bonusPoints: 0,
     type: "cosmetic"
@@ -155,7 +155,7 @@ export const CARD_POOL: Card[] = [
     id: "card-3",
     name: "เทพคัดลอกวาง (StackOverflow)",
     rarity: "common",
-    imageUrl: "/cards/meme_common.png",
+    imageUrl: "/cards/card_stackoverflow.png",
     description: "ไม่รู้หรอกว่าโค้ดบรรทัดนี้ทำงานยังไง แต่ก๊อปมาวางแล้วมันดันรันผ่าน! (ประดับคลังการ์ด)",
     bonusPoints: 0,
     type: "cosmetic"
@@ -164,7 +164,7 @@ export const CARD_POOL: Card[] = [
     id: "card-4",
     name: "เบราว์เซอร์สุดอืด (Internet Explorer)",
     rarity: "common",
-    imageUrl: "/cards/meme_common.png",
+    imageUrl: "/cards/card_ie.png",
     description: "กำลังโหลด... โปรดรออีกสัก 3 ชาติเศษๆ (ประดับคลังการ์ด)",
     bonusPoints: 0,
     type: "cosmetic"
@@ -173,7 +173,7 @@ export const CARD_POOL: Card[] = [
     id: "card-5",
     name: "คุยกับเป็ด (Rubber Duck Debugging)",
     rarity: "common",
-    imageUrl: "/cards/meme_common.png",
+    imageUrl: "/cards/card_rubber_duck.png",
     description: "เมื่อไม่มีใครช่วยได้ ก็ต้องอธิบายโค้ดให้เป็ดยางฟังเผื่อจะบรรลุธรรม (ประดับคลังการ์ด)",
     bonusPoints: 0,
     type: "cosmetic"
@@ -182,7 +182,7 @@ export const CARD_POOL: Card[] = [
     id: "card-6",
     name: "พิมพ์ผิดชีวิตเปลี่ยน (Typo Error)",
     rarity: "common",
-    imageUrl: "/cards/meme_common.png",
+    imageUrl: "/cards/card_typo.png",
     description: "นั่งเพ่งหาบั๊กเป็นชั่วโมง สรุปพิมพ์ชื่อตัวแปรผิดไปแค่ตัวเดียว (ประดับคลังการ์ด)",
     bonusPoints: 0,
     type: "cosmetic"
@@ -191,7 +191,7 @@ export const CARD_POOL: Card[] = [
     id: "card-7",
     name: "โค้ดสปาเก็ตตี้ (Spaghetti Code)",
     rarity: "rare",
-    imageUrl: "/cards/meme_rare.png",
+    imageUrl: "/cards/card_spaghetti.png",
     description: "โยงมั่วไปหมดจนดึงแก้เส้นนึง พังทลายไปทั้งระบบ! (+1 คะแนนโบนัส)",
     bonusPoints: 1,
     type: "bonus"
@@ -200,7 +200,7 @@ export const CARD_POOL: Card[] = [
     id: "card-8",
     name: "ลั่นปิดผิดหน้า (Alt+F4)",
     rarity: "rare",
-    imageUrl: "/cards/meme_rare.png",
+    imageUrl: "/cards/card_alt_f4.png",
     description: "ตั้งใจจะกดเซฟงาน แต่ดันนิ้วเบียดไปกดปิดโปรแกรมทิ้งซะงั้น (+1 คะแนนโบนัส)",
     bonusPoints: 1,
     type: "bonus"
@@ -209,7 +209,7 @@ export const CARD_POOL: Card[] = [
     id: "card-9",
     name: "ทำงานเต็มสูบ (100% CPU Usage)",
     rarity: "rare",
-    imageUrl: "/cards/meme_rare.png",
+    imageUrl: "/cards/card_cpu.png",
     description: "พัดลมคอมพิวเตอร์หมุนแรงจัด จนกะทัดรัดเตรียมบินขึ้นอวกาศ (+1 คะแนนโบนัส)",
     bonusPoints: 1,
     type: "bonus"
@@ -218,7 +218,7 @@ export const CARD_POOL: Card[] = [
     id: "card-10",
     name: "สมองปลาทอง (Forgot Password)",
     rarity: "rare",
-    imageUrl: "/cards/meme_rare.png",
+    imageUrl: "/cards/card_forgot_pwd.png",
     description: "ตั้งรหัสผ่านไว้ซับซ้อนเกินไป จนตัวเองก็ยังจำไม่ได้ (+1 คะแนนโบนัส)",
     bonusPoints: 1,
     type: "bonus"
@@ -227,7 +227,7 @@ export const CARD_POOL: Card[] = [
     id: "card-11",
     name: "เทสเตอร์ผู้กล้า (Tester in Prod)",
     rarity: "rare",
-    imageUrl: "/cards/meme_rare.png",
+    imageUrl: "/cards/card_tester_prod.png",
     description: "ขี้เกียจทดสอบในเครื่องตัวเอง ปล่อยโค้ดขึ้นระบบจริงแล้วค่อยไปลุ้นเอา! (+1 คะแนนโบนัส)",
     bonusPoints: 1,
     type: "bonus"
@@ -236,7 +236,7 @@ export const CARD_POOL: Card[] = [
     id: "card-12",
     name: "เซิร์ฟเวอร์ไหม้ (This is Fine)",
     rarity: "epic",
-    imageUrl: "/cards/meme_epic.png",
+    imageUrl: "/cards/card_this_is_fine.png",
     description: "ไฟไหม้ห้องเซิร์ฟเวอร์ย่อยยับ แต่ระบบยังรันได้ (มั้ง) สบายมาก! (+2 คะแนนโบนัส)",
     bonusPoints: 2,
     type: "bonus"
