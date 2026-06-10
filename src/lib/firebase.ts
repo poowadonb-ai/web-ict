@@ -345,6 +345,57 @@ export function resetCardInPool(cardId?: string): void {
 
 // ─── Custom Cards (teacher-created new cards) ─────────────────────────────────
 const CUSTOM_CARDS_KEY = "mock_card_pool_custom";
+const DROP_RATES_KEY = "mock_drop_rates";
+
+export interface DropRates {
+  common: number;
+  rare: number;
+  epic: number;
+  legendary: number;
+  holographic: number;
+}
+
+export interface GachaRates {
+  pack: DropRates;
+  exchange: DropRates;
+}
+
+export const DEFAULT_DROP_RATES: GachaRates = {
+  pack: {
+    holographic: 0.2,
+    legendary: 0.5,
+    epic: 3.0,
+    rare: 10.0,
+    common: 86.3
+  },
+  exchange: {
+    holographic: 0.4,
+    legendary: 1.0,
+    epic: 6.0,
+    rare: 20.0,
+    common: 72.6
+  }
+};
+
+export function getDropRates(): GachaRates {
+  if (typeof window === "undefined") return DEFAULT_DROP_RATES;
+  try {
+    const stored = localStorage.getItem(DROP_RATES_KEY);
+    return stored ? JSON.parse(stored) : DEFAULT_DROP_RATES;
+  } catch {
+    return DEFAULT_DROP_RATES;
+  }
+}
+
+export function saveDropRates(rates: GachaRates): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(DROP_RATES_KEY, JSON.stringify(rates));
+    saveCardsToFirestore();
+  } catch (e) {
+    console.error("saveDropRates error:", e);
+  }
+}
 
 /** Return all teacher-created custom cards from LocalStorage. */
 export function getCustomCards(): Card[] {
@@ -469,6 +520,7 @@ if (isFirebaseConfigured) {
 
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
+  db = getFirestore(app);
   googleProvider = new GoogleAuthProvider();
 }
 
@@ -480,7 +532,8 @@ export async function saveCardsToFirestore(): Promise<void> {
     const docRef = doc(db, "settings", "cards");
     const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
     const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
-    await setDoc(docRef, { overrides, custom }, { merge: true });
+    const dropRates = JSON.parse(localStorage.getItem(DROP_RATES_KEY) || "null");
+    await setDoc(docRef, { overrides, custom, dropRates }, { merge: true });
   } catch (e) {
     console.error("saveCardsToFirestore error:", e);
   }
@@ -500,6 +553,9 @@ export async function syncCardsFromFirestore(): Promise<void> {
       }
       if (data.custom) {
         localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(data.custom));
+      }
+      if (data.dropRates) {
+        localStorage.setItem(DROP_RATES_KEY, JSON.stringify(data.dropRates));
       }
       window.dispatchEvent(new Event("storage"));
     }
@@ -1077,16 +1133,23 @@ class MockDbService {
     const student = students.find(s => s.uid === studentUid);
     if (!student || (student.packsCount || 0) <= 0) return [];
 
+    const rates = getDropRates().pack;
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
-      if (rand < 0.2) {
+      
+      const holoLimit = rates.holographic;
+      const legLimit = holoLimit + rates.legendary;
+      const epicLimit = legLimit + rates.epic;
+      const rareLimit = epicLimit + rates.rare;
+
+      if (rand < holoLimit) {
         selectedRarity = "holographic";
-      } else if (rand < 0.7) {
+      } else if (rand < legLimit) {
         selectedRarity = "legendary";
-      } else if (rand < 3.7) {
+      } else if (rand < epicLimit) {
         selectedRarity = "epic";
-      } else if (rand < 13.7) {
+      } else if (rand < rareLimit) {
         selectedRarity = "rare";
       } else {
         selectedRarity = "common";
@@ -1347,14 +1410,22 @@ class MockDbService {
 
     // Exchange odds — 2x better than normal gacha packs:
     // Holographic 0.4% | Legendary 1.0% | Epic 6% | Rare 20% | Common ~72.6%
+    const rates = getDropRates().exchange;
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
-      if (rand < 0.4) selectedRarity = "holographic";
-      else if (rand < 1.4) selectedRarity = "legendary";
-      else if (rand < 7.4) selectedRarity = "epic";
-      else if (rand < 27.4) selectedRarity = "rare";
+      
+      const holoLimit = rates.holographic;
+      const legLimit = holoLimit + rates.legendary;
+      const epicLimit = legLimit + rates.epic;
+      const rareLimit = epicLimit + rates.rare;
+
+      if (rand < holoLimit) selectedRarity = "holographic";
+      else if (rand < legLimit) selectedRarity = "legendary";
+      else if (rand < epicLimit) selectedRarity = "epic";
+      else if (rand < rareLimit) selectedRarity = "rare";
       else selectedRarity = "common";
+
       const activePool = getCardPool();
       const matchingCards = activePool.filter(c => c.rarity === selectedRarity);
       if (matchingCards.length === 0) {
@@ -1993,20 +2064,28 @@ export const cardService = {
     const { doc, runTransaction } = await import("firebase/firestore");
     const userRef = doc(db, "users", studentUid);
 
+    const rates = getDropRates().pack;
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
-      if (rand < 0.2) {
+      
+      const holoLimit = rates.holographic;
+      const legLimit = holoLimit + rates.legendary;
+      const epicLimit = legLimit + rates.epic;
+      const rareLimit = epicLimit + rates.rare;
+
+      if (rand < holoLimit) {
         selectedRarity = "holographic";
-      } else if (rand < 0.7) {
+      } else if (rand < legLimit) {
         selectedRarity = "legendary";
-      } else if (rand < 3.7) {
+      } else if (rand < epicLimit) {
         selectedRarity = "epic";
-      } else if (rand < 13.7) {
+      } else if (rand < rareLimit) {
         selectedRarity = "rare";
       } else {
         selectedRarity = "common";
       }
+
       const activePool = getCardPool();
       const matchingCards = activePool.filter(c => c.rarity === selectedRarity);
       if (matchingCards.length === 0) {
@@ -2169,14 +2248,22 @@ export const cardService = {
 
     // Exchange odds — 2x better than normal gacha packs:
     // Holographic 0.4% | Legendary 1.0% | Epic 6% | Rare 20% | Common ~72.6%
+    const rates = getDropRates().exchange;
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
-      if (rand < 0.4) selectedRarity = "holographic";
-      else if (rand < 1.4) selectedRarity = "legendary";
-      else if (rand < 7.4) selectedRarity = "epic";
-      else if (rand < 27.4) selectedRarity = "rare";
+      
+      const holoLimit = rates.holographic;
+      const legLimit = holoLimit + rates.legendary;
+      const epicLimit = legLimit + rates.epic;
+      const rareLimit = epicLimit + rates.rare;
+
+      if (rand < holoLimit) selectedRarity = "holographic";
+      else if (rand < legLimit) selectedRarity = "legendary";
+      else if (rand < epicLimit) selectedRarity = "epic";
+      else if (rand < rareLimit) selectedRarity = "rare";
       else selectedRarity = "common";
+
       const activePool = getCardPool();
       const matchingCards = activePool.filter(c => c.rarity === selectedRarity);
       if (matchingCards.length === 0) {

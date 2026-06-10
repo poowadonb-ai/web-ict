@@ -944,3 +944,185 @@
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 }
+
+/* ─── Drop Rates Button & Modal ─────────────────────────────────────────── */
+.ratesBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15));
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #c084fc;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ratesBtn:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(6, 182, 212, 0.25));
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
+}
+
+.ratesModalContent {
+  background: #0f1728;
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(6, 182, 212, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.modalCloseX {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalCloseX:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ratesInfoText {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.ratesGroup {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.ratesGroupTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ratesInputGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.ratesInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ratesInputGroup label {
+  font-size: 0.78rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.rarityB { color: #a0aec0; }
+.rarityA { color: #4299e1; }
+.rarityS { color: #9f7aea; }
+.raritySS { color: #ed8936; }
+.raritySSS { color: #f0abfc; }
+
+.inputWithPercent {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inputWithPercent:focus-within {
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15);
+}
+
+.inputWithPercent input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  width: 100%;
+  outline: none;
+  text-align: right;
+  padding-right: 2px;
+}
+
+/* Hide spin buttons */
+.inputWithPercent input[type="number"] {
+  -moz-appearance: textfield;
+}
+.inputWithPercent input::-webkit-outer-spin-button,
+.inputWithPercent input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.inputWithPercent span {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.ratesSumCheck {
+  margin-top: 12px;
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.resetRatesBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetRatesBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+@media (max-width: 600px) {
+  .ratesInputGrid {
+    grid-template-columns: 1fr;
+  }
+}
+

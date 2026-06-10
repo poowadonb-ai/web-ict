@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   authService, cardService, UserProfile, RedemptionRequest,
   Card, getCardPool, updateCardInPool, resetCardInPool, CARD_POOL,
-  addCustomCard, updateCustomCard, removeCustomCard, generateCustomCardId
+  addCustomCard, updateCustomCard, removeCustomCard, generateCustomCardId,
+  getDropRates, saveDropRates, GachaRates, DEFAULT_DROP_RATES
 } from "@/lib/firebase";
 import {
   Gift, Award, Check, X, Users, RefreshCw, Filter, Search, ShieldCheck,
@@ -116,6 +117,11 @@ export default function TeacherCardsPage() {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [saveMsg, setSaveMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // drop rates states
+  const [isEditingRates, setIsEditingRates] = useState(false);
+  const [rateForm, setRateForm] = useState<GachaRates | null>(null);
+  const [ratesMsg, setRatesMsg] = useState("");
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "teacher")) {
@@ -346,6 +352,56 @@ export default function TeacherCardsPage() {
     resetCardInPool(cardId);
     setCardPool(getCardPool());
     if (editingCard?.id === cardId) closeEditModal();
+  };
+
+  const openRatesModal = () => {
+    setRateForm(JSON.parse(JSON.stringify(getDropRates())));
+    setRatesMsg("");
+    setIsEditingRates(true);
+  };
+
+  const closeRatesModal = () => {
+    setIsEditingRates(false);
+    setRateForm(null);
+    setRatesMsg("");
+  };
+
+  const handleSaveRates = () => {
+    if (!rateForm) return;
+
+    // Validate Pack Rates sum to 100%
+    const packSum = Number((
+      rateForm.pack.holographic +
+      rateForm.pack.legendary +
+      rateForm.pack.epic +
+      rateForm.pack.rare +
+      rateForm.pack.common
+    ).toFixed(4));
+
+    if (Math.abs(packSum - 100) > 0.01) {
+      setRatesMsg(`⚠️ อัตราสุ่มการ์ดรวมกันต้องได้ 100% (ปัจจุบันได้ ${packSum}%)`);
+      return;
+    }
+
+    // Validate Exchange Rates sum to 100%
+    const exchangeSum = Number((
+      rateForm.exchange.holographic +
+      rateForm.exchange.legendary +
+      rateForm.exchange.epic +
+      rateForm.exchange.rare +
+      rateForm.exchange.common
+    ).toFixed(4));
+
+    if (Math.abs(exchangeSum - 100) > 0.01) {
+      setRatesMsg(`⚠️ อัตราหลอมการ์ดรวมกันต้องได้ 100% (ปัจจุบันได้ ${exchangeSum}%)`);
+      return;
+    }
+
+    saveDropRates(rateForm);
+    setRatesMsg("✅ บันทึกอัตราสุ่มการ์ดเรียบร้อยแล้ว!");
+    setTimeout(() => {
+      closeRatesModal();
+    }, 1500);
   };
 
   const handleResetAll = () => {
@@ -627,6 +683,10 @@ export default function TeacherCardsPage() {
               </p>
             </div>
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button onClick={openRatesModal} className={styles.ratesBtn}>
+                <Layers size={15} />
+                <span>ตั้งค่าอัตราการดรอป</span>
+              </button>
               <button onClick={openNewCardModal} className={styles.addCardBtn}>
                 <Plus size={15} />
                 <span>เพิ่มการ์ดใหม่</span>
@@ -830,6 +890,239 @@ export default function TeacherCardsPage() {
                 <button onClick={closeEditModal} className="btn-secondary">ยกเลิก</button>
                 <button onClick={handleSaveCard} className="btn-primary" disabled={uploadingImg}>
                   {isCreating ? <><Plus size={15} /> สร้างการ์ด</> : <><Check size={15} /> บันทึก</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Drop Rates Settings ────────────────────────────────────────── */}
+      {isEditingRates && rateForm && (
+        <div className={styles.modalOverlay} onClick={closeRatesModal}>
+          <div className={styles.ratesModalContent} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <Layers size={18} />
+              <h2>ตั้งค่าอัตราการดรอปการ์ด (Drop Rates Settings)</h2>
+              <button className={styles.modalCloseX} onClick={closeRatesModal}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p className={styles.ratesInfoText}>
+                💡 กำหนดเปอร์เซ็นต์ (%) สำหรับการสุ่มเปิดการ์ดในแต่ละช่องทาง โดยยอดรวมของแต่ละกลุ่มต้องได้ 100% เสมอ
+              </p>
+
+              {/* Group 1: Regular Packs */}
+              <div className={styles.ratesGroup}>
+                <h3 className={styles.ratesGroupTitle}>📦 อัตราการดรอปในซองการ์ดปกติ (Regular Pack)</h3>
+                <div className={styles.ratesInputGrid}>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.rarityB}>B (Common)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.pack.common}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          pack: { ...p!.pack, common: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.rarityA}>A (Rare)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.pack.rare}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          pack: { ...p!.pack, rare: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.rarityS}>S (Epic)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.pack.epic}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          pack: { ...p!.pack, epic: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.raritySS}>SS (Legendary)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.pack.legendary}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          pack: { ...p!.pack, legendary: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.raritySSS}>SSS (Mythic)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.pack.holographic}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          pack: { ...p!.pack, holographic: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.ratesSumCheck}>
+                  รวมทั้งหมด: <strong style={{
+                    color: Math.abs((rateForm.pack.common + rateForm.pack.rare + rateForm.pack.epic + rateForm.pack.legendary + rateForm.pack.holographic) - 100) < 0.01 ? "#10b981" : "#ef4444"
+                  }}>
+                    {(rateForm.pack.common + rateForm.pack.rare + rateForm.pack.epic + rateForm.pack.legendary + rateForm.pack.holographic).toFixed(2)}%
+                  </strong>
+                </div>
+              </div>
+
+              {/* Group 2: Fusion / Exchange */}
+              <div className={styles.ratesGroup} style={{ marginTop: "20px" }}>
+                <h3 className={styles.ratesGroupTitle}>♻️ อัตราการดรอปในการหลอมการ์ด (Exchange Gacha)</h3>
+                <div className={styles.ratesInputGrid}>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.rarityB}>B (Common)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.exchange.common}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          exchange: { ...p!.exchange, common: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.rarityA}>A (Rare)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.exchange.rare}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          exchange: { ...p!.exchange, rare: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.rarityS}>S (Epic)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.exchange.epic}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          exchange: { ...p!.exchange, epic: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.raritySS}>SS (Legendary)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.exchange.legendary}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          exchange: { ...p!.exchange, legendary: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                  <div className={styles.ratesInputGroup}>
+                    <label className={styles.raritySSS}>SSS (Mythic)</label>
+                    <div className={styles.inputWithPercent}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        value={rateForm.exchange.holographic}
+                        onChange={e => setRateForm(p => ({
+                          ...p!,
+                          exchange: { ...p!.exchange, holographic: Number(e.target.value) }
+                        }))}
+                      />
+                      <span>%</span>
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.ratesSumCheck}>
+                  รวมทั้งหมด: <strong style={{
+                    color: Math.abs((rateForm.exchange.common + rateForm.exchange.rare + rateForm.exchange.epic + rateForm.exchange.legendary + rateForm.exchange.holographic) - 100) < 0.01 ? "#10b981" : "#ef4444"
+                  }}>
+                    {(rateForm.exchange.common + rateForm.exchange.rare + rateForm.exchange.epic + rateForm.exchange.legendary + rateForm.exchange.holographic).toFixed(2)}%
+                  </strong>
+                </div>
+              </div>
+
+              {ratesMsg && <div className={styles.saveMsgBanner} style={{ marginTop: "15px" }}>{ratesMsg}</div>}
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button onClick={() => setRateForm(JSON.parse(JSON.stringify(DEFAULT_DROP_RATES)))} className={styles.resetRatesBtn}>
+                <RotateCcw size={14} /> รีเซ็ตเป็นค่าเริ่มต้น
+              </button>
+              <div style={{ marginLeft: "auto", display: "flex", gap: "10px" }}>
+                <button onClick={closeRatesModal} className="btn-secondary">ยกเลิก</button>
+                <button onClick={handleSaveRates} className="btn-primary">
+                  <Check size={15} /> บันทึกการตั้งค่า
                 </button>
               </div>
             </div>
