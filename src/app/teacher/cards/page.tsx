@@ -1,12 +1,82 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService, cardService, UserProfile, RedemptionRequest } from "@/lib/firebase";
-import { Gift, Award, Check, X, Users, RefreshCw, Filter, Search, ShieldCheck } from "lucide-react";
+import {
+  authService, cardService, UserProfile, RedemptionRequest,
+  Card, getCardPool, updateCardInPool, resetCardInPool, CARD_POOL,
+  addCustomCard, updateCustomCard, removeCustomCard, generateCustomCardId
+} from "@/lib/firebase";
+import {
+  Gift, Award, Check, X, Users, RefreshCw, Filter, Search, ShieldCheck,
+  Pencil, RotateCcw, Upload, Image as ImageIcon, Layers, TriangleAlert, Plus, Trash2
+} from "lucide-react";
 import styles from "./page.module.css";
 
+// ─── Image Compression (Canvas API, client-side) ──────────────────────────────
+async function compressImage(
+  file: File,
+  maxDim = 800,
+  quality = 0.82
+): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round((height * maxDim) / width); width = maxDim; }
+        else { width = Math.round((width * maxDim) / height); height = maxDim; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      // Prefer WebP, fall back to JPEG
+      const mimeType = canvas.toDataURL("image/webp").startsWith("data:image/webp")
+        ? "image/webp"
+        : "image/jpeg";
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          const ext = mimeType === "image/webp" ? "webp" : "jpg";
+          const newName = file.name.replace(/\.[^.]+$/, `.${ext}`);
+          resolve(new File([blob], newName, { type: mimeType }));
+        },
+        mimeType,
+        quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type ActiveTab = "distribute" | "requests" | "manage";
+
+// ─── Rarity helpers ───────────────────────────────────────────────────────────
+const RARITY_LABELS: Record<string, string> = {
+  common: "ทั่วไป (Common)",
+  rare: "หายาก (Rare)",
+  epic: "มหากาพย์ (Epic)",
+  legendary: "ตำนาน (Legendary)",
+  holographic: "โฮโลกราฟิก (Holo)"
+};
+
+const RARITY_CSS: Record<string, string> = {
+  common: styles.rarityCommon,
+  rare: styles.rarityRare,
+  epic: styles.rarityEpic,
+  legendary: styles.rarityLegendary,
+  holographic: styles.rarityHolo,
+};
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TeacherCardsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -14,14 +84,25 @@ export default function TeacherCardsPage() {
   const [students, setStudents] = useState<UserProfile[]>([]);
   const [redemptions, setRedemptions] = useState<RedemptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"distribute" | "requests">("distribute");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("distribute");
 
-  // Filter & Search states
-  const [selectedRoom, setSelectedRoom] = useState("2"); // Default to 4/2
+  // distribute tab
+  const [selectedRoom, setSelectedRoom] = useState("2");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [packCount, setPackCount] = useState<number>(1);
   const [successMsg, setSuccessMsg] = useState("");
+
+  // card manager tab
+  const [cardPool, setCardPool] = useState<Card[]>([]);
+  const [editingCard, setEditingCard] = useState<Card | null>(null);
+  const [isCreating, setIsCreating] = useState(false); // true = new card mode
+  const [editForm, setEditForm] = useState<Partial<Card>>({});
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [compressionInfo, setCompressionInfo] = useState<string>("");
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [saveMsg, setSaveMsg] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "teacher")) {
@@ -32,17 +113,16 @@ export default function TeacherCardsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const fetchedStudents = await authService.getRegisteredStudents();
-      const fetchedRedemptions = await cardService.getRedemptions();
-      
-      // Sort students by Room, then No.
+      const [fetchedStudents, fetchedRedemptions] = await Promise.all([
+        authService.getRegisteredStudents(),
+        cardService.getRedemptions()
+      ]);
       const sortedStudents = [...fetchedStudents].sort((a, b) => {
         const roomA = Number(a.room || 0);
         const roomB = Number(b.room || 0);
         if (roomA !== roomB) return roomA - roomB;
         return Number(a.studentNo || 0) - Number(b.studentNo || 0);
       });
-
       setStudents(sortedStudents);
       setRedemptions(fetchedRedemptions);
     } catch (err) {
@@ -52,11 +132,15 @@ export default function TeacherCardsPage() {
     }
   };
 
+  // Refresh card pool whenever manage tab is opened
   useEffect(() => {
-    if (user && user.role === "teacher") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadData();
+    if (activeTab === "manage") {
+      setCardPool(getCardPool());
     }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (user?.role === "teacher") loadData();
   }, [user]);
 
   if (authLoading || loading) {
@@ -68,39 +152,30 @@ export default function TeacherCardsPage() {
     );
   }
 
-  // Filter students based on selected room and search query
+  // ── Distribute helpers ────────────────────────────────────────────────────
   const filteredStudents = students.filter(student => {
     const matchesRoom = student.room === selectedRoom;
-    const matchesSearch = 
+    const matchesSearch =
       (student.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.studentNo || "").includes(searchQuery);
     return matchesRoom && matchesSearch;
   });
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedStudents(filteredStudents.map(s => s.uid));
-    } else {
-      setSelectedStudents([]);
-    }
+    setSelectedStudents(checked ? filteredStudents.map(s => s.uid) : []);
   };
 
   const handleSelectStudent = (uid: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStudents(prev => [...prev, uid]);
-    } else {
-      setSelectedStudents(prev => prev.filter(id => id !== uid));
-    }
+    setSelectedStudents(prev =>
+      checked ? [...prev, uid] : prev.filter(id => id !== uid)
+    );
   };
 
   const handleAwardPacks = async () => {
     if (selectedStudents.length === 0) return;
     try {
       setLoading(true);
-      await Promise.all(
-        selectedStudents.map(uid => cardService.awardPack(uid, packCount))
-      );
-      
+      await Promise.all(selectedStudents.map(uid => cardService.awardPack(uid, packCount)));
       setSuccessMsg(`มอบซองการ์ดจำนวน ${packCount} ซอง ให้แก่นักเรียน ${selectedStudents.length} คน เรียบร้อยแล้ว!`);
       setSelectedStudents([]);
       setPackCount(1);
@@ -137,7 +212,159 @@ export default function TeacherCardsPage() {
     }
   };
 
-  // Stats calculation
+  // ── Card Manager helpers ──────────────────────────────────────────────────
+
+  // Count how many times each card appears across all students' collections
+  const getDrawnCount = (cardId: string): number =>
+    students.reduce((acc, s) => {
+      const found = (s.cardsCollected || []).find(c => c.cardId === cardId);
+      return acc + (found ? found.count : 0);
+    }, 0);
+
+  const openEditModal = (card: Card) => {
+    setIsCreating(false);
+    setEditingCard(card);
+    setEditForm({ ...card });
+    setPreviewUrl(card.imageUrl);
+    setCompressionInfo("");
+    setSaveMsg("");
+  };
+
+  const openNewCardModal = () => {
+    const newId = generateCustomCardId();
+    const blank: Card = {
+      id: newId,
+      name: "",
+      rarity: "common",
+      imageUrl: "/cards/card_missing_semi.png",
+      description: "",
+      bonusPoints: 0,
+      type: "cosmetic"
+    };
+    setIsCreating(true);
+    setEditingCard(blank);
+    setEditForm(blank);
+    setPreviewUrl(blank.imageUrl);
+    setCompressionInfo("");
+    setSaveMsg("");
+  };
+
+  const closeEditModal = () => {
+    setEditingCard(null);
+    setIsCreating(false);
+    setEditForm({});
+    setPreviewUrl("");
+    setCompressionInfo("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingCard) return;
+
+    setCompressionInfo("");
+    // Local preview immediately
+    setPreviewUrl(URL.createObjectURL(file));
+
+    setUploadingImg(true);
+    try {
+      // ── Compress before upload ──────────────────────────────────────────
+      const originalKB = Math.round(file.size / 1024);
+      const compressed = await compressImage(file, 800, 0.82);
+      const compressedKB = Math.round(compressed.size / 1024);
+      const saved = Math.round((1 - compressed.size / file.size) * 100);
+      if (saved > 0) {
+        setCompressionInfo(`ย่อขนาดแล้ว: ${originalKB} KB → ${compressedKB} KB (ลด ${saved}%)`);
+      }
+
+      // Update local preview with compressed version
+      setPreviewUrl(URL.createObjectURL(compressed));
+
+      // Upload compressed file
+      const fd = new FormData();
+      fd.append("file", compressed);
+      fd.append("cardId", editingCard.id);
+      const res = await fetch("/api/cards/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (json.imageUrl) {
+        setEditForm(prev => ({ ...prev, imageUrl: json.imageUrl }));
+        setPreviewUrl(json.imageUrl);
+      } else {
+        alert(json.error || "อัปโหลดไม่สำเร็จ");
+      }
+    } catch {
+      alert("เกิดข้อผิดพลาดในการอัปโหลด");
+    } finally {
+      setUploadingImg(false);
+    }
+  };
+
+  const handleSaveCard = () => {
+    if (!editingCard) return;
+    if (!editForm.name?.trim()) {
+      setSaveMsg("⚠️ กรุณาใส่ชื่อการ์ดก่อนบันทึก");
+      return;
+    }
+    if (isCreating) {
+      // Add as new custom card
+      addCustomCard({ ...editingCard, ...editForm } as Card);
+    } else {
+      // Check if this is an existing custom card or a base card
+      const isCustom = !CARD_POOL.find(c => c.id === editingCard.id);
+      if (isCustom) {
+        updateCustomCard(editingCard.id, editForm);
+      } else {
+        updateCardInPool(editingCard.id, editForm);
+      }
+    }
+    setCardPool(getCardPool());
+    setSaveMsg("✅ บันทึกข้อมูลการ์ดเรียบร้อยแล้ว!");
+    setTimeout(() => {
+      setSaveMsg("");
+      closeEditModal();
+    }, 1500);
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    if (!confirm("ลบการ์ดนี้ออกจากระบบ? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+    removeCustomCard(cardId);
+    setCardPool(getCardPool());
+    if (editingCard?.id === cardId) closeEditModal();
+  };
+
+  const handleResetCard = (cardId: string) => {
+    if (!confirm("รีเซ็ตการ์ดนี้กลับเป็นค่าเริ่มต้น?")) return;
+    resetCardInPool(cardId);
+    setCardPool(getCardPool());
+    if (editingCard?.id === cardId) closeEditModal();
+  };
+
+  const handleResetAll = () => {
+    if (!confirm("รีเซ็ตการ์ดทั้งหมด (ยกเว้นการ์ดที่สร้างใหม่) กลับเป็นค่าเริ่มต้น?")) return;
+    resetCardInPool();
+    setCardPool(getCardPool());
+  };
+
+  /** True = this card was teacher-created (not in CARD_POOL) */
+  const isCustomCard = (cardId: string): boolean =>
+    !CARD_POOL.find(c => c.id === cardId);
+
+  // Has a BASE card been overridden?
+  const isOverridden = (cardId: string): boolean => {
+    if (isCustomCard(cardId)) return false; // custom cards are always "original"
+    const defaultCard = CARD_POOL.find(c => c.id === cardId);
+    const activeCard = cardPool.find(c => c.id === cardId);
+    if (!defaultCard || !activeCard) return false;
+    return (
+      activeCard.name !== defaultCard.name ||
+      activeCard.description !== defaultCard.description ||
+      activeCard.imageUrl !== defaultCard.imageUrl ||
+      activeCard.bonusPoints !== defaultCard.bonusPoints ||
+      activeCard.rarity !== defaultCard.rarity
+    );
+  };
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
   const totalPacksAwarded = students.reduce((acc, s) => acc + (s.packsCount || 0), 0);
   const pendingRequests = redemptions.filter(r => r.status === "pending");
   const approvedPointsCount = redemptions
@@ -150,8 +377,8 @@ export default function TeacherCardsPage() {
         <div className={styles.titleArea}>
           <Gift className={styles.headerIcon} />
           <div>
-            <h1 className="gradient-text">ระบบการ์ด & คะแนนพิเศษ</h1>
-            <p className={styles.subtitle}>แจกซองการ์ด Gacha ให้กับนักเรียนชั้น ม.4 และอนุมัติคะแนนพิเศษจากการ์ดแรร์</p>
+            <h1 className="gradient-text">ระบบการ์ด &amp; คะแนนพิเศษ</h1>
+            <p className={styles.subtitle}>แจกซองการ์ด Gacha, อนุมัติคะแนนพิเศษ, และจัดการการ์ดสะสมทั้งหมด</p>
           </div>
         </div>
         <button onClick={loadData} className="btn-secondary" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
@@ -187,19 +414,26 @@ export default function TeacherCardsPage() {
 
       {/* Tabs */}
       <div className={styles.tabsContainer}>
-        <button 
+        <button
           onClick={() => setActiveTab("distribute")}
           className={`${styles.tabBtn} ${activeTab === "distribute" ? styles.activeTab : ""}`}
         >
           <Users size={16} />
           <span>แจกการ์ดห้องเรียน</span>
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab("requests")}
           className={`${styles.tabBtn} ${activeTab === "requests" ? styles.activeTab : ""}`}
         >
           <Award size={16} />
           <span>คำขอคะแนนโบนัส ({pendingRequests.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("manage")}
+          className={`${styles.tabBtn} ${activeTab === "manage" ? styles.activeTab : ""}`}
+        >
+          <Layers size={16} />
+          <span>จัดการการ์ดทั้งหมด</span>
         </button>
       </div>
 
@@ -210,29 +444,22 @@ export default function TeacherCardsPage() {
         </div>
       )}
 
-      {activeTab === "distribute" ? (
+      {/* ── Tab: Distribute ──────────────────────────────────────────────────── */}
+      {activeTab === "distribute" && (
         <div className={`${styles.panel} glass-container`}>
           <div className={styles.panelControls}>
-            {/* Room Filter */}
             <div className={styles.filterGroup}>
               <Filter size={16} />
-              <select 
-                value={selectedRoom} 
-                onChange={(e) => {
-                  setSelectedRoom(e.target.value);
-                  setSelectedStudents([]);
-                }}
+              <select
+                value={selectedRoom}
+                onChange={(e) => { setSelectedRoom(e.target.value); setSelectedStudents([]); }}
                 className={styles.selectFilter}
               >
                 {["2", "3", "4", "5", "6", "12", "13"].map((r) => (
-                  <option key={r} value={r}>
-                    ห้อง ม.4/{r}
-                  </option>
+                  <option key={r} value={r}>ห้อง ม.4/{r}</option>
                 ))}
               </select>
             </div>
-
-            {/* Student Search */}
             <div className={styles.searchGroup}>
               <Search size={16} />
               <input
@@ -243,22 +470,20 @@ export default function TeacherCardsPage() {
                 className={styles.searchInput}
               />
             </div>
-
-            {/* Action Bar */}
             <div className={styles.awardActions}>
               <div className={styles.packCountInput}>
                 <label>จำนวนซอง:</label>
-                <input 
-                  type="number" 
-                  min={1} 
-                  max={10} 
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
                   value={packCount}
                   onChange={(e) => setPackCount(Math.max(1, Number(e.target.value)))}
                 />
               </div>
-              <button 
-                onClick={handleAwardPacks} 
-                disabled={selectedStudents.length === 0} 
+              <button
+                onClick={handleAwardPacks}
+                disabled={selectedStudents.length === 0}
                 className="btn-primary"
               >
                 <Gift size={16} />
@@ -278,7 +503,7 @@ export default function TeacherCardsPage() {
                 <thead>
                   <tr>
                     <th style={{ width: "40px", textAlign: "center" }}>
-                      <input 
+                      <input
                         type="checkbox"
                         checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
                         onChange={(e) => handleSelectAll(e.target.checked)}
@@ -294,7 +519,7 @@ export default function TeacherCardsPage() {
                   {filteredStudents.map(student => (
                     <tr key={student.uid}>
                       <td style={{ textAlign: "center" }}>
-                        <input 
+                        <input
                           type="checkbox"
                           checked={selectedStudents.includes(student.uid)}
                           onChange={(e) => handleSelectStudent(student.uid, e.target.checked)}
@@ -315,7 +540,10 @@ export default function TeacherCardsPage() {
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {/* ── Tab: Requests ────────────────────────────────────────────────────── */}
+      {activeTab === "requests" && (
         <div className={`${styles.panel} glass-container`}>
           {pendingRequests.length === 0 ? (
             <div className={styles.emptyState}>
@@ -342,7 +570,6 @@ export default function TeacherCardsPage() {
                     if (req.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
                     else if (req.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
                     else if (req.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-
                     return (
                       <tr key={req.id}>
                         <td style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
@@ -352,9 +579,7 @@ export default function TeacherCardsPage() {
                         <td style={{ fontWeight: "600" }}>{req.studentName}</td>
                         <td>
                           <div className={styles.cardInfoCell}>
-                            <span className={`${styles.rarityBadge} ${rarityClass}`}>
-                              {rarityText}
-                            </span>
+                            <span className={`${styles.rarityBadge} ${rarityClass}`}>{rarityText}</span>
                             <span className={styles.cardNameText}>{req.cardName}</span>
                           </div>
                         </td>
@@ -363,19 +588,11 @@ export default function TeacherCardsPage() {
                         </td>
                         <td>
                           <div className={styles.actionCell}>
-                            <button 
-                              onClick={() => handleApprove(req.id)}
-                              className={`${styles.approveBtn} btn-primary`}
-                            >
-                              <Check size={14} />
-                              <span>อนุมัติ</span>
+                            <button onClick={() => handleApprove(req.id)} className={`${styles.approveBtn} btn-primary`}>
+                              <Check size={14} /><span>อนุมัติ</span>
                             </button>
-                            <button 
-                              onClick={() => handleReject(req.id)}
-                              className={styles.rejectBtn}
-                            >
-                              <X size={14} />
-                              <span>ปฏิเสธ</span>
+                            <button onClick={() => handleReject(req.id)} className={styles.rejectBtn}>
+                              <X size={14} /><span>ปฏิเสธ</span>
                             </button>
                           </div>
                         </td>
@@ -388,6 +605,228 @@ export default function TeacherCardsPage() {
           )}
         </div>
       )}
+
+      {/* ── Tab: Manage Cards ─────────────────────────────────────────────────── */}
+      {activeTab === "manage" && (
+        <div className={styles.manageSection}>
+          {/* Top bar */}
+          <div className={styles.manageTopBar}>
+            <div>
+              <p className={styles.manageHint}>
+                🎴 การ์ดทั้งหมด {cardPool.length} ใบ — คลิก <strong>✏️ แก้ไข</strong> เพื่อเปลี่ยนข้อมูลหรืออัปโหลดรูปใหม่
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button onClick={openNewCardModal} className={styles.addCardBtn}>
+                <Plus size={15} />
+                <span>เพิ่มการ์ดใหม่</span>
+              </button>
+              <button onClick={handleResetAll} className={styles.resetAllBtn}>
+                <RotateCcw size={15} />
+                <span>รีเซ็ตทั้งหมด</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card Grid */}
+          <div className={styles.cardManagerGrid}>
+            {cardPool.map(card => {
+              const drawnCount = getDrawnCount(card.id);
+              const modified = isOverridden(card.id);
+              const custom = isCustomCard(card.id);
+              return (
+                <div key={card.id} className={`${styles.manageCard} ${modified ? styles.manageCardModified : ""} ${custom ? styles.manageCardCustom : ""}`}>
+                  {modified && (
+                    <div className={styles.modifiedBadge} title="การ์ดนี้ถูกแก้ไขแล้ว">✏️ แก้ไขแล้ว</div>
+                  )}
+                  {custom && !modified && (
+                    <div className={styles.customBadge} title="การ์ดที่ครูสร้างใหม่">✨ สร้างใหม่</div>
+                  )}
+                  {/* Card image */}
+                  <div className={styles.manageCardImg}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={card.imageUrl}
+                      alt={card.name}
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/cards/card_missing_semi.png"; }}
+                    />
+                  </div>
+                  {/* Info */}
+                  <div className={styles.manageCardInfo}>
+                    <span className={`${styles.rarityBadge} ${RARITY_CSS[card.rarity] || styles.rarityCommon}`}>
+                      {card.rarity.toUpperCase()}
+                    </span>
+                    <p className={styles.manageCardName}>{card.name}</p>
+                    <p className={styles.manageCardDesc}>{card.description}</p>
+                    <div className={styles.manageCardMeta}>
+                      <span className={styles.bonusBadge}>+{card.bonusPoints} คะแนน</span>
+                      <span className={styles.drawnBadge}>
+                        ออกไปแล้ว: <strong>{drawnCount}</strong> ใบ
+                      </span>
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  <div className={styles.manageCardActions}>
+                    <button onClick={() => openEditModal(card)} className={styles.editCardBtn}>
+                      <Pencil size={14} /> แก้ไข
+                    </button>
+                    {modified && (
+                      <button onClick={() => handleResetCard(card.id)} className={styles.resetCardBtn} title="รีเซ็ตเป็นค่าเริ่มต้น">
+                        <RotateCcw size={13} />
+                      </button>
+                    )}
+                    {custom && (
+                      <button onClick={() => handleDeleteCard(card.id)} className={styles.deleteCardBtn} title="ลบการ์ดออกจากระบบ">
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Modal ───────────────────────────────────────────────────────── */}
+      {editingCard && (
+        <div className={styles.modalOverlay} onClick={closeEditModal}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>{isCreating ? "✨ เพิ่มการ์ดใหม่" : "✏️ แก้ไขการ์ด"}</h2>
+              <button className={styles.modalClose} onClick={closeEditModal}><X size={20} /></button>
+            </div>
+
+            <div className={styles.modalBody}>
+              {/* Image preview + upload */}
+              <div className={styles.imgUploadZone}>
+                <div className={styles.imgPreview}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={previewUrl || editForm.imageUrl || "/cards/card_rare.png"}
+                    alt="preview"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/cards/card_rare.png"; }}
+                  />
+                  {uploadingImg && (
+                    <div className={styles.imgUploading}>
+                      <div className={styles.spinner}></div>
+                    </div>
+                  )}
+                </div>
+                <div className={styles.imgUploadControls}>
+                  <button
+                    type="button"
+                    className={styles.uploadBtn}
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImg}
+                  >
+                    <Upload size={15} />
+                    {uploadingImg ? "กำลังอัปโหลด..." : "อัปโหลดรูปภาพ"}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    style={{ display: "none" }}
+                    onChange={handleFileSelect}
+                  />
+                  <p className={styles.uploadHint}>
+                    <ImageIcon size={12} /> JPG, PNG, WebP, GIF — ย่อขนาดอัตโนมัติสูงสุด 800px
+                  </p>
+                  {compressionInfo && (
+                    <div className={styles.compressionBadge}>🗜️ {compressionInfo}</div>
+                  )}
+                  <div className={styles.formGroup}>
+                    <label>หรือใส่ URL รูปภาพ</label>
+                    <input
+                      type="text"
+                      value={editForm.imageUrl || ""}
+                      onChange={e => { setEditForm(p => ({ ...p, imageUrl: e.target.value })); setPreviewUrl(e.target.value); }}
+                      placeholder="/cards/card_example.png"
+                      className={styles.formInput}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Form fields */}
+              <div className={styles.formGroup}>
+                <label>ชื่อการ์ด</label>
+                <input
+                  type="text"
+                  value={editForm.name || ""}
+                  onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+                  className={styles.formInput}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>คำอธิบาย</label>
+                <textarea
+                  value={editForm.description || ""}
+                  onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))}
+                  className={styles.formTextarea}
+                  rows={3}
+                />
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>ระดับความแรร์</label>
+                  <select
+                    value={editForm.rarity || "common"}
+                    onChange={e => setEditForm(p => ({ ...p, rarity: e.target.value as Card["rarity"] }))}
+                    className={styles.formSelect}
+                  >
+                    {Object.entries(RARITY_LABELS).map(([val, label]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label>คะแนนโบนัส</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={editForm.bonusPoints ?? 0}
+                    onChange={e => setEditForm(p => ({ ...p, bonusPoints: Number(e.target.value) }))}
+                    className={styles.formInput}
+                  />
+                </div>
+              </div>
+
+              {/* Warning if drawn count > 0 */}
+              {getDrawnCount(editingCard.id) > 0 && (
+                <div className={styles.warnBanner}>
+                  <TriangleAlert size={16} />
+                  <span>การ์ดนี้ถูกนักเรียนสะสมแล้ว {getDrawnCount(editingCard.id)} ใบ การแก้ไขจะมีผลกับการแสดงผลเท่านั้น ไม่ส่งผลต่อคะแนนที่ได้รับไปแล้ว</span>
+                </div>
+              )}
+
+              {saveMsg && <div className={styles.saveMsgBanner}>{saveMsg}</div>}
+            </div>
+
+            <div className={styles.modalFooter}>
+              {!isCreating && editingCard && isCustomCard(editingCard.id) && (
+                <button
+                  onClick={() => handleDeleteCard(editingCard.id)}
+                  className={styles.deleteModalBtn}
+                >
+                  <Trash2 size={14} /> ลบการ์ดนี้
+                </button>
+              )}
+              <div style={{ marginLeft: "auto", display: "flex", gap: "10px" }}>
+                <button onClick={closeEditModal} className="btn-secondary">ยกเลิก</button>
+                <button onClick={handleSaveCard} className="btn-primary" disabled={uploadingImg}>
+                  {isCreating ? <><Plus size={15} /> สร้างการ์ด</> : <><Check size={15} /> บันทึก</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

@@ -299,6 +299,122 @@ export const CARD_POOL: Card[] = [
   }
 ];
 
+// -------------------------------------------------------------
+// CARD POOL MANAGEMENT (LocalStorage override for teacher edits)
+// -------------------------------------------------------------
+const CARD_POOL_STORAGE_KEY = "mock_card_pool_overrides";
+
+
+/**
+ * Save partial updates for a single card to LocalStorage.
+ */
+export function updateCardInPool(cardId: string, updates: Partial<Card>): void {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+    const overrides: Record<string, Partial<Card>> = stored ? JSON.parse(stored) : {};
+    overrides[cardId] = { ...(overrides[cardId] || {}), ...updates };
+    localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+  } catch (e) {
+    console.error("updateCardInPool error:", e);
+  }
+}
+
+/**
+ * Reset a single card (or all cards) back to their defaults.
+ */
+export function resetCardInPool(cardId?: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (!cardId) {
+      localStorage.removeItem(CARD_POOL_STORAGE_KEY);
+      return;
+    }
+    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+    if (!stored) return;
+    const overrides: Record<string, Partial<Card>> = JSON.parse(stored);
+    delete overrides[cardId];
+    localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+  } catch (e) {
+    console.error("resetCardInPool error:", e);
+  }
+}
+
+// ─── Custom Cards (teacher-created new cards) ─────────────────────────────────
+const CUSTOM_CARDS_KEY = "mock_card_pool_custom";
+
+/** Return all teacher-created custom cards from LocalStorage. */
+export function getCustomCards(): Card[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(CUSTOM_CARDS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Returns the FULL active pool = CARD_POOL (with overrides) + custom cards.
+ * Overrides are applied first, then custom cards are appended at the end.
+ */
+export function getCardPool(): Card[] {
+  if (typeof window === "undefined") return CARD_POOL;
+  try {
+    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+    const overrides: Record<string, Partial<Card>> = stored ? JSON.parse(stored) : {};
+    const base = CARD_POOL.map(card => ({ ...card, ...(overrides[card.id] || {}) }));
+    const custom = getCustomCards();
+    return [...base, ...custom];
+  } catch {
+    return CARD_POOL;
+  }
+}
+
+/** Add a new custom card to LocalStorage. */
+export function addCustomCard(card: Card): void {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = getCustomCards();
+    // Prevent duplicate IDs
+    if (existing.find(c => c.id === card.id)) return;
+    existing.push(card);
+    localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  } catch (e) {
+    console.error("addCustomCard error:", e);
+  }
+}
+
+/** Update an existing custom card in LocalStorage. */
+export function updateCustomCard(cardId: string, updates: Partial<Card>): void {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = getCustomCards();
+    const idx = existing.findIndex(c => c.id === cardId);
+    if (idx === -1) return;
+    existing[idx] = { ...existing[idx], ...updates };
+    localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  } catch (e) {
+    console.error("updateCustomCard error:", e);
+  }
+}
+
+/** Permanently delete a custom card from LocalStorage. */
+export function removeCustomCard(cardId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const existing = getCustomCards().filter(c => c.id !== cardId);
+    localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  } catch (e) {
+    console.error("removeCustomCard error:", e);
+  }
+}
+
+/** Generate a new unique custom card ID (e.g. "custom-1681234567890"). */
+export function generateCustomCardId(): string {
+  return `custom-${Date.now()}`;
+}
+
 // Check if Firebase keys are available and are actual keys (not placeholders)
 const hasRealKeys = () => {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;

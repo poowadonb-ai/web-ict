@@ -408,3 +408,539 @@
     justify-content: space-between;
   }
 }
+
+/* ─── Holographic Rarity Badge ──────────────────────────────────────────── */
+.rarityHolo {
+  background: linear-gradient(135deg, rgba(236,72,153,0.15), rgba(139,92,246,0.15), rgba(6,182,212,0.15));
+  color: #f0abfc;
+  border: 1px solid rgba(240,171,252,0.3);
+  box-shadow: 0 0 10px rgba(240,171,252,0.4);
+  animation: holoShine 3s infinite ease-in-out;
+}
+
+@keyframes holoShine {
+  0%, 100% { box-shadow: 0 0 8px rgba(240,171,252,0.4); }
+  50% { box-shadow: 0 0 18px rgba(240,171,252,0.8); }
+}
+
+/* ─── Card Manager Section ──────────────────────────────────────────────── */
+.manageSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.manageTopBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.manageHint {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.resetAllBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #ef4444;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetAllBtn:hover {
+  background: rgba(239,68,68,0.2);
+  transform: translateY(-1px);
+}
+
+/* ─── Add Card Button ───────────────────────────────────────────────────── */
+.addCardBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.15));
+  border: 1px solid rgba(16,185,129,0.35);
+  color: #10b981;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.addCardBtn:hover {
+  background: linear-gradient(135deg, rgba(16,185,129,0.32), rgba(6,182,212,0.25));
+  transform: translateY(-1px);
+  box-shadow: 0 0 12px rgba(16,185,129,0.25);
+}
+
+/* ─── Custom Card Badge & Border ────────────────────────────────────────── */
+.customBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(6,182,212,0.85);
+  color: #000;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  z-index: 2;
+}
+
+.manageCardCustom {
+  border-color: rgba(6,182,212,0.4);
+  box-shadow: 0 0 12px rgba(6,182,212,0.12);
+}
+
+/* ─── Delete Buttons ────────────────────────────────────────────────────── */
+.deleteCardBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: #ef4444;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.deleteCardBtn:hover {
+  background: rgba(239,68,68,0.25);
+  transform: translateY(-1px);
+}
+
+.deleteModalBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #ef4444;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteModalBtn:hover {
+  background: rgba(239,68,68,0.18);
+}
+
+/* ─── Compression Info Badge ────────────────────────────────────────────── */
+.compressionBadge {
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.2);
+  color: #10b981;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+
+/* ─── Card Manager Grid ─────────────────────────────────────────────────── */
+.cardManagerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.manageCard {
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.manageCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 16px rgba(6,182,212,0.15);
+}
+
+.manageCardModified {
+  border-color: rgba(245,158,11,0.4);
+  box-shadow: 0 0 12px rgba(245,158,11,0.15);
+}
+
+.modifiedBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(245,158,11,0.9);
+  color: #000;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  z-index: 2;
+}
+
+.manageCardImg {
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background: rgba(0,0,0,0.3);
+}
+
+.manageCardImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.manageCard:hover .manageCardImg img {
+  transform: scale(1.06);
+}
+
+.manageCardInfo {
+  padding: 14px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.manageCardName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.manageCardDesc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.manageCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.bonusBadge {
+  background: rgba(16,185,129,0.1);
+  color: #10b981;
+  border: 1px solid rgba(16,185,129,0.2);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.drawnBadge {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.drawnBadge strong {
+  color: var(--accent-cyan);
+}
+
+.manageCardActions {
+  padding: 10px 14px 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.editCardBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+  background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(139,92,246,0.15));
+  border: 1px solid rgba(6,182,212,0.3);
+  color: var(--accent-cyan);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editCardBtn:hover {
+  background: linear-gradient(135deg, rgba(6,182,212,0.25), rgba(139,92,246,0.25));
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(6,182,212,0.25);
+}
+
+.resetCardBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: #ef4444;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.resetCardBtn:hover {
+  background: rgba(239,68,68,0.2);
+}
+
+/* ─── Edit Modal ────────────────────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal {
+  background: #0f1728;
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(6,182,212,0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.modalHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.modalClose {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.modalClose:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.05);
+}
+
+.modalBody {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modalFooter {
+  padding: 16px 28px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* ─── Image Upload Zone ─────────────────────────────────────────────────── */
+.imgUploadZone {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.imgPreview {
+  position: relative;
+  width: 140px;
+  aspect-ratio: 3/4;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--glass-border);
+}
+
+.imgPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imgUploading {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imgUploadControls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uploadBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.15));
+  border: 1px solid rgba(139,92,246,0.3);
+  color: var(--accent-purple);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.uploadBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.25));
+  transform: translateY(-1px);
+}
+
+.uploadBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.uploadHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* ─── Form Fields ───────────────────────────────────────────────────────── */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.formGroup label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.formInput, .formTextarea, .formSelect {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.formInput:focus, .formTextarea:focus, .formSelect:focus {
+  border-color: rgba(6,182,212,0.5);
+  box-shadow: 0 0 0 3px rgba(6,182,212,0.1);
+}
+
+.formSelect option {
+  background: #111827;
+  color: var(--text-primary);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ─── Banner Messages ───────────────────────────────────────────────────── */
+.warnBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 10px;
+  color: #f59e0b;
+  font-size: 0.88rem;
+}
+
+.saveMsgBanner {
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: #10b981;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .imgUploadZone {
+    grid-template-columns: 1fr;
+  }
+  .imgPreview {
+    width: 120px;
+  }
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+  .cardManagerGrid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
