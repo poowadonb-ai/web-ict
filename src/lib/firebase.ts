@@ -265,7 +265,7 @@ export const CARD_POOL: Card[] = [
     id: "card-14",
     name: "วัดใจวันศุกร์ (Git Push Force)",
     rarity: "epic",
-    imageUrl: "/cards/meme_epic.png",
+    imageUrl: "/cards/card_git_push.png",
     description: "อัปเดตระบบตอน 5 โมงเย็นวันศุกร์ แล้วหนีกลับบ้าน ไม่รับรู้อะไรทั้งสิ้น! (+2 คะแนนโบนัส)",
     bonusPoints: 2,
     type: "bonus"
@@ -274,7 +274,7 @@ export const CARD_POOL: Card[] = [
     id: "card-15",
     name: "เอไอแย่งงาน (AI Took My Job)",
     rarity: "epic",
-    imageUrl: "/cards/meme_epic.png",
+    imageUrl: "/cards/card_ai_took_job.png",
     description: "เมื่อแชทบอทเขียนโค้ดได้เก่งกว่าและเร็วกว่าเราไปแล้ว... (+2 คะแนนโบนัส)",
     bonusPoints: 2,
     type: "bonus"
@@ -292,7 +292,7 @@ export const CARD_POOL: Card[] = [
     id: "card-holo-1",
     name: "✨ มังกรไซเบอร์ (Cyber Dragon Holographic)",
     rarity: "holographic",
-    imageUrl: "__HOLOGRAPHIC__",
+    imageUrl: "/cards/card_cyber_dragon.png",
     description: "การ์ดโฮโลกราฟิกหายากที่สุดในโลก! ผู้โชคดี 1 ใน 500 คนเท่านั้น! พลังงานดิจิทัลสูงสุด! (+10 คะแนนโบนัส)",
     bonusPoints: 10,
     type: "bonus"
