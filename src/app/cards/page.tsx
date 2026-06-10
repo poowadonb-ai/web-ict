@@ -615,65 +615,67 @@ export default function StudentCardsPage() {
                     else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; glowTextClass = styles.glitchText; }
                     else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; glowTextClass = styles.glitchText; }
 
+                    const isFlipped = flippedCards[idx];
+
                     return (
                       <div 
                         key={idx} 
-                        className={`${styles.cardFlipContainer} ${styles.cardDealt} ${flippedCards[idx] ? styles.flipped : ""}`}
+                        className={`${styles.exchangeRevealWrapper} ${styles.cardDealt} ${rarityClass}`}
                         onClick={(e) => handleFlipCard(idx, e)}
+                        style={{ cursor: isFlipped ? 'default' : 'pointer' }}
                       >
-                        <div className={styles.cardInner}>
-                          {/* Premium Animated Card Back */}
-                          <div className={styles.cardBack}>
+                        {!isFlipped && (
+                          /* Interactive exchange card cover similar to premium card back */
+                          <div className={`${styles.exchangeCover} ${styles.cardBack}`}>
                             <div className={styles.cyberRing} />
                             <div className={styles.cyberRingInner} />
                             <div className={styles.cardBackDesign}>
                               <div className={styles.cardBackLogo}>ICT</div>
-                              <p>LUCKY BOX</p>
+                              <p>แตะเพื่อเปิด</p>
+                              <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>TAP TO REVEAL</p>
                             </div>
                           </div>
-                          
-                          {/* Card Front */}
-                          <div className={`${styles.cardFront} ${rarityClass}`}>
-                            <div className={styles.bgGlow} />
-                            {card.rarity === "legendary" && <div className={styles.legendaryRays} />}
-                            {card.rarity === "holographic" && <div className={styles.holoFoil} />}
-                            {(card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
-                              <div className={styles.particles}>
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                              </div>
-                            )}
-                            <div className={styles.shineSweep} />
-                            <div className={styles.cardOverlay} />
-                            
-                            {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
-                              <div className={styles.cyberHoloFallback}>
-                                <div className={styles.cyberGrid} />
-                                <div className={styles.cyberHoloRing} />
-                                <div className={styles.cyberHoloSymbol}>✨</div>
-                              </div>
-                            ) : (
-                               <img
-                                 src={card.imageUrl}
-                                 alt={card.name}
-                                 className={styles.cardImg}
-                                 onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
-                               />
-                             )}
-                            <div className={styles.cardBody}>
-                              <div className={styles.cardHeader}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                                  <span className={styles.cardRarityBadge}>{rarityText}</span>
-                                  {renderStars(card.rarity)}
-                                </div>
-                                {card.bonusPoints > 0 && (
-                                  <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
-                                )}
-                              </div>
-                              <h3 className={`${styles.cardTitle} ${glowTextClass}`}>{card.name}</h3>
-                              <p className={styles.cardDesc}>{card.description}</p>
+                        )}
+                        <div className={`${styles.exchangeCardDisplay} ${isFlipped ? styles.exchangeCardRevealed : ''}`}>
+                          <div className={styles.bgGlow} />
+                          {card.rarity === "legendary" && <div className={styles.legendaryRays} />}
+                          {card.rarity === 'holographic' && <div className={styles.holoFoil} />}
+                          {(card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
+                            <div className={styles.particles}>
+                              <span></span>
+                              <span></span>
+                              <span></span>
                             </div>
+                          )}
+                          <div className={styles.shineSweep} />
+                          <div className={styles.cardOverlay} />
+                          
+                          {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
+                            <div className={styles.cyberHoloFallback} style={{ width: '100%', aspectRatio: '3/4', height: 'auto' }}>
+                              <div className={styles.cyberGrid} />
+                              <div className={styles.cyberHoloRing} />
+                              <div className={styles.cyberHoloSymbol}>✨</div>
+                            </div>
+                          ) : (
+                            <img
+                              src={card.imageUrl}
+                              alt={card.name}
+                              className={styles.cardImg}
+                              onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
+                            />
+                          )}
+                          <div className={styles.cardBody}>
+                            <div className={styles.cardHeader}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                                <span className={styles.cardRarityBadge}>{rarityText}</span>
+                                {renderStars(card.rarity)}
+                              </div>
+                              {card.bonusPoints > 0 && (
+                                <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
+                              )}
+                            </div>
+                            <h3 className={`${styles.cardTitle} ${glowTextClass}`}>{card.name}</h3>
+                            <p className={styles.cardDesc}>{card.description}</p>
                           </div>
                         </div>
                       </div>

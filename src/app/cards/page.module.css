@@ -1170,7 +1170,8 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  .gachaCardsGrid .cardFlipContainer {
+  .gachaCardsGrid .cardFlipContainer,
+  .gachaCardsGrid .exchangeRevealWrapper {
     width: 140px;
     height: 250px;
   }
