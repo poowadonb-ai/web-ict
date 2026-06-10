@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { authService, cardService, CARD_POOL, Card, UserProfile, RedemptionRequest } from "@/lib/firebase";
 import { Sparkles, Gift, Award, CheckCircle, RefreshCw, X, ShieldAlert } from "lucide-react";
+import { audioSynth } from "@/lib/audioSynth";
 import styles from "./page.module.css";
 
 const renderStars = (rarity: string) => {
@@ -101,13 +102,21 @@ export default function StudentCardsPage() {
   const handleOpenPack = async () => {
     if (!user || !studentProfile) return;
     setIsOpeningPack(true);
+    
+    // Play shake sound repeatedly during the 2s shake animation
+    const intervalId = setInterval(() => {
+      audioSynth.playShake();
+    }, 180);
+
     try {
       // Shake animation time
       await new Promise(resolve => setTimeout(resolve, 2000));
+      clearInterval(intervalId);
       const newCards = await cardService.openPack(user.uid);
       setOpenedCards(newCards);
       setIsOpeningPack(false);
     } catch (err) {
+      clearInterval(intervalId);
       console.error("Error opening pack:", err);
       setIsGachaMode(false);
       setIsOpeningPack(false);
@@ -115,11 +124,18 @@ export default function StudentCardsPage() {
   };
 
   const handleFlipCard = (index: number) => {
+    if (flippedCards[index]) return;
     setFlippedCards(prev => {
       const updated = [...prev];
       updated[index] = true;
       return updated;
     });
+
+    const card = openedCards[index];
+    if (card) {
+      audioSynth.playFlip();
+      audioSynth.playReveal(card.rarity);
+    }
   };
 
   const handleCloseGacha = async () => {
@@ -155,9 +171,15 @@ export default function StudentCardsPage() {
     setExchangeResultCard(null);
     setExchangeCardFlipped(false);
 
+    // Play shake sound repeatedly during the 2s shake animation
+    const intervalId = setInterval(() => {
+      audioSynth.playShake();
+    }, 180);
+
     try {
       // Fake delay for animation
       await new Promise(resolve => setTimeout(resolve, 2000));
+      clearInterval(intervalId);
       
       const newCard = await cardService.exchangeCommonCards(user.uid);
       if (newCard) {
@@ -168,6 +190,7 @@ export default function StudentCardsPage() {
         setIsExchangeMode(false);
       }
     } catch (err: any) {
+      clearInterval(intervalId);
       console.error("Error exchanging cards:", err);
       alert(err.message || "เกิดข้อผิดพลาดในการย่อยการ์ด");
       setIsExchangeMode(false);
@@ -424,7 +447,13 @@ export default function StudentCardsPage() {
                     return (
                       <div 
                         className={`${styles.cardFlipContainer} ${exchangeCardFlipped ? styles.flipped : ""}`}
-                        onClick={() => setExchangeCardFlipped(true)}
+                        onClick={() => {
+                          if (!exchangeCardFlipped) {
+                            setExchangeCardFlipped(true);
+                            audioSynth.playFlip();
+                            audioSynth.playReveal(card.rarity);
+                          }
+                        }}
                         style={{ maxWidth: '280px', width: '100%' }}
                       >
                         <div className={styles.cardInner}>
