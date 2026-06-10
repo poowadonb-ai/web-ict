@@ -125,45 +125,328 @@
 /* Card Slot */
 .cardSlot {
   border-radius: 16px;
-  border: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.03);
+  border: 2px solid var(--glass-border);
+  background: linear-gradient(135deg, #0d0622 0%, #050212 100%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
   position: relative;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
 .cardSlot:hover {
-  transform: translateY(-4px);
+  transform: translateY(-8px) scale(1.02) rotateY(3deg);
 }
 
 .owned {
-  background: rgba(255,255,255,0.05);
+  background: linear-gradient(135deg, #0f0a28 0%, #040112 100%);
 }
 
 .locked {
-  opacity: 0.45;
-  filter: grayscale(80%);
+  opacity: 0.35;
+  filter: grayscale(95%);
+  cursor: not-allowed;
+}
+.locked:hover {
+  transform: none;
 }
 
-.holoCard {
-  animation: holoShimmer 3s infinite ease-in-out;
+/* ── PREMIUM EFFECT LAYERS ── */
+.shineSweep {
+  position: absolute;
+  top: -50%;
+  left: -150%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 30%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.12) 70%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  z-index: 3;
+  pointer-events: none;
 }
 
-@keyframes holoShimmer {
-  0%, 100% { box-shadow: 0 0 20px rgba(236, 72, 153, 0.5), 0 0 40px rgba(139, 92, 246, 0.3); }
-  33% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.5), 0 0 40px rgba(236, 72, 153, 0.3); }
-  66% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.5), 0 0 40px rgba(6, 182, 212, 0.3); }
+.bgGlow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.85;
+  mix-blend-mode: screen;
+}
+.rarityRare .bgGlow {
+  background: radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+}
+.rarityEpic .bgGlow {
+  background: radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.4) 0%, transparent 75%);
+  animation: pulseGlow 4s infinite alternate ease-in-out;
+}
+.rarityLegendary .bgGlow {
+  background: radial-gradient(circle at 50% 100%, rgba(245, 158, 11, 0.55) 0%, transparent 85%);
+  animation: pulseGlow 3s infinite alternate ease-in-out;
+}
+.rarityHolographic .bgGlow {
+  background: radial-gradient(circle at 50% 100%, rgba(236, 72, 153, 0.4) 0%, rgba(6, 182, 212, 0.3) 45%, transparent 80%);
+  animation: holoGlowCycle 6s infinite linear;
+}
+
+@keyframes pulseGlow {
+  0% { opacity: 0.65; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1.04); }
+}
+@keyframes holoGlowCycle {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+}
+
+.particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 2;
+  pointer-events: none;
+}
+.particles span {
+  position: absolute;
+  display: block;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0;
+  animation: floatUp 4s infinite ease-in;
+}
+.rarityEpic .particles span {
+  background: #d8b4fe;
+  box-shadow: 0 0 6px #a855f7;
+}
+.rarityLegendary .particles span {
+  background: #fef08a;
+  box-shadow: 0 0 6px #fbbf24;
+}
+.rarityHolographic .particles span {
+  background: #cffafe;
+  box-shadow: 0 0 8px #22d3ee;
+  animation: floatUpHolo 3.5s infinite ease-in;
+}
+.particles span:nth-child(1) { left: 15%; bottom: 5%; animation-delay: 0s; width: 3px; height: 3px; }
+.particles span:nth-child(2) { left: 55%; bottom: 10%; animation-delay: 1.5s; width: 4px; height: 4px; animation-duration: 4.5s; }
+.particles span:nth-child(3) { left: 80%; bottom: 7%; animation-delay: 2.5s; width: 2px; height: 2px; }
+
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  15% { opacity: 0.8; }
+  85% { opacity: 0.8; }
+  100% { transform: translateY(-90px) scale(0.3); opacity: 0; }
+}
+@keyframes floatUpHolo {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0; }
+  15% { opacity: 0.9; }
+  85% { opacity: 0.9; }
+  100% { transform: translateY(-100px) rotate(180deg) scale(0.3); opacity: 0; filter: hue-rotate(180deg); }
+}
+
+.legendaryRays {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(245, 158, 11, 0) 0deg,
+    rgba(245, 158, 11, 0.05) 15deg,
+    rgba(245, 158, 11, 0) 30deg
+  );
+  z-index: 1;
+  pointer-events: none;
+  animation: rotateRays 30s infinite linear;
+  mix-blend-mode: screen;
+}
+@keyframes rotateRays {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.holoFoil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  opacity: 0.3;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 0, 128, 0.4) 0%,
+    rgba(0, 255, 255, 0.3) 35%,
+    rgba(255, 255, 0, 0.3) 65%,
+    rgba(255, 0, 128, 0.4) 100%
+  );
+  background-size: 300% 300%;
+  animation: holoFoilShift 6s infinite alternate ease-in-out;
+}
+@keyframes holoFoilShift {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
+/* Fallback cyber image */
+.cyberHoloFallback {
+  width: 100%;
+  height: 100%;
+  min-height: 175px;
+  background: linear-gradient(135deg, #0b0525 0%, #15094d 50%, #020014 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.cyberGrid {
+  position: absolute;
+  inset: -50%;
+  background-image: 
+    linear-gradient(rgba(6, 182, 212, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.12) 1px, transparent 1px);
+  background-size: 14px 14px;
+  transform: perspective(100px) rotateX(60deg) translateY(-20px);
+  animation: gridScroll 5s infinite linear;
+}
+@keyframes gridScroll {
+  from { background-position: 0 0; }
+  to { background-position: 0 70px; }
+}
+.cyberHoloRing {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 2px dashed rgba(236, 72, 153, 0.35);
+  border-radius: 50%;
+  animation: rotateRing 10s infinite linear;
+}
+@keyframes rotateRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.cyberHoloSymbol {
+  font-size: 2.5rem;
+  z-index: 2;
+  filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.8));
+  animation: floatSymbol 3s infinite ease-in-out;
+}
+@keyframes floatSymbol {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.1) translateY(-5px); }
+}
+
+/* Rarity Header */
+.rarityHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  z-index: 2;
+  position: relative;
+}
+
+.rarityStars {
+  font-size: 0.6rem;
+  font-family: monospace;
+  letter-spacing: 1px;
+  filter: drop-shadow(0 0 2px currentColor);
+}
+
+/* Rarity Specific Outlines */
+.rarityCommon {
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+.rarityCommon:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65), 0 0 12px rgba(148, 163, 184, 0.15);
+}
+
+.rarityRare {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+}
+.rarityRare:hover {
+  border-color: #60a5fa !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65), 0 0 20px rgba(59, 130, 246, 0.45);
+}
+.rarityRare .shineSweep {
+  animation: sweep 6s infinite ease-in-out;
+}
+
+.rarityEpic {
+  border-color: rgba(168, 85, 247, 0.5) !important;
+  animation: pulseEpicBorder 3.5s infinite ease-in-out;
+}
+.rarityEpic:hover {
+  border-color: #c084fc !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65), 0 0 28px rgba(168, 85, 247, 0.65);
+}
+.rarityEpic .shineSweep {
+  animation: sweep 5s infinite ease-in-out;
+}
+@keyframes pulseEpicBorder {
+  0%, 100% { border-color: rgba(168, 85, 247, 0.45); }
+  50% { border-color: rgba(236, 72, 153, 0.7); }
+}
+
+.rarityLegendary {
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  animation: pulseGoldBorder 2.5s infinite ease-in-out;
+}
+.rarityLegendary:hover {
+  border-color: #fde047 !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 36px rgba(245, 158, 11, 0.75);
+}
+.rarityLegendary .shineSweep {
+  animation: sweep 4s infinite ease-in-out;
+}
+@keyframes pulseGoldBorder {
+  0%, 100% { border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 0 10px rgba(245, 158, 11, 0.15); }
+  50% { border-color: rgba(251, 191, 36, 0.85); box-shadow: 0 0 22px rgba(251, 191, 36, 0.35); }
+}
+
+.rarityHolographic {
+  border-color: #ec4899 !important;
+  animation: pulseHoloBorder 4s infinite linear;
+}
+.rarityHolographic:hover {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 40px rgba(236, 72, 153, 0.8);
+}
+.rarityHolographic .shineSweep {
+  animation: sweep 3s infinite ease-in-out;
+}
+@keyframes pulseHoloBorder {
+  0% { border-color: #ec4899; box-shadow: 0 0 10px rgba(236, 72, 153, 0.35); }
+  20% { border-color: #8b5cf6; box-shadow: 0 0 10px rgba(139, 92, 246, 0.35); }
+  40% { border-color: #06b6d4; box-shadow: 0 0 10px rgba(6, 182, 212, 0.35); }
+  60% { border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.35); }
+  80% { border-color: #eab308; box-shadow: 0 0 10px rgba(234, 179, 8, 0.35); }
+  100% { border-color: #ec4899; box-shadow: 0 0 10px rgba(236, 72, 153, 0.35); }
+}
+
+@keyframes sweep {
+  0% { left: -150%; }
+  35% { left: 150%; }
+  100% { left: 150%; }
 }
 
 /* Rarity Badge */
 .rarityBadge {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 4px 8px;
+  padding: 3px 8px;
+  border-radius: 6px;
   text-align: center;
 }
 
@@ -172,13 +455,20 @@
   width: 100%;
   aspect-ratio: 3/4;
   overflow: hidden;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 2;
 }
 
 .cardImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.cardSlot:hover .cardImg {
+  transform: scale(1.05);
 }
 
 .silhouette {

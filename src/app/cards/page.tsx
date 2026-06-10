@@ -7,6 +7,21 @@ import { authService, cardService, CARD_POOL, Card, UserProfile, RedemptionReque
 import { Sparkles, Gift, Award, CheckCircle, RefreshCw, X, ShieldAlert } from "lucide-react";
 import styles from "./page.module.css";
 
+const renderStars = (rarity: string) => {
+  let count = 2;
+  let color = "var(--text-muted)";
+  if (rarity === "rare") { count = 3; color = "#60a5fa"; }
+  else if (rarity === "epic") { count = 4; color = "#c084fc"; }
+  else if (rarity === "legendary") { count = 5; color = "#fbbf24"; }
+  else if (rarity === "holographic") { count = 6; color = "#f472b6"; }
+  
+  return (
+    <div className={styles.rarityStars} style={{ color }}>
+      {"★".repeat(count)}
+    </div>
+  );
+};
+
 export default function StudentCardsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -302,7 +317,7 @@ export default function StudentCardsPage() {
                     if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
                     else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
                     else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
+                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
 
                     return (
                       <div 
@@ -321,11 +336,35 @@ export default function StudentCardsPage() {
                           
                           {/* Card Front */}
                           <div className={`${styles.cardFront} ${rarityClass}`}>
+                            <div className={styles.bgGlow} />
+                            {card.rarity === "legendary" && <div className={styles.legendaryRays} />}
+                            {card.rarity === "holographic" && <div className={styles.holoFoil} />}
+                            {(card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
+                              <div className={styles.particles}>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                              </div>
+                            )}
+                            <div className={styles.shineSweep} />
                             <div className={styles.cardOverlay}></div>
-                            <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                            
+                            {card.imageUrl === "__HOLOGRAPHIC__" ? (
+                              <div className={styles.cyberHoloFallback}>
+                                <div className={styles.cyberGrid} />
+                                <div className={styles.cyberHoloRing} />
+                                <div className={styles.cyberHoloSymbol}>✨</div>
+                              </div>
+                            ) : (
+                              <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                            )}
+
                             <div className={styles.cardBody}>
                               <div className={styles.cardHeader}>
-                                <span className={styles.cardRarityBadge}>{rarityText}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                                  <span className={styles.cardRarityBadge}>{rarityText}</span>
+                                  {renderStars(card.rarity)}
+                                </div>
                                 {card.bonusPoints > 0 && (
                                   <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
                                 )}
@@ -374,7 +413,7 @@ export default function StudentCardsPage() {
                     if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
                     else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
                     else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
+                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
 
                     return (
                       <div 
@@ -393,11 +432,35 @@ export default function StudentCardsPage() {
                           
                           {/* Card Front */}
                           <div className={`${styles.cardFront} ${rarityClass}`}>
+                            <div className={styles.bgGlow} />
+                            {card.rarity === "legendary" && <div className={styles.legendaryRays} />}
+                            {card.rarity === "holographic" && <div className={styles.holoFoil} />}
+                            {(card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
+                              <div className={styles.particles}>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                              </div>
+                            )}
+                            <div className={styles.shineSweep} />
                             <div className={styles.cardOverlay}></div>
-                            <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+
+                            {card.imageUrl === "__HOLOGRAPHIC__" ? (
+                              <div className={styles.cyberHoloFallback}>
+                                <div className={styles.cyberGrid} />
+                                <div className={styles.cyberHoloRing} />
+                                <div className={styles.cyberHoloSymbol}>✨</div>
+                              </div>
+                            ) : (
+                              <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                            )}
+
                             <div className={styles.cardBody}>
                               <div className={styles.cardHeader}>
-                                <span className={styles.cardRarityBadge}>{rarityText}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                                  <span className={styles.cardRarityBadge}>{rarityText}</span>
+                                  {renderStars(card.rarity)}
+                                </div>
                                 {card.bonusPoints > 0 && (
                                   <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
                                 )}
@@ -543,7 +606,7 @@ export default function StudentCardsPage() {
               if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
               else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
               else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-              else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
+              else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
 
               return (
                 <div 
@@ -551,15 +614,38 @@ export default function StudentCardsPage() {
                   className={`${styles.galleryCard} ${isOwned ? "" : styles.unowned} ${rarityClass}`}
                   onClick={() => isOwned && setSelectedCard(card)}
                 >
+                  {isOwned && <div className={styles.bgGlow} />}
+                  {isOwned && card.rarity === "legendary" && <div className={styles.legendaryRays} />}
+                  {isOwned && card.rarity === "holographic" && <div className={styles.holoFoil} />}
+                  {isOwned && (card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
+                    <div className={styles.particles}>
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  )}
+                  {isOwned && <div className={styles.shineSweep} />}
+                  
                   <div className={styles.cardHeader}>
-                    <span className={styles.cardRarityBadge}>{rarityText}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                      <span className={styles.cardRarityBadge}>{rarityText}</span>
+                      {renderStars(card.rarity)}
+                    </div>
                     {card.bonusPoints > 0 && (
                       <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
                     )}
                   </div>
                   
                   {isOwned ? (
-                    <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                    card.imageUrl === "__HOLOGRAPHIC__" ? (
+                      <div className={styles.cyberHoloFallback}>
+                        <div className={styles.cyberGrid} />
+                        <div className={styles.cyberHoloRing} />
+                        <div className={styles.cyberHoloSymbol}>✨</div>
+                      </div>
+                    ) : (
+                      <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                    )
                   ) : (
                     <div className={styles.silhouetteArea}>
                       <Gift className={styles.lockIcon} />
@@ -601,7 +687,7 @@ export default function StudentCardsPage() {
         if (selectedCard.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
         else if (selectedCard.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
         else if (selectedCard.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-        else if (selectedCard.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityLegendary; }
+        else if (selectedCard.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
 
         return (
           <div className={styles.modalOverlay} onClick={() => setSelectedCard(null)}>
@@ -614,9 +700,34 @@ export default function StudentCardsPage() {
                 {/* Left: Card Big Render */}
                 <div className={styles.modalCardColumn}>
                   <div className={`${styles.bigCard} ${rarityClass}`}>
-                    <img src={selectedCard.imageUrl} alt={selectedCard.name} className={styles.bigCardImg} />
+                    <div className={styles.bgGlow} />
+                    {selectedCard.rarity === "legendary" && <div className={styles.legendaryRays} />}
+                    {selectedCard.rarity === "holographic" && <div className={styles.holoFoil} />}
+                    {(selectedCard.rarity === "epic" || selectedCard.rarity === "legendary" || selectedCard.rarity === "holographic") && (
+                      <div className={styles.particles}>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    )}
+                    <div className={styles.shineSweep} />
+                    <div className={styles.cardOverlay}></div>
+
+                    {selectedCard.imageUrl === "__HOLOGRAPHIC__" ? (
+                      <div className={styles.cyberHoloFallback} style={{ minHeight: '360px' }}>
+                        <div className={styles.cyberGrid} />
+                        <div className={styles.cyberHoloRing} style={{ width: '130px', height: '130px' }} />
+                        <div className={styles.cyberHoloSymbol} style={{ fontSize: '3.6rem' }}>✨</div>
+                      </div>
+                    ) : (
+                      <img src={selectedCard.imageUrl} alt={selectedCard.name} className={styles.bigCardImg} />
+                    )}
+
                     <div className={styles.bigCardHeader}>
-                      <span className={styles.cardRarityBadge}>{rarityText}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                        <span className={styles.cardRarityBadge}>{rarityText}</span>
+                        {renderStars(selectedCard.rarity)}
+                      </div>
                       {selectedCard.bonusPoints > 0 && (
                         <span className={styles.cardPointsBadge}>+{selectedCard.bonusPoints} Pt</span>
                       )}

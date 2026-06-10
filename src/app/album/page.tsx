@@ -17,6 +17,21 @@ const RARITY_CONFIG: Record<string, { label: string; color: string; bg: string; 
   common: { label: "ทั่วไป", color: "#9ca3af", bg: "rgba(156, 163, 175, 0.08)", glow: "rgba(156, 163, 175, 0.2)" },
 };
 
+const renderStars = (rarity: string) => {
+  let count = 2;
+  let color = "var(--text-muted)";
+  if (rarity === "rare") { count = 3; color = "#60a5fa"; }
+  else if (rarity === "epic") { count = 4; color = "#c084fc"; }
+  else if (rarity === "legendary") { count = 5; color = "#fbbf24"; }
+  else if (rarity === "holographic") { count = 6; color = "#f472b6"; }
+  
+  return (
+    <div className={styles.rarityStars} style={{ color }}>
+      {"★".repeat(count)}
+    </div>
+  );
+};
+
 export default function AlbumPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -114,24 +129,45 @@ export default function AlbumPage() {
           const cfg = RARITY_CONFIG[card.rarity];
           const isHolo = card.rarity === "holographic";
 
+          let rarityClass = styles.rarityCommon;
+          if (card.rarity === "rare") rarityClass = styles.rarityRare;
+          else if (card.rarity === "epic") rarityClass = styles.rarityEpic;
+          else if (card.rarity === "legendary") rarityClass = styles.rarityLegendary;
+          else if (card.rarity === "holographic") rarityClass = styles.rarityHolographic;
+
           return (
             <div
               key={card.id}
-              className={`${styles.cardSlot} ${hasCard ? styles.owned : styles.locked} ${isHolo ? styles.holoCard : ""}`}
-              style={hasCard ? { boxShadow: `0 0 20px ${cfg.glow}`, borderColor: cfg.color } : {}}
+              className={`${styles.cardSlot} ${hasCard ? styles.owned : styles.locked} ${rarityClass}`}
             >
-              {/* Rarity Badge */}
-              <div className={styles.rarityBadge} style={{ color: cfg.color, background: cfg.bg }}>
-                {cfg.label}
+              {hasCard && <div className={styles.bgGlow} />}
+              {hasCard && card.rarity === "legendary" && <div className={styles.legendaryRays} />}
+              {hasCard && card.rarity === "holographic" && <div className={styles.holoFoil} />}
+              {hasCard && (card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
+                <div className={styles.particles}>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              )}
+              {hasCard && <div className={styles.shineSweep} />}
+
+              {/* Rarity Badge & Stars */}
+              <div className={styles.rarityHeader}>
+                <div className={styles.rarityBadge} style={{ color: cfg.color, background: cfg.bg }}>
+                  {cfg.label}
+                </div>
+                {renderStars(card.rarity)}
               </div>
 
               {/* Card Image or Silhouette */}
               <div className={styles.cardImageArea}>
                 {hasCard ? (
                   card.imageUrl === "__HOLOGRAPHIC__" ? (
-                    <div className={styles.holoPlaceholder}>
-                      <div className={styles.holoShimmer} />
-                      <span className={styles.holoText}>✨</span>
+                    <div className={styles.cyberHoloFallback}>
+                      <div className={styles.cyberGrid} />
+                      <div className={styles.cyberHoloRing} />
+                      <div className={styles.cyberHoloSymbol}>✨</div>
                     </div>
                   ) : (
                     <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
