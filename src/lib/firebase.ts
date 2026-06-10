@@ -308,39 +308,31 @@ const CARD_POOL_STORAGE_KEY = "mock_card_pool_overrides";
 /**
  * Save partial updates for a single card to LocalStorage.
  */
-export function updateCardInPool(cardId: string, updates: Partial<Card>): void {
+export async function updateCardInPool(cardId: string, updates: Partial<Card>): Promise<void> {
   if (typeof window === "undefined") return;
-  try {
-    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
-    const overrides: Record<string, Partial<Card>> = stored ? JSON.parse(stored) : {};
-    overrides[cardId] = { ...(overrides[cardId] || {}), ...updates };
-    localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
-    saveCardsToFirestore();
-  } catch (e) {
-    console.error("updateCardInPool error:", e);
-  }
+  const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+  const overrides: Record<string, Partial<Card>> = stored ? JSON.parse(stored) : {};
+  overrides[cardId] = { ...(overrides[cardId] || {}), ...updates };
+  localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+  await saveCardsToFirestore();
 }
 
 /**
  * Reset a single card (or all cards) back to their defaults.
  */
-export function resetCardInPool(cardId?: string): void {
+export async function resetCardInPool(cardId?: string): Promise<void> {
   if (typeof window === "undefined") return;
-  try {
-    if (!cardId) {
-      localStorage.removeItem(CARD_POOL_STORAGE_KEY);
-    } else {
-      const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
-      if (stored) {
-        const overrides: Record<string, Partial<Card>> = JSON.parse(stored);
-        delete overrides[cardId];
-        localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
-      }
+  if (!cardId) {
+    localStorage.removeItem(CARD_POOL_STORAGE_KEY);
+  } else {
+    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+    if (stored) {
+      const overrides: Record<string, Partial<Card>> = JSON.parse(stored);
+      delete overrides[cardId];
+      localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
     }
-    saveCardsToFirestore();
-  } catch (e) {
-    console.error("resetCardInPool error:", e);
   }
+  await saveCardsToFirestore();
 }
 
 // ─── Custom Cards (teacher-created new cards) ─────────────────────────────────
@@ -387,14 +379,10 @@ export function getDropRates(): GachaRates {
   }
 }
 
-export function saveDropRates(rates: GachaRates): void {
+export async function saveDropRates(rates: GachaRates): Promise<void> {
   if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(DROP_RATES_KEY, JSON.stringify(rates));
-    saveCardsToFirestore();
-  } catch (e) {
-    console.error("saveDropRates error:", e);
-  }
+  localStorage.setItem(DROP_RATES_KEY, JSON.stringify(rates));
+  await saveCardsToFirestore();
 }
 
 /** Return all teacher-created custom cards from LocalStorage. */
@@ -426,45 +414,33 @@ export function getCardPool(): Card[] {
 }
 
 /** Add a new custom card to LocalStorage. */
-export function addCustomCard(card: Card): void {
+export async function addCustomCard(card: Card): Promise<void> {
   if (typeof window === "undefined") return;
-  try {
-    const existing = getCustomCards();
-    // Prevent duplicate IDs
-    if (existing.find(c => c.id === card.id)) return;
-    existing.push(card);
-    localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
-    saveCardsToFirestore();
-  } catch (e) {
-    console.error("addCustomCard error:", e);
-  }
+  const existing = getCustomCards();
+  // Prevent duplicate IDs
+  if (existing.find(c => c.id === card.id)) return;
+  existing.push(card);
+  localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  await saveCardsToFirestore();
 }
 
 /** Update an existing custom card in LocalStorage. */
-export function updateCustomCard(cardId: string, updates: Partial<Card>): void {
+export async function updateCustomCard(cardId: string, updates: Partial<Card>): Promise<void> {
   if (typeof window === "undefined") return;
-  try {
-    const existing = getCustomCards();
-    const idx = existing.findIndex(c => c.id === cardId);
-    if (idx === -1) return;
-    existing[idx] = { ...existing[idx], ...updates };
-    localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
-    saveCardsToFirestore();
-  } catch (e) {
-    console.error("updateCustomCard error:", e);
-  }
+  const existing = getCustomCards();
+  const idx = existing.findIndex(c => c.id === cardId);
+  if (idx === -1) return;
+  existing[idx] = { ...existing[idx], ...updates };
+  localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  await saveCardsToFirestore();
 }
 
 /** Permanently delete a custom card from LocalStorage. */
-export function removeCustomCard(cardId: string): void {
+export async function removeCustomCard(cardId: string): Promise<void> {
   if (typeof window === "undefined") return;
-  try {
-    const existing = getCustomCards().filter(c => c.id !== cardId);
-    localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
-    saveCardsToFirestore();
-  } catch (e) {
-    console.error("removeCustomCard error:", e);
-  }
+  const existing = getCustomCards().filter(c => c.id !== cardId);
+  localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  await saveCardsToFirestore();
 }
 
 /** Generate a new unique custom card ID (e.g. "custom-1681234567890"). */
@@ -536,6 +512,7 @@ export async function saveCardsToFirestore(): Promise<void> {
     await setDoc(docRef, { overrides, custom, dropRates }, { merge: true });
   } catch (e) {
     console.error("saveCardsToFirestore error:", e);
+    throw e;
   }
 }
 

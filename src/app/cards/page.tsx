@@ -34,6 +34,7 @@ export default function StudentCardsPage() {
 
   // Gacha states
   const [isOpeningPack, setIsOpeningPack] = useState(false);
+  const [isPackTearing, setIsPackTearing] = useState(false);
   const [openedCards, setOpenedCards] = useState<Card[]>([]);
   const [flippedCards, setFlippedCards] = useState<boolean[]>([false, false, false]);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -50,6 +51,136 @@ export default function StudentCardsPage() {
   const [isExchangingPack, setIsExchangingPack] = useState(false);
   const [exchangeResultCards, setExchangeResultCards] = useState<Card[]>([]);
   const [exchangeCardsFlipped, setExchangeCardsFlipped] = useState<boolean[]>([false, false]);
+
+  // Canvas refs and particle logic
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+  const particlesRef = React.useRef<any[]>([]);
+
+  const addParticles = (x: number, y: number, count: number, type: "spark" | "blast" | "rarity", rarityColor?: string) => {
+    const particles = particlesRef.current;
+    const colors = {
+      common: "#94a3b8",
+      rare: "#3b82f6",
+      epic: "#a855f7",
+      legendary: "#fbbf24",
+      holographic: "#ec4899"
+    };
+
+    const baseColor = rarityColor || colors.common;
+
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      let speed = 0;
+      let size = 0;
+      let decay = 0;
+      let gravity = 0;
+      let life = 0;
+      let color = baseColor;
+      let sparkle = false;
+
+      if (type === "spark") {
+        speed = 1.5 + Math.random() * 3;
+        size = 1.5 + Math.random() * 2;
+        decay = 0.02 + Math.random() * 0.03;
+        gravity = -0.01;
+        life = 30 + Math.random() * 30;
+        color = Math.random() > 0.5 ? "#00f0ff" : "#ff007f";
+      } else if (type === "blast") {
+        speed = 3 + Math.random() * 9;
+        size = 2.5 + Math.random() * 4;
+        decay = 0.01 + Math.random() * 0.015;
+        gravity = 0.04;
+        life = 60 + Math.random() * 60;
+        const blastColors = ["#00f0ff", "#ff007f", "#a855f7", "#ffffff", "#fbbf24"];
+        color = blastColors[Math.floor(Math.random() * blastColors.length)];
+        sparkle = Math.random() > 0.6;
+      } else if (type === "rarity") {
+        speed = 2 + Math.random() * 7;
+        size = 2 + Math.random() * 3.5;
+        decay = 0.012 + Math.random() * 0.02;
+        gravity = 0.02;
+        life = 40 + Math.random() * 50;
+        sparkle = true;
+        if (rarityColor === "holographic") {
+          const holoColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#fbbf24"];
+          color = holoColors[Math.floor(Math.random() * holoColors.length)];
+        }
+      }
+
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size,
+        color,
+        alpha: 1,
+        decay,
+        gravity,
+        life,
+        sparkle
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!isGachaMode && !isExchangeMode) {
+      particlesRef.current = [];
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const updateAndDraw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const particles = particlesRef.current;
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.alpha -= p.decay;
+        p.life -= 1;
+
+        if (p.alpha <= 0 || p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.shadowBlur = p.sparkle ? p.size * 2.5 : p.size * 1.5;
+        ctx.shadowColor = p.color;
+        ctx.fillStyle = p.color;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      animationFrameId = requestAnimationFrame(updateAndDraw);
+    };
+
+    animationFrameId = requestAnimationFrame(updateAndDraw);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", resizeCanvas);
+    };
+  }, [isGachaMode, isExchangeMode]);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "student")) {
@@ -96,6 +227,7 @@ export default function StudentCardsPage() {
     if (!user || !studentProfile || (studentProfile.packsCount || 0) <= 0) return;
     setIsGachaMode(true);
     setIsOpeningPack(false);
+    setIsPackTearing(false);
     setOpenedCards([]);
     setFlippedCards([false, false, false]);
   };
@@ -103,17 +235,33 @@ export default function StudentCardsPage() {
   const handleOpenPack = async () => {
     if (!user || !studentProfile) return;
     setIsOpeningPack(true);
+    setIsPackTearing(false);
     
-    // Play shake sound repeatedly during the 2s shake animation
+    // Play shake sound and spawn pack sparks
     const intervalId = setInterval(() => {
       audioSynth.playShake();
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight * 0.45;
+      addParticles(centerX + (Math.random() * 40 - 20), centerY + (Math.random() * 40 - 20), 8, "spark");
     }, 180);
 
     try {
-      // Shake animation time
+      // Parallelize openPack call and 2s shake animation
+      const openPackPromise = cardService.openPack(user.uid);
+      
       await new Promise(resolve => setTimeout(resolve, 2000));
       clearInterval(intervalId);
-      const newCards = await cardService.openPack(user.uid);
+      
+      // Trigger tear CSS animation
+      setIsPackTearing(true);
+      
+      // Wait for tear animation slide (approx 450ms) then do blast
+      await new Promise(resolve => setTimeout(resolve, 450));
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight * 0.45;
+      addParticles(centerX, centerY, 150, "blast");
+      
+      const newCards = await openPackPromise;
       setOpenedCards(newCards);
       setIsOpeningPack(false);
     } catch (err) {
@@ -124,7 +272,7 @@ export default function StudentCardsPage() {
     }
   };
 
-  const handleFlipCard = (index: number) => {
+  const handleFlipCard = (index: number, event: React.MouseEvent) => {
     if (flippedCards[index]) return;
     setFlippedCards(prev => {
       const updated = [...prev];
@@ -136,6 +284,25 @@ export default function StudentCardsPage() {
     if (card) {
       audioSynth.playFlip();
       audioSynth.playReveal(card.rarity);
+      
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      const colors = {
+        common: "#94a3b8",
+        rare: "#60a5fa",
+        epic: "#c084fc",
+        legendary: "#fbbf24",
+        holographic: "#f472b6"
+      };
+
+      setTimeout(() => {
+        addParticles(x, y, 45, "rarity", colors[card.rarity]);
+        if (card.rarity === "legendary" || card.rarity === "holographic") {
+          addParticles(x, y, 40, "blast");
+        }
+      }, 350);
     }
   };
 
@@ -169,20 +336,33 @@ export default function StudentCardsPage() {
     if (!user) return;
     setIsExchangeMode(true);
     setIsExchangingPack(true);
+    setIsPackTearing(false);
     setExchangeResultCards([]);
     setExchangeCardsFlipped([false, false]);
 
-    // Play shake sound repeatedly during the 2s shake animation
+    // Play shake sound and spawn sparks at the reactor core
     const intervalId = setInterval(() => {
       audioSynth.playShake();
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight * 0.45;
+      addParticles(centerX, centerY, 12, "spark");
     }, 180);
 
     try {
-      // Fake delay for animation
+      // Parallelize exchangeCommonCards call and 2s shake animation
+      const exchangePromise = cardService.exchangeCommonCards(user.uid);
+      
       await new Promise(resolve => setTimeout(resolve, 2000));
       clearInterval(intervalId);
       
-      const newCards = await cardService.exchangeCommonCards(user.uid);
+      // Reactor blast
+      setIsPackTearing(true);
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight * 0.45;
+      addParticles(centerX, centerY, 160, "blast");
+      
+      const newCards = await exchangePromise;
       if (newCards && newCards.length > 0) {
         setExchangeResultCards(newCards);
         const cardNames = newCards.map(c => c.name).join(", ");
@@ -201,7 +381,7 @@ export default function StudentCardsPage() {
     }
   };
 
-  const handleFlipExchangeCard = (index: number) => {
+  const handleFlipExchangeCard = (index: number, event: React.MouseEvent) => {
     if (exchangeCardsFlipped[index]) return;
     setExchangeCardsFlipped(prev => {
       const updated = [...prev];
@@ -213,6 +393,25 @@ export default function StudentCardsPage() {
     if (card) {
       audioSynth.playFlip();
       audioSynth.playReveal(card.rarity);
+      
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      const colors = {
+        common: "#94a3b8",
+        rare: "#60a5fa",
+        epic: "#c084fc",
+        legendary: "#fbbf24",
+        holographic: "#f472b6"
+      };
+
+      setTimeout(() => {
+        addParticles(x, y, 45, "rarity", colors[card.rarity]);
+        if (card.rarity === "legendary" || card.rarity === "holographic") {
+          addParticles(x, y, 40, "blast");
+        }
+      }, 350);
     }
   };
 
@@ -330,21 +529,76 @@ export default function StudentCardsPage() {
       {/* Gacha Opening overlay */}
       {isGachaMode && (
         <div className={styles.gachaOverlay}>
+          {/* Emitter Canvas for Premium Particle Effects */}
+          <canvas ref={canvasRef} className={styles.gachaCanvas} />
+          
           <div className={styles.gachaContainer}>
             {isOpeningPack ? (
               <div className={styles.lootboxArea}>
-                <div className={`${styles.lootbox} ${styles.shaking}`}>🎁</div>
-                <h2>กำลังสุ่มการ์ดไอซีที...</h2>
-                <p>เตรียมพบกับการ์ดแรร์สุดพิเศษ!</p>
+                {/* 3D Card booster pack splitting animation */}
+                <div className={styles.cardPack}>
+                  <div className={`${styles.cardPackWrapper} ${styles.shaking}`}>
+                    {/* Top half */}
+                    <div className={`${styles.packHalf} ${styles.packTop} ${isPackTearing ? styles.packTornTop : ""}`}>
+                      <div className={styles.packTearLine} />
+                      <div className={styles.packDesign}>
+                        <div className={styles.packGraphicWrapper}>
+                          <div className={styles.packLogo}>ICT</div>
+                          <div className={styles.packTitle}>PREMIUM BOOSTER</div>
+                          <div className={styles.packSub}>GACHA SYSTEM</div>
+                        </div>
+                      </div>
+                      <div className={styles.packFoilShine} />
+                    </div>
+                    {/* Bottom half */}
+                    <div className={`${styles.packHalf} ${styles.packBottom} ${isPackTearing ? styles.packTornBottom : ""}`}>
+                      <div className={styles.packDesign}>
+                        <div className={styles.packGraphicWrapper}>
+                          <div className={styles.packLogo}>ICT</div>
+                          <div className={styles.packTitle}>PREMIUM BOOSTER</div>
+                          <div className={styles.packSub}>GACHA SYSTEM</div>
+                        </div>
+                      </div>
+                      <div className={styles.packFoilShine} />
+                    </div>
+                  </div>
+                </div>
+                <h2>กำลังเปิดซองการ์ดไอซีที...</h2>
+                <p>เตรียมตัวลุ้นการ์ดแรร์ระดับตำนาน!</p>
                 <div className={styles.spinner}></div>
               </div>
             ) : openedCards.length === 0 ? (
               <div className={styles.lootboxArea}>
-                <div className={styles.lootbox}>🎁</div>
+                {/* Clickable 3D Card pack */}
+                <div className={styles.cardPack} onClick={handleOpenPack}>
+                  <div className={styles.cardPackWrapper}>
+                    <div className={`${styles.packHalf} ${styles.packTop}`}>
+                      <div className={styles.packTearLine} />
+                      <div className={styles.packDesign}>
+                        <div className={styles.packGraphicWrapper}>
+                          <div className={styles.packLogo}>ICT</div>
+                          <div className={styles.packTitle}>PREMIUM BOOSTER</div>
+                          <div className={styles.packSub}>GACHA SYSTEM</div>
+                        </div>
+                      </div>
+                      <div className={styles.packFoilShine} />
+                    </div>
+                    <div className={`${styles.packHalf} ${styles.packBottom}`}>
+                      <div className={styles.packDesign}>
+                        <div className={styles.packGraphicWrapper}>
+                          <div className={styles.packLogo}>ICT</div>
+                          <div className={styles.packTitle}>PREMIUM BOOSTER</div>
+                          <div className={styles.packSub}>GACHA SYSTEM</div>
+                        </div>
+                      </div>
+                      <div className={styles.packFoilShine} />
+                    </div>
+                  </div>
+                </div>
                 <h2>ซองการ์ดรอการเปิด!</h2>
-                <p>กดปุ่มด้านล่างเพื่อเริ่มสุ่มการ์ดจำนวน 3 ใบ</p>
+                <p>กดปุ่มด้านล่างหรือกดที่ซองการ์ดเพื่อเริ่มสุ่มการ์ดจำนวน 3 ใบ</p>
                 <button className={styles.openPackMainBtn} onClick={handleOpenPack}>
-                  ✨ เปิดกล่องสุ่มเลย!
+                  ✨ เปิดซองการ์ดเลย!
                 </button>
               </div>
             ) : (
@@ -355,20 +609,23 @@ export default function StudentCardsPage() {
                   {openedCards.map((card, idx) => {
                     let rarityClass = styles.rarityCommon;
                     let rarityText = "B";
+                    let glowTextClass = "";
                     if (card.rarity === "rare") { rarityText = "A"; rarityClass = styles.rarityRare; }
-                    else if (card.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; }
-                    else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; }
-                    else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; }
+                    else if (card.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; glowTextClass = styles.glitchText; }
+                    else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; glowTextClass = styles.glitchText; }
+                    else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; glowTextClass = styles.glitchText; }
 
                     return (
                       <div 
                         key={idx} 
-                        className={`${styles.cardFlipContainer} ${flippedCards[idx] ? styles.flipped : ""}`}
-                        onClick={() => handleFlipCard(idx)}
+                        className={`${styles.cardFlipContainer} ${styles.cardDealt} ${flippedCards[idx] ? styles.flipped : ""}`}
+                        onClick={(e) => handleFlipCard(idx, e)}
                       >
                         <div className={styles.cardInner}>
-                          {/* Card Back */}
+                          {/* Premium Animated Card Back */}
                           <div className={styles.cardBack}>
+                            <div className={styles.cyberRing} />
+                            <div className={styles.cyberRingInner} />
                             <div className={styles.cardBackDesign}>
                               <div className={styles.cardBackLogo}>ICT</div>
                               <p>LUCKY BOX</p>
@@ -388,7 +645,7 @@ export default function StudentCardsPage() {
                               </div>
                             )}
                             <div className={styles.shineSweep} />
-                            <div className={styles.cardOverlay}></div>
+                            <div className={styles.cardOverlay} />
                             
                             {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
                               <div className={styles.cyberHoloFallback}>
@@ -414,7 +671,7 @@ export default function StudentCardsPage() {
                                   <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
                                 )}
                               </div>
-                              <h3 className={styles.cardTitle}>{card.name}</h3>
+                              <h3 className={`${styles.cardTitle} ${glowTextClass}`}>{card.name}</h3>
                               <p className={styles.cardDesc}>{card.description}</p>
                             </div>
                           </div>
@@ -438,12 +695,28 @@ export default function StudentCardsPage() {
       {/* Exchange Gacha Opening overlay */}
       {isExchangeMode && (
         <div className={styles.gachaOverlay}>
+          {/* Emitter Canvas for Premium Particle Effects */}
+          <canvas ref={canvasRef} className={styles.gachaCanvas} />
+          
           <div className={styles.gachaContainer}>
             {isExchangingPack ? (
               <div className={styles.lootboxArea}>
-                <div className={`${styles.lootbox} ${styles.shaking}`}>♻️</div>
+                {/* Quantum Fusion Reactor Visual */}
+                <div className={`${styles.reactorContainer} ${styles.reactorShaking}`}>
+                  <div className={styles.reactorRingOuter} />
+                  <div className={styles.reactorRingInner} />
+                  <div className={styles.reactorCore} />
+                  {/* Visual Energy streams consuming common cards */}
+                  {[0, 72, 144, 216, 288].map((angle, i) => (
+                    <div 
+                      key={i} 
+                      className={styles.energyStream} 
+                      style={{ '--angle': `${angle}deg` } as React.CSSProperties} 
+                    />
+                  ))}
+                </div>
                 <h2>กำลังนำการ์ด 5 ใบไปหลอมรวม...</h2>
-                <p>ลุ้นรับการ์ดใบใหม่ที่อาจจะแรร์กว่าเดิม!</p>
+                <p>ลุ้นรับการ์ดใบใหม่ที่ระดับความแรร์สูงกว่าเดิม!</p>
                 <div className={styles.spinner}></div>
               </div>
             ) : exchangeResultCards.length > 0 ? (
@@ -458,22 +731,26 @@ export default function StudentCardsPage() {
                   {exchangeResultCards.map((card, idx) => {
                     let rarityClass = styles.rarityCommon;
                     let rarityText = "B";
+                    let glowTextClass = "";
                     if (card.rarity === "rare") { rarityText = "A"; rarityClass = styles.rarityRare; }
-                    else if (card.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; }
-                    else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; }
-                    else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; }
+                    else if (card.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; glowTextClass = styles.glitchText; }
+                    else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; glowTextClass = styles.glitchText; }
+                    else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; glowTextClass = styles.glitchText; }
 
                     const isFlipped = exchangeCardsFlipped[idx];
 
                     return (
                       <div 
                         key={idx} 
-                        className={`${styles.exchangeRevealWrapper} ${rarityClass}`}
-                        onClick={() => handleFlipExchangeCard(idx)}
+                        className={`${styles.exchangeRevealWrapper} ${styles.cardDealt} ${rarityClass}`}
+                        onClick={(e) => handleFlipExchangeCard(idx, e)}
                         style={{ cursor: isFlipped ? 'default' : 'pointer' }}
                       >
                         {!isFlipped && (
-                          <div className={styles.exchangeCover}>
+                          /* Interactive exchange card cover similar to premium card back */
+                          <div className={`${styles.exchangeCover} ${styles.cardBack}`}>
+                            <div className={styles.cyberRing} />
+                            <div className={styles.cyberRingInner} />
                             <div className={styles.cardBackDesign}>
                               <div className={styles.cardBackLogo}>♻️</div>
                               <p>แตะเพื่อเปิด</p>
@@ -484,7 +761,7 @@ export default function StudentCardsPage() {
                         <div className={`${styles.exchangeCardDisplay} ${isFlipped ? styles.exchangeCardRevealed : ''}`}>
                           <div className={styles.bgGlow} />
                           {card.rarity === "legendary" && <div className={styles.legendaryRays} />}
-                          {card.rarity === "holographic" && <div className={styles.holoFoil} />}
+                          {card.rarity === 'holographic' && <div className={styles.holoFoil} />}
                           {(card.rarity === "epic" || card.rarity === "legendary" || card.rarity === "holographic") && (
                             <div className={styles.particles}>
                               <span></span>
@@ -493,7 +770,7 @@ export default function StudentCardsPage() {
                             </div>
                           )}
                           <div className={styles.shineSweep} />
-                          <div className={styles.cardOverlay}></div>
+                          <div className={styles.cardOverlay} />
                           
                           {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
                             <div className={styles.cyberHoloFallback} style={{ height: '220px' }}>
@@ -519,7 +796,7 @@ export default function StudentCardsPage() {
                                 <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
                               )}
                             </div>
-                            <h3 className={styles.cardTitle}>{card.name}</h3>
+                            <h3 className={`${styles.cardTitle} ${glowTextClass}`}>{card.name}</h3>
                             <p className={styles.cardDesc}>{card.description}</p>
                           </div>
                         </div>

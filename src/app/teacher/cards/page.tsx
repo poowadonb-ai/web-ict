@@ -314,44 +314,66 @@ export default function TeacherCardsPage() {
     }
   };
 
-  const handleSaveCard = () => {
+  const handleSaveCard = async () => {
     if (!editingCard) return;
     if (!editForm.name?.trim()) {
       setSaveMsg("⚠️ กรุณาใส่ชื่อการ์ดก่อนบันทึก");
       return;
     }
-    if (isCreating) {
-      // Add as new custom card
-      addCustomCard({ ...editingCard, ...editForm } as Card);
-    } else {
-      // Check if this is an existing custom card or a base card
-      const isCustom = !CARD_POOL.find(c => c.id === editingCard.id);
-      if (isCustom) {
-        updateCustomCard(editingCard.id, editForm);
+    setSaveMsg("⏳ กำลังบันทึกข้อมูล...");
+    try {
+      if (isCreating) {
+        // Add as new custom card
+        await addCustomCard({ ...editingCard, ...editForm } as Card);
       } else {
-        updateCardInPool(editingCard.id, editForm);
+        // Check if this is an existing custom card or a base card
+        const isCustom = !CARD_POOL.find(c => c.id === editingCard.id);
+        if (isCustom) {
+          await updateCustomCard(editingCard.id, editForm);
+        } else {
+          await updateCardInPool(editingCard.id, editForm);
+        }
       }
+      setCardPool(getCardPool());
+      setSaveMsg("✅ บันทึกข้อมูลการ์ดเรียบร้อยแล้ว!");
+      setTimeout(() => {
+        setSaveMsg("");
+        closeEditModal();
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setSaveMsg(`❌ บันทึกไม่สำเร็จ: ${err.message || "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}`);
     }
-    setCardPool(getCardPool());
-    setSaveMsg("✅ บันทึกข้อมูลการ์ดเรียบร้อยแล้ว!");
-    setTimeout(() => {
-      setSaveMsg("");
-      closeEditModal();
-    }, 1500);
   };
 
-  const handleDeleteCard = (cardId: string) => {
+  const handleDeleteCard = async (cardId: string) => {
     if (!confirm("ลบการ์ดนี้ออกจากระบบ? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
-    removeCustomCard(cardId);
-    setCardPool(getCardPool());
-    if (editingCard?.id === cardId) closeEditModal();
+    try {
+      setLoading(true);
+      await removeCustomCard(cardId);
+      setCardPool(getCardPool());
+      if (editingCard?.id === cardId) closeEditModal();
+    } catch (err: any) {
+      console.error(err);
+      alert(`❌ ลบการ์ดไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleResetCard = (cardId: string) => {
+  const handleResetCard = async (cardId: string) => {
     if (!confirm("รีเซ็ตการ์ดนี้กลับเป็นค่าเริ่มต้น?")) return;
-    resetCardInPool(cardId);
-    setCardPool(getCardPool());
-    if (editingCard?.id === cardId) closeEditModal();
+    try {
+      setLoading(true);
+      await resetCardInPool(cardId);
+      setCardPool(getCardPool());
+      if (editingCard?.id === cardId) closeEditModal();
+    } catch (err: any) {
+      console.error(err);
+      alert(`❌ รีเซ็ตการ์ดไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openRatesModal = () => {
@@ -366,7 +388,7 @@ export default function TeacherCardsPage() {
     setRatesMsg("");
   };
 
-  const handleSaveRates = () => {
+  const handleSaveRates = async () => {
     if (!rateForm) return;
 
     // Validate Pack Rates sum to 100%
@@ -397,17 +419,31 @@ export default function TeacherCardsPage() {
       return;
     }
 
-    saveDropRates(rateForm);
-    setRatesMsg("✅ บันทึกอัตราสุ่มการ์ดเรียบร้อยแล้ว!");
-    setTimeout(() => {
-      closeRatesModal();
-    }, 1500);
+    setRatesMsg("⏳ กำลังบันทึกอัตราดรอป...");
+    try {
+      await saveDropRates(rateForm);
+      setRatesMsg("✅ บันทึกอัตราสุ่มการ์ดเรียบร้อยแล้ว!");
+      setTimeout(() => {
+        closeRatesModal();
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setRatesMsg(`❌ บันทึกไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+    }
   };
 
-  const handleResetAll = () => {
+  const handleResetAll = async () => {
     if (!confirm("รีเซ็ตการ์ดทั้งหมด (ยกเว้นการ์ดที่สร้างใหม่) กลับเป็นค่าเริ่มต้น?")) return;
-    resetCardInPool();
-    setCardPool(getCardPool());
+    try {
+      setLoading(true);
+      await resetCardInPool();
+      setCardPool(getCardPool());
+    } catch (err: any) {
+      console.error(err);
+      alert(`❌ รีเซ็ตทั้งหมดไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /** True = this card was teacher-created (not in CARD_POOL) */

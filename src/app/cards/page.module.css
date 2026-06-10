@@ -1193,24 +1193,63 @@
 }
 
 .cardBack {
-  background: linear-gradient(135deg, #0d0722 0%, #160e32 100%);
+  background: radial-gradient(circle at 50% 50%, #110930 0%, #050210 100%);
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.35);
+  border: 2px solid rgba(168, 85, 247, 0.45) !important;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cardBack::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(6, 182, 212, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.08) 1px, transparent 1px);
+  background-size: 10px 10px;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .cardBackDesign {
-  width: calc(100% - 16px);
-  height: calc(100% - 16px);
-  border: 1px solid rgba(168, 85, 247, 0.15);
-  border-radius: 10px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  border: 1.5px solid rgba(168, 85, 247, 0.25);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  background: radial-gradient(circle at 50% 40%, rgba(168, 85, 247, 0.12), transparent 60%);
+  gap: 16px;
+  background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.22) 0%, rgba(6, 182, 212, 0.03) 75%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Cyber Corners for Card Back */
+.cardBackDesign::before,
+.cardBackDesign::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(6, 182, 212, 0.7);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 2;
+}
+.cardBackDesign::before {
+  top: 8px; left: 8px;
+  border-width: 2px 0 0 2px;
+}
+.cardBackDesign::after {
+  bottom: 8px; right: 8px;
+  border-width: 0 2px 2px 0;
 }
 
 .cardBackLogo {
@@ -1221,13 +1260,49 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: 3px;
+  z-index: 3;
+  filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.6));
 }
 
 .cardBackDesign p {
   font-size: 0.7rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
   letter-spacing: 2px;
   text-transform: uppercase;
+  z-index: 3;
+}
+
+.cyberRing {
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  border: 1px dashed rgba(6, 182, 212, 0.35);
+  border-radius: 50%;
+  animation: rotateRingClockwise 20s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cyberRingInner {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-style: solid none solid none;
+  border-radius: 50%;
+  animation: rotateRingCounterClockwise 12s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes rotateRingClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotateRingCounterClockwise {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }
 
 .cardFront {
@@ -1259,12 +1334,15 @@
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.12);
   transition: var(--transition-smooth);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  z-index: 10;
 }
 
 .closeGachaBtn:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(168, 85, 247, 0.25);
 }
 
 /* Loading */
@@ -1343,4 +1421,324 @@
   opacity: 1;
   transform: scale(1) rotateY(0deg);
 }
+
+/* ── INTERACTIVE 3D CARD BOOSTER PACK ── */
+.cardPack {
+  position: relative;
+  width: 230px;
+  height: 340px;
+  perspective: 1200px;
+  margin: 20px auto;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.cardPackWrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  box-shadow: 0 25px 55px rgba(0, 0, 0, 0.8), 0 0 30px rgba(168, 85, 247, 0.3);
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.cardPack:hover .cardPackWrapper {
+  transform: translateY(-10px) rotateY(12deg) rotateX(4deg);
+  box-shadow: 0 35px 70px rgba(0, 0, 0, 0.9), 0 0 45px rgba(6, 182, 212, 0.5);
+}
+
+.packHalf {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  transition: transform 0.85s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.65s ease;
+  z-index: 5;
+}
+
+.packTop {
+  top: 0;
+  border-radius: 12px 12px 0 0;
+  border: 2px solid rgba(168, 85, 247, 0.45);
+  border-bottom: none;
+  background: linear-gradient(180deg, #1b0f4c 0%, #0d0722 100%);
+  transform-origin: top center;
+}
+
+.packBottom {
+  bottom: 0;
+  border-radius: 0 0 12px 12px;
+  border: 2px solid rgba(168, 85, 247, 0.45);
+  border-top: none;
+  background: linear-gradient(180deg, #0d0722 0%, #050212 100%);
+  transform-origin: bottom center;
+}
+
+/* Tear animations */
+.packTornTop {
+  transform: translateY(-160px) rotateX(-50deg) rotateZ(-12deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.packTornBottom {
+  transform: translateY(160px) rotateX(50deg) rotateZ(12deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.packDesign {
+  width: 100%;
+  height: 200%;
+  position: absolute;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.packTop .packDesign {
+  top: 0;
+}
+
+.packBottom .packDesign {
+  top: -100%;
+}
+
+.packGraphicWrapper {
+  width: calc(100% - 14px);
+  height: calc(100% - 14px);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.22) 0%, transparent 80%);
+}
+
+.packGraphicWrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 12px 12px;
+  pointer-events: none;
+}
+
+.packTearLine {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #00f0ff 30%, #ff007f 50%, #00f0ff 70%, transparent 100%);
+  box-shadow: 0 0 10px #00f0ff;
+  z-index: 10;
+  transform: translateY(-50%);
+  animation: pulseTear 1.5s infinite alternate;
+}
+
+@keyframes pulseTear {
+  from { opacity: 0.5; box-shadow: 0 0 6px #00f0ff; }
+  to { opacity: 1; box-shadow: 0 0 16px #ff007f; }
+}
+
+.packLogo {
+  font-size: 3.2rem;
+  font-weight: 950;
+  background: linear-gradient(135deg, #00f0ff 0%, #ff007f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 4px;
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.5));
+  animation: packLogoPulse 2.5s infinite ease-in-out alternate;
+  z-index: 2;
+}
+
+@keyframes packLogoPulse {
+  0% { transform: scale(0.98); filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4)); }
+  100% { transform: scale(1.04); filter: drop-shadow(0 0 22px rgba(255, 0, 127, 0.7)); }
+}
+
+.packTitle {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 3px;
+  margin-top: 18px;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  z-index: 2;
+}
+
+.packSub {
+  font-size: 0.58rem;
+  color: var(--text-secondary);
+  letter-spacing: 1.5px;
+  margin-top: 4px;
+  z-index: 2;
+}
+
+.packFoilShine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.08) 60%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  background-size: 200% 200%;
+  animation: packFoilSweep 5s infinite linear;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes packFoilSweep {
+  0% { background-position: -150% -150%; }
+  100% { background-position: 250% 250%; }
+}
+
+/* ── FULL VIEWPORT GACHA CANVAS ── */
+.gachaCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── CARD DEAL ANIMATION ── */
+.cardDealt {
+  animation: dealCard 0.85s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  opacity: 0;
+}
+
+.cardDealt:nth-child(1) { animation-delay: 0.1s; }
+.cardDealt:nth-child(2) { animation-delay: 0.25s; }
+.cardDealt:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dealCard {
+  0% {
+    transform: scale(0.25) rotateX(60deg) rotateY(-35deg) translate3d(0, 0, 400px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotateX(0) rotateY(0) translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+/* ── QUANTUM FUSION REACTOR ── */
+.reactorContainer {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 20px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.reactorCore {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #b981f9 0%, #6d28d9 70%, transparent 100%);
+  box-shadow: 0 0 35px #a855f7, 0 0 70px rgba(168, 85, 247, 0.5);
+  position: relative;
+  z-index: 3;
+}
+
+.reactorShaking .reactorCore {
+  animation: reactorCorePulse 0.35s infinite linear alternate, coreGlow 0.12s infinite alternate;
+}
+
+@keyframes reactorCorePulse {
+  0% { transform: scale(0.92); }
+  100% { transform: scale(1.12); }
+}
+
+@keyframes coreGlow {
+  from { box-shadow: 0 0 25px #a855f7, 0 0 50px rgba(168, 85, 247, 0.4); }
+  to { box-shadow: 0 0 55px #ec4899, 0 0 110px rgba(236, 72, 153, 0.85), inset 0 0 15px white; }
+}
+
+.reactorRingOuter {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border: 2px dashed rgba(6, 182, 212, 0.45);
+  border-radius: 50%;
+  animation: rotateRingClockwise 8s linear infinite;
+  z-index: 1;
+}
+
+.reactorRingInner {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border: 1.5px solid rgba(236, 72, 153, 0.35);
+  border-style: dashed solid dashed solid;
+  border-radius: 50%;
+  animation: rotateRingCounterClockwise 5s linear infinite;
+  z-index: 1;
+}
+
+.energyStream {
+  position: absolute;
+  width: 3px;
+  height: 60px;
+  background: linear-gradient(to top, var(--accent-purple), var(--accent-cyan));
+  border-radius: 2px;
+  opacity: 0.8;
+  transform-origin: bottom center;
+  z-index: 2;
+}
+
+.reactorShaking .energyStream {
+  animation: streamAbsorb 0.75s infinite linear;
+}
+
+@keyframes streamAbsorb {
+  0% { transform: rotate(var(--angle)) translateY(-110px) scaleY(1); opacity: 0; }
+  20% { opacity: 0.9; }
+  85% { opacity: 0.9; }
+  100% { transform: rotate(var(--angle)) translateY(-40px) scaleY(0.1); opacity: 0; }
+}
+
+/* ── NEON TEXT GLITCH ── */
+.glitchText {
+  position: relative;
+  text-shadow: 0.05em 0 0 rgba(255, 0, 127, 0.75), -0.025em -0.05em 0 rgba(0, 240, 255, 0.75);
+  animation: textGlitch 2.5s infinite;
+}
+
+@keyframes textGlitch {
+  0%, 95%, 100% {
+    text-shadow: 0.05em 0 0 rgba(255, 0, 127, 0.75), -0.025em -0.05em 0 rgba(0, 240, 255, 0.75);
+  }
+  96% {
+    text-shadow: -0.05em -0.025em 0 rgba(255, 0, 127, 0.75), 0.025em 0.025em 0 rgba(0, 240, 255, 0.75);
+  }
+  97% {
+    text-shadow: 0.025em 0.05em 0 rgba(255, 0, 127, 0.75), -0.05em -0.025em 0 rgba(0, 240, 255, 0.75);
+  }
+  99% {
+    text-shadow: -0.025em -0.05em 0 rgba(255, 0, 127, 0.75), 0.05em 0.025em 0 rgba(0, 240, 255, 0.75);
+  }
+}
+
 
