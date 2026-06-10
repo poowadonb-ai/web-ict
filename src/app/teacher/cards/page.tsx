@@ -14,45 +14,50 @@ import {
 } from "lucide-react";
 import styles from "./page.module.css";
 
-// ─── Image Compression (Canvas API, client-side) ──────────────────────────────
-async function compressImage(
+// ─── Image Compress → Data URL (works on Vercel & local, no server needed) ────────────
+type CompressResult = { dataUrl: string; originalKB: number; finalKB: number };
+
+async function compressToDataUrl(
   file: File,
   maxDim = 800,
   quality = 0.82
-): Promise<File> {
-  return new Promise((resolve) => {
+): Promise<CompressResult> {
+  return new Promise((resolve, reject) => {
+    const originalKB = Math.round(file.size / 1024);
     const img = new Image();
-    const url = URL.createObjectURL(file);
+    const blobUrl = URL.createObjectURL(file);
+
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(blobUrl);
       let { width, height } = img;
+      // Scale down if bigger than maxDim
       if (width > maxDim || height > maxDim) {
-        if (width > height) { height = Math.round((height * maxDim) / width); width = maxDim; }
-        else { width = Math.round((width * maxDim) / height); height = maxDim; }
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
       }
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) { resolve(file); return; }
+      if (!ctx) { reject(new Error("Canvas not supported")); return; }
       ctx.drawImage(img, 0, 0, width, height);
-      // Prefer WebP, fall back to JPEG
+
+      // Prefer WebP (smaller), fall back to JPEG
       const mimeType = canvas.toDataURL("image/webp").startsWith("data:image/webp")
         ? "image/webp"
         : "image/jpeg";
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) { resolve(file); return; }
-          const ext = mimeType === "image/webp" ? "webp" : "jpg";
-          const newName = file.name.replace(/\.[^.]+$/, `.${ext}`);
-          resolve(new File([blob], newName, { type: mimeType }));
-        },
-        mimeType,
-        quality
-      );
+      const dataUrl = canvas.toDataURL(mimeType, quality);
+      // Estimate final size (base64 overhead ~33%)
+      const finalKB = Math.round((dataUrl.length * 3) / 4 / 1024);
+      resolve({ dataUrl, originalKB, finalKB });
     };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    img.src = url;
+    img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error("Image load failed")); };
+    img.src = blobUrl;
   });
 }
 
@@ -262,38 +267,34 @@ export default function TeacherCardsPage() {
     const file = e.target.files?.[0];
     if (!file || !editingCard) return;
 
+    // Validate type
+    if (!file.type.startsWith("image/")) {
+      alert("รองรับเฉพาะไฟล์ภาพเท่านั้น");
+      return;
+    }
+
     setCompressionInfo("");
-    // Local preview immediately
-    setPreviewUrl(URL.createObjectURL(file));
-
+    // Show instant preview from original file
+    const previewBlobUrl = URL.createObjectURL(file);
+    setPreviewUrl(previewBlobUrl);
     setUploadingImg(true);
+
     try {
-      // ── Compress before upload ──────────────────────────────────────────
-      const originalKB = Math.round(file.size / 1024);
-      const compressed = await compressImage(file, 800, 0.82);
-      const compressedKB = Math.round(compressed.size / 1024);
-      const saved = Math.round((1 - compressed.size / file.size) * 100);
+      // ── Compress → Data URL (no server needed, works on Vercel) ────────────
+      const { dataUrl, originalKB, finalKB } = await compressToDataUrl(file, 800, 0.82);
+      const saved = Math.round((1 - finalKB / originalKB) * 100);
+
       if (saved > 0) {
-        setCompressionInfo(`ย่อขนาดแล้ว: ${originalKB} KB → ${compressedKB} KB (ลด ${saved}%)`);
+        setCompressionInfo(`ย่อขนาดแล้ว: ${originalKB} KB → ${finalKB} KB (ลด ${saved}%)`);
       }
 
-      // Update local preview with compressed version
-      setPreviewUrl(URL.createObjectURL(compressed));
-
-      // Upload compressed file
-      const fd = new FormData();
-      fd.append("file", compressed);
-      fd.append("cardId", editingCard.id);
-      const res = await fetch("/api/cards/upload", { method: "POST", body: fd });
-      const json = await res.json();
-      if (json.imageUrl) {
-        setEditForm(prev => ({ ...prev, imageUrl: json.imageUrl }));
-        setPreviewUrl(json.imageUrl);
-      } else {
-        alert(json.error || "อัปโหลดไม่สำเร็จ");
-      }
-    } catch {
-      alert("เกิดข้อผิดพลาดในการอัปโหลด");
+      // Revoke old blob URL and use data URL as the actual value
+      URL.revokeObjectURL(previewBlobUrl);
+      setPreviewUrl(dataUrl);
+      setEditForm(prev => ({ ...prev, imageUrl: dataUrl }));
+    } catch (err) {
+      console.error("Compress error:", err);
+      alert("ไม่สามารถประมวลผลภาพได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setUploadingImg(false);
     }
