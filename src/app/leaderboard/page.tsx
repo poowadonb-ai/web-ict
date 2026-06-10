@@ -170,14 +170,18 @@ export default function LeaderboardPage() {
               return (
                 <tr key={entry.student.uid} className={isMe ? styles.myRow : ""}>
                   <td className={styles.rankCell}>
-                    {idx === 0 && <Crown size={18} style={{ color: "#fbbf24" }} />}
-                    {idx === 1 && <Medal size={18} style={{ color: "#d1d5db" }} />}
-                    {idx === 2 && <Medal size={18} style={{ color: "#cd7c3a" }} />}
-                    {idx > 2 && <span className={styles.rankNum}>#{idx + 1}</span>}
+                    <div className={styles.rankWrapper}>
+                      {idx === 0 && <Crown size={18} style={{ color: "#fbbf24" }} />}
+                      {idx === 1 && <Medal size={18} style={{ color: "#d1d5db" }} />}
+                      {idx === 2 && <Medal size={18} style={{ color: "#cd7c3a" }} />}
+                      {idx > 2 && <span className={styles.rankNum}>#{idx + 1}</span>}
+                    </div>
                   </td>
                   <td className={styles.nameCell}>
-                    {entry.student.fullName}
-                    {isMe && <span className={styles.meBadge}>คุณ</span>}
+                    <div className={styles.nameWrapper}>
+                      {entry.student.fullName}
+                      {isMe && <span className={styles.meBadge}>คุณ</span>}
+                    </div>
                   </td>
                   <td>ม.4/{entry.student.room}</td>
                   <td className={styles.holoCell}>{entry.holoCount > 0 ? `✨ ${entry.holoCount}` : "-"}</td>

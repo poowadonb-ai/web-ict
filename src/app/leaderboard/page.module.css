@@ -208,6 +208,10 @@
 }
 
 .rankCell {
+  text-align: center;
+}
+
+.rankWrapper {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -222,6 +226,9 @@
 .nameCell {
   text-align: left;
   font-weight: 600;
+}
+
+.nameWrapper {
   display: flex;
   align-items: center;
   gap: 8px;
