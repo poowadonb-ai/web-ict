@@ -45,6 +45,7 @@ export interface UserProfile {
   cardsCollected?: CardCollected[];
   packsCount?: number;
   bonusPoints?: number;
+  lastLoginDate?: string;
 }
 
 export interface Lesson {
@@ -615,6 +616,16 @@ class MockDbService {
       status: "pending"
     };
 
+    // Reward: 1 Pack for submitting
+    const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
+    if (user.email && profiles[user.email]) {
+      profiles[user.email].packsCount = (profiles[user.email].packsCount || 0) + 1;
+      this.setItem("mock_profiles", profiles);
+      const updatedUser = { ...user, packsCount: profiles[user.email].packsCount };
+      this.setItem("mock_current_user", updatedUser);
+      this.emit("authChange", updatedUser);
+    }
+
     this.setItem("mock_submissions", [newSubmission, ...allSubmissions]);
   }
 
@@ -822,11 +833,11 @@ class MockDbService {
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 3) {
+      if (rand < 1) {
         selectedRarity = "legendary";
-      } else if (rand < 17) {
+      } else if (rand < 8) {
         selectedRarity = "epic";
-      } else if (rand < 45) {
+      } else if (rand < 23) {
         selectedRarity = "rare";
       } else {
         selectedRarity = "common";
@@ -1082,9 +1093,9 @@ class MockDbService {
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 3) selectedRarity = "legendary";
-      else if (rand < 17) selectedRarity = "epic";
-      else if (rand < 45) selectedRarity = "rare";
+      if (rand < 1) selectedRarity = "legendary";
+      else if (rand < 8) selectedRarity = "epic";
+      else if (rand < 23) selectedRarity = "rare";
       else selectedRarity = "common";
       const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
@@ -1196,9 +1207,28 @@ export const authService = {
 
   onAuthStateChanged: (callback: (user: UserProfile | null) => void) => {
     if (isMockMode()) {
-      callback(mockDb.currentUser);
-      return mockDb.subscribe("authChange", (user: UserProfile | null) => {
+      const handleMockUser = (user: UserProfile | null) => {
+        if (user && user.role === "student" && user.isRegistered) {
+          const today = new Date().toISOString().split('T')[0];
+          if (user.lastLoginDate !== today) {
+            const profiles = mockDb.getItem<{ [email: string]: any }>("mock_profiles", {});
+            const profile = profiles[user.email || ""] || {};
+            profile.packsCount = (profile.packsCount || 0) + 1;
+            profile.lastLoginDate = today;
+            profiles[user.email || ""] = profile;
+            mockDb.setItem("mock_profiles", profiles);
+            
+            user.packsCount = profile.packsCount;
+            user.lastLoginDate = today;
+            mockDb.setItem("mock_current_user", user);
+          }
+        }
         callback(user);
+      };
+
+      handleMockUser(mockDb.currentUser);
+      return mockDb.subscribe("authChange", (user: UserProfile | null) => {
+        handleMockUser(user);
       });
     }
 
@@ -1219,6 +1249,16 @@ export const authService = {
 
       if (userSnap.exists()) {
         const data = userSnap.data();
+        let packsCount = data.packsCount || 0;
+        let lastLoginDate = data.lastLoginDate;
+        
+        const today = new Date().toISOString().split('T')[0];
+        if (data.role === "student" && lastLoginDate !== today) {
+           packsCount += 1;
+           lastLoginDate = today;
+           updateDoc(userDocRef, { packsCount, lastLoginDate }).catch(console.error);
+        }
+
         callback({
           uid: user.uid,
           email: user.email,
@@ -1228,7 +1268,9 @@ export const authService = {
           fullName: data.fullName,
           grade: data.grade,
           room: data.room,
-          studentNo: data.studentNo
+          studentNo: data.studentNo,
+          packsCount,
+          lastLoginDate
         });
       } else {
         const newUser: UserProfile = {
@@ -1450,6 +1492,13 @@ export const submissionService = {
       members,
       status: "pending"
     });
+
+    // Reward: 1 Pack for submitting
+    const userDocRef = doc(db, "users", currentUserProfile.uid);
+    const { increment } = await import("firebase/firestore");
+    await updateDoc(userDocRef, {
+      packsCount: increment(1)
+    });
   },
 
   deleteSubmission: async (submissionId: string): Promise<void> => {
@@ -1618,11 +1667,11 @@ export const cardService = {
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 3) {
+      if (rand < 1) {
         selectedRarity = "legendary";
-      } else if (rand < 17) {
+      } else if (rand < 8) {
         selectedRarity = "epic";
-      } else if (rand < 45) {
+      } else if (rand < 23) {
         selectedRarity = "rare";
       } else {
         selectedRarity = "common";
@@ -1785,9 +1834,9 @@ export const cardService = {
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" = "common";
-      if (rand < 3) selectedRarity = "legendary";
-      else if (rand < 17) selectedRarity = "epic";
-      else if (rand < 45) selectedRarity = "rare";
+      if (rand < 1) selectedRarity = "legendary";
+      else if (rand < 8) selectedRarity = "epic";
+      else if (rand < 23) selectedRarity = "rare";
       else selectedRarity = "common";
       const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];

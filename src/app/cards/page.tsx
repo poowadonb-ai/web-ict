@@ -28,6 +28,12 @@ export default function StudentCardsPage() {
   const [redeemLoading, setRedeemLoading] = useState(false);
   const [exchangeLoading, setExchangeLoading] = useState(false);
 
+  // Exchange Gacha states
+  const [isExchangeMode, setIsExchangeMode] = useState(false);
+  const [isExchangingPack, setIsExchangingPack] = useState(false);
+  const [exchangeResultCard, setExchangeResultCard] = useState<Card | null>(null);
+  const [exchangeCardFlipped, setExchangeCardFlipped] = useState(false);
+
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "student")) {
       router.push("/classroom");
@@ -128,20 +134,37 @@ export default function StudentCardsPage() {
 
   const handleExchangeCommonCards = async () => {
     if (!user) return;
-    setExchangeLoading(true);
+    setIsExchangeMode(true);
+    setIsExchangingPack(true);
+    setExchangeResultCard(null);
+    setExchangeCardFlipped(false);
+
     try {
+      // Fake delay for animation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const newCard = await cardService.exchangeCommonCards(user.uid);
       if (newCard) {
+        setExchangeResultCard(newCard);
         setSuccessRedeemMsg(`🎉 ยินดีด้วย! คุณได้รับการ์ดใหม่จากการย่อยการ์ด: ${newCard.name}`);
         setTimeout(() => setSuccessRedeemMsg(""), 6000);
-        await loadData();
+      } else {
+        setIsExchangeMode(false);
       }
     } catch (err: any) {
       console.error("Error exchanging cards:", err);
       alert(err.message || "เกิดข้อผิดพลาดในการย่อยการ์ด");
+      setIsExchangeMode(false);
     } finally {
-      setExchangeLoading(false);
+      setIsExchangingPack(false);
     }
+  };
+
+  const handleCloseExchange = async () => {
+    setIsExchangeMode(false);
+    setExchangeResultCard(null);
+    setExchangeCardFlipped(false);
+    await loadData();
   };
 
   // Helper: check card counts
@@ -281,6 +304,77 @@ export default function StudentCardsPage() {
         </div>
       )}
 
+      {/* Exchange Gacha Opening overlay */}
+      {isExchangeMode && (
+        <div className={styles.gachaOverlay}>
+          <div className={styles.gachaContainer}>
+            {isExchangingPack ? (
+              <div className={styles.lootboxArea}>
+                <div className={`${styles.lootbox} ${styles.shaking}`}>♻️</div>
+                <h2>กำลังนำการ์ด 5 ใบไปหลอมรวม...</h2>
+                <p>ลุ้นรับการ์ดใบใหม่ที่อาจจะแรร์กว่าเดิม!</p>
+                <div className={styles.spinner}></div>
+              </div>
+            ) : exchangeResultCard ? (
+              <div className={styles.revealArea}>
+                <h2>หลอมการ์ดสำเร็จ! คลิกเพื่อดูการ์ดใหม่ของคุณ</h2>
+                
+                <div className={styles.gachaCardsGrid} style={{ display: 'flex', justifyContent: 'center' }}>
+                  {(() => {
+                    const card = exchangeResultCard;
+                    let rarityClass = styles.rarityCommon;
+                    let rarityText = "ทั่วไป";
+                    if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
+                    else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
+                    else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
+
+                    return (
+                      <div 
+                        className={`${styles.cardFlipContainer} ${exchangeCardFlipped ? styles.flipped : ""}`}
+                        onClick={() => setExchangeCardFlipped(true)}
+                        style={{ maxWidth: '280px', width: '100%' }}
+                      >
+                        <div className={styles.cardInner}>
+                          {/* Card Back */}
+                          <div className={styles.cardBack}>
+                            <div className={styles.cardBackDesign}>
+                              <div className={styles.cardBackLogo}>♻️</div>
+                              <p>NEW CARD</p>
+                            </div>
+                          </div>
+                          
+                          {/* Card Front */}
+                          <div className={`${styles.cardFront} ${rarityClass}`}>
+                            <div className={styles.cardOverlay}></div>
+                            <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                            <div className={styles.cardBody}>
+                              <div className={styles.cardHeader}>
+                                <span className={styles.cardRarityBadge}>{rarityText}</span>
+                                {card.bonusPoints > 0 && (
+                                  <span className={styles.cardPointsBadge}>+{card.bonusPoints} Pt</span>
+                                )}
+                              </div>
+                              <h3 className={styles.cardTitle}>{card.name}</h3>
+                              <p className={styles.cardDesc}>{card.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {exchangeCardFlipped && (
+                  <button onClick={handleCloseExchange} className={styles.closeGachaBtn}>
+                    🎒 เก็บเข้าคลังสะสม
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       {/* Main Panel */}
       <div className={styles.mainGrid}>
         {/* Left Side: Packs & Statistics */}
@@ -380,7 +474,7 @@ export default function StudentCardsPage() {
             <button 
               className="btn-primary"
               onClick={handleExchangeCommonCards}
-              disabled={exchangeLoading || totalCommonAvailable < 5}
+              disabled={isExchangeMode || totalCommonAvailable < 5}
               style={{ display: "flex", gap: "8px", alignItems: "center", padding: "8px 16px", opacity: totalCommonAvailable < 5 ? 0.5 : 1, background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", border: "none" }}
             >
               <RefreshCw size={16} />
