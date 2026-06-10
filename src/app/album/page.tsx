@@ -38,6 +38,7 @@ export default function AlbumPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [filterRarity, setFilterRarity] = useState<string>("all");
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "student")) {
@@ -163,14 +164,19 @@ export default function AlbumPage() {
               {/* Card Image or Silhouette */}
               <div className={styles.cardImageArea}>
                 {hasCard ? (
-                  card.imageUrl === "__HOLOGRAPHIC__" ? (
+                  card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
                     <div className={styles.cyberHoloFallback}>
                       <div className={styles.cyberGrid} />
                       <div className={styles.cyberHoloRing} />
                       <div className={styles.cyberHoloSymbol}>✨</div>
                     </div>
                   ) : (
-                    <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                    <img 
+                      src={card.imageUrl} 
+                      alt={card.name} 
+                      className={styles.cardImg} 
+                      onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
+                    />
                   )
                 ) : (
                   <div className={styles.silhouette}>

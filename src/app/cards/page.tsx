@@ -35,6 +35,7 @@ export default function StudentCardsPage() {
   const [isOpeningPack, setIsOpeningPack] = useState(false);
   const [openedCards, setOpenedCards] = useState<Card[]>([]);
   const [flippedCards, setFlippedCards] = useState<boolean[]>([false, false, false]);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isGachaMode, setIsGachaMode] = useState(false);
 
   // Modal / Detail state
@@ -349,14 +350,19 @@ export default function StudentCardsPage() {
                             <div className={styles.shineSweep} />
                             <div className={styles.cardOverlay}></div>
                             
-                            {card.imageUrl === "__HOLOGRAPHIC__" ? (
+                            {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
                               <div className={styles.cyberHoloFallback}>
                                 <div className={styles.cyberGrid} />
                                 <div className={styles.cyberHoloRing} />
                                 <div className={styles.cyberHoloSymbol}>✨</div>
                               </div>
                             ) : (
-                              <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                              <img 
+                                src={card.imageUrl} 
+                                alt={card.name} 
+                                className={styles.cardImg} 
+                                onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
+                              />
                             )}
 
                             <div className={styles.cardBody}>
@@ -445,14 +451,19 @@ export default function StudentCardsPage() {
                             <div className={styles.shineSweep} />
                             <div className={styles.cardOverlay}></div>
 
-                            {card.imageUrl === "__HOLOGRAPHIC__" ? (
+                            {card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
                               <div className={styles.cyberHoloFallback}>
                                 <div className={styles.cyberGrid} />
                                 <div className={styles.cyberHoloRing} />
                                 <div className={styles.cyberHoloSymbol}>✨</div>
                               </div>
                             ) : (
-                              <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                              <img 
+                                src={card.imageUrl} 
+                                alt={card.name} 
+                                className={styles.cardImg} 
+                                onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
+                              />
                             )}
 
                             <div className={styles.cardBody}>
@@ -637,14 +648,19 @@ export default function StudentCardsPage() {
                   </div>
                   
                   {isOwned ? (
-                    card.imageUrl === "__HOLOGRAPHIC__" ? (
+                    card.imageUrl === "__HOLOGRAPHIC__" || imageErrors[card.id] ? (
                       <div className={styles.cyberHoloFallback}>
                         <div className={styles.cyberGrid} />
                         <div className={styles.cyberHoloRing} />
                         <div className={styles.cyberHoloSymbol}>✨</div>
                       </div>
                     ) : (
-                      <img src={card.imageUrl} alt={card.name} className={styles.cardImg} />
+                      <img 
+                        src={card.imageUrl} 
+                        alt={card.name} 
+                        className={styles.cardImg} 
+                        onError={() => setImageErrors(prev => ({ ...prev, [card.id]: true }))}
+                      />
                     )
                   ) : (
                     <div className={styles.silhouetteArea}>
@@ -713,14 +729,19 @@ export default function StudentCardsPage() {
                     <div className={styles.shineSweep} />
                     <div className={styles.cardOverlay}></div>
 
-                    {selectedCard.imageUrl === "__HOLOGRAPHIC__" ? (
+                    {selectedCard.imageUrl === "__HOLOGRAPHIC__" || imageErrors[selectedCard.id] ? (
                       <div className={styles.cyberHoloFallback} style={{ minHeight: '360px' }}>
                         <div className={styles.cyberGrid} />
                         <div className={styles.cyberHoloRing} style={{ width: '130px', height: '130px' }} />
                         <div className={styles.cyberHoloSymbol} style={{ fontSize: '3.6rem' }}>✨</div>
                       </div>
                     ) : (
-                      <img src={selectedCard.imageUrl} alt={selectedCard.name} className={styles.bigCardImg} />
+                      <img 
+                        src={selectedCard.imageUrl} 
+                        alt={selectedCard.name} 
+                        className={styles.bigCardImg} 
+                        onError={() => setImageErrors(prev => ({ ...prev, [selectedCard.id]: true }))}
+                      />
                     )}
 
                     <div className={styles.bigCardHeader}>

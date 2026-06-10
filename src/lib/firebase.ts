@@ -256,7 +256,7 @@ export const CARD_POOL: Card[] = [
     id: "card-13",
     name: "สายฮีลลิ่ง (Coffee IV Drip)",
     rarity: "epic",
-    imageUrl: "/cards/meme_epic.png",
+    imageUrl: "/cards/card_coffee_iv.png",
     description: "เจาะสายน้ำเกลือเติมกาแฟเข้าเส้นเลือด เพื่อปั่นโปรเจกต์โต้รุ่ง (+2 คะแนนโบนัส)",
     bonusPoints: 2,
     type: "bonus"
