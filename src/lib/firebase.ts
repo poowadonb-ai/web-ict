@@ -1182,13 +1182,15 @@ class MockDbService {
 
     profiles[foundEmail].cardsCollected = coll.filter((item: any) => item.count > 0 || item.redeemedCount > 0);
 
+    // Exchange odds — 2x better than normal gacha packs:
+    // Holographic 0.4% | Legendary 1.0% | Epic 6% | Rare 20% | Common ~72.6%
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
-      if (rand < 0.2) selectedRarity = "holographic";
-      else if (rand < 0.7) selectedRarity = "legendary";
-      else if (rand < 3.7) selectedRarity = "epic";
-      else if (rand < 13.7) selectedRarity = "rare";
+      if (rand < 0.4) selectedRarity = "holographic";
+      else if (rand < 1.4) selectedRarity = "legendary";
+      else if (rand < 7.4) selectedRarity = "epic";
+      else if (rand < 27.4) selectedRarity = "rare";
       else selectedRarity = "common";
       const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
@@ -1982,13 +1984,15 @@ export const cardService = {
     const { doc, runTransaction } = await import("firebase/firestore");
     const userRef = doc(db, "users", studentUid);
 
+    // Exchange odds — 2x better than normal gacha packs:
+    // Holographic 0.4% | Legendary 1.0% | Epic 6% | Rare 20% | Common ~72.6%
     const drawRandomCard = (): Card => {
       const rand = Math.random() * 100;
       let selectedRarity: "common" | "rare" | "epic" | "legendary" | "holographic" = "common";
-      if (rand < 0.2) selectedRarity = "holographic";
-      else if (rand < 0.7) selectedRarity = "legendary";
-      else if (rand < 3.7) selectedRarity = "epic";
-      else if (rand < 13.7) selectedRarity = "rare";
+      if (rand < 0.4) selectedRarity = "holographic";
+      else if (rand < 1.4) selectedRarity = "legendary";
+      else if (rand < 7.4) selectedRarity = "epic";
+      else if (rand < 27.4) selectedRarity = "rare";
       else selectedRarity = "common";
       const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
