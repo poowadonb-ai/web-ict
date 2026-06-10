@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { authService, CARD_POOL, UserProfile } from "@/lib/firebase";
+import { authService, getCardPool, syncCardsFromFirestore, UserProfile } from "@/lib/firebase";
 import { Trophy, Medal, Star, Crown, RefreshCw, Filter } from "lucide-react";
 import styles from "./page.module.css";
 
@@ -21,7 +21,7 @@ function getCardCounts(student: UserProfile) {
   const cards = student.cardsCollected || [];
   let holo = 0, legendary = 0, epic = 0, rare = 0, common = 0;
   cards.forEach((c) => {
-    const card = CARD_POOL.find((p) => p.id === c.cardId);
+    const card = getCardPool().find((p) => p.id === c.cardId);
     if (!card) return;
     const count = c.count || 0;
     if (card.rarity === "holographic") holo += count;
@@ -47,6 +47,7 @@ export default function LeaderboardPage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      await syncCardsFromFirestore();
       const students = await authService.getRegisteredStudents();
       const ranked: LeaderboardEntry[] = students.map((s) => {
         const counts = getCardCounts(s);

@@ -315,6 +315,7 @@ export function updateCardInPool(cardId: string, updates: Partial<Card>): void {
     const overrides: Record<string, Partial<Card>> = stored ? JSON.parse(stored) : {};
     overrides[cardId] = { ...(overrides[cardId] || {}), ...updates };
     localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+    saveCardsToFirestore();
   } catch (e) {
     console.error("updateCardInPool error:", e);
   }
@@ -328,13 +329,15 @@ export function resetCardInPool(cardId?: string): void {
   try {
     if (!cardId) {
       localStorage.removeItem(CARD_POOL_STORAGE_KEY);
-      return;
+    } else {
+      const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+      if (stored) {
+        const overrides: Record<string, Partial<Card>> = JSON.parse(stored);
+        delete overrides[cardId];
+        localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+      }
     }
-    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
-    if (!stored) return;
-    const overrides: Record<string, Partial<Card>> = JSON.parse(stored);
-    delete overrides[cardId];
-    localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+    saveCardsToFirestore();
   } catch (e) {
     console.error("resetCardInPool error:", e);
   }
@@ -380,6 +383,7 @@ export function addCustomCard(card: Card): void {
     if (existing.find(c => c.id === card.id)) return;
     existing.push(card);
     localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+    saveCardsToFirestore();
   } catch (e) {
     console.error("addCustomCard error:", e);
   }
@@ -394,6 +398,7 @@ export function updateCustomCard(cardId: string, updates: Partial<Card>): void {
     if (idx === -1) return;
     existing[idx] = { ...existing[idx], ...updates };
     localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+    saveCardsToFirestore();
   } catch (e) {
     console.error("updateCustomCard error:", e);
   }
@@ -405,6 +410,7 @@ export function removeCustomCard(cardId: string): void {
   try {
     const existing = getCustomCards().filter(c => c.id !== cardId);
     localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+    saveCardsToFirestore();
   } catch (e) {
     console.error("removeCustomCard error:", e);
   }
@@ -463,8 +469,43 @@ if (isFirebaseConfigured) {
 
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
   googleProvider = new GoogleAuthProvider();
+}
+
+/** Sync card pool overrides and custom cards to Firestore if configured. */
+export async function saveCardsToFirestore(): Promise<void> {
+  if (typeof window === "undefined" || !isFirebaseConfigured || !db) return;
+  try {
+    const { doc, setDoc } = await import("firebase/firestore");
+    const docRef = doc(db, "settings", "cards");
+    const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
+    const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
+    await setDoc(docRef, { overrides, custom }, { merge: true });
+  } catch (e) {
+    console.error("saveCardsToFirestore error:", e);
+  }
+}
+
+/** Sync card pool overrides and custom cards from Firestore to LocalStorage. */
+export async function syncCardsFromFirestore(): Promise<void> {
+  if (typeof window === "undefined" || !isFirebaseConfigured || !db) return;
+  try {
+    const { doc, getDoc } = await import("firebase/firestore");
+    const docRef = doc(db, "settings", "cards");
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.overrides) {
+        localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(data.overrides));
+      }
+      if (data.custom) {
+        localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(data.custom));
+      }
+      window.dispatchEvent(new Event("storage"));
+    }
+  } catch (e) {
+    console.error("syncCardsFromFirestore error:", e);
+  }
 }
 
 // -------------------------------------------------------------
@@ -1051,7 +1092,12 @@ class MockDbService {
         selectedRarity = "common";
       }
 
-      const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+      const activePool = getCardPool();
+      const matchingCards = activePool.filter(c => c.rarity === selectedRarity);
+      if (matchingCards.length === 0) {
+        const fallbackCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+        return fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
+      }
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
     };
 
@@ -1116,7 +1162,7 @@ class MockDbService {
       return null;
     }
 
-    const card = CARD_POOL.find(c => c.id === cardId);
+    const card = getCardPool().find(c => c.id === cardId);
     if (!card) return null;
 
     const allRedemptions = this.getItem<RedemptionRequest[]>("mock_redemptions", []);
@@ -1272,9 +1318,10 @@ class MockDbService {
 
     const coll = profiles[foundEmail].cardsCollected || [];
     
+    const activePool = getCardPool();
     let commonAvailable = 0;
     coll.forEach((item: any) => {
-      const card = CARD_POOL.find(c => c.id === item.cardId);
+      const card = activePool.find(c => c.id === item.cardId);
       if (card && card.rarity === "common") {
         commonAvailable += (item.count || 0) - (item.redeemedCount || 0);
       }
@@ -1285,7 +1332,7 @@ class MockDbService {
     let toDeduct = 5;
     for (const item of coll) {
       if (toDeduct <= 0) break;
-      const card = CARD_POOL.find(c => c.id === item.cardId);
+      const card = activePool.find(c => c.id === item.cardId);
       if (card && card.rarity === "common") {
         const available = (item.count || 0) - (item.redeemedCount || 0);
         if (available > 0) {
@@ -1308,7 +1355,12 @@ class MockDbService {
       else if (rand < 7.4) selectedRarity = "epic";
       else if (rand < 27.4) selectedRarity = "rare";
       else selectedRarity = "common";
-      const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+      const activePool = getCardPool();
+      const matchingCards = activePool.filter(c => c.rarity === selectedRarity);
+      if (matchingCards.length === 0) {
+        const fallbackCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+        return fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
+      }
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
     };
 
@@ -1450,6 +1502,13 @@ export const authService = {
       if (!user) {
         callback(null);
         return;
+      }
+
+      // Sync card definitions from Firestore
+      try {
+        await syncCardsFromFirestore();
+      } catch (err) {
+        console.error("Error syncing cards on auth state change:", err);
       }
 
       const userDocRef = doc(db, "users", user.uid);
@@ -1948,7 +2007,12 @@ export const cardService = {
       } else {
         selectedRarity = "common";
       }
-      const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+      const activePool = getCardPool();
+      const matchingCards = activePool.filter(c => c.rarity === selectedRarity);
+      if (matchingCards.length === 0) {
+        const fallbackCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+        return fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
+      }
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
     };
 
@@ -1986,7 +2050,7 @@ export const cardService = {
 
     const { doc, collection, addDoc, runTransaction } = await import("firebase/firestore");
     const userRef = doc(db, "users", studentUid);
-    const card = CARD_POOL.find(c => c.id === cardId);
+    const card = getCardPool().find(c => c.id === cardId);
     if (!card) return null;
 
     let newReq: RedemptionRequest | null = null;
@@ -2113,7 +2177,12 @@ export const cardService = {
       else if (rand < 7.4) selectedRarity = "epic";
       else if (rand < 27.4) selectedRarity = "rare";
       else selectedRarity = "common";
-      const matchingCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+      const activePool = getCardPool();
+      const matchingCards = activePool.filter(c => c.rarity === selectedRarity);
+      if (matchingCards.length === 0) {
+        const fallbackCards = CARD_POOL.filter(c => c.rarity === selectedRarity);
+        return fallbackCards[Math.floor(Math.random() * fallbackCards.length)];
+      }
       return matchingCards[Math.floor(Math.random() * matchingCards.length)];
     };
 
@@ -2124,10 +2193,11 @@ export const cardService = {
       if (!snap.exists()) throw new Error("Student profile not found");
       
       const coll = snap.data().cardsCollected || [];
+      const activePool = getCardPool();
       
       let commonAvailable = 0;
       coll.forEach((item: any) => {
-        const card = CARD_POOL.find(c => c.id === item.cardId);
+        const card = activePool.find(c => c.id === item.cardId);
         if (card && card.rarity === "common") {
           commonAvailable += (item.count || 0) - (item.redeemedCount || 0);
         }
@@ -2140,7 +2210,7 @@ export const cardService = {
       let toDeduct = 5;
       for (const item of coll) {
         if (toDeduct <= 0) break;
-        const card = CARD_POOL.find(c => c.id === item.cardId);
+        const card = activePool.find(c => c.id === item.cardId);
         if (card && card.rarity === "common") {
           const available = (item.count || 0) - (item.redeemedCount || 0);
           if (available > 0) {

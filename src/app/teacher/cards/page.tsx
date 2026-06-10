@@ -66,11 +66,19 @@ type ActiveTab = "distribute" | "requests" | "manage";
 
 // ─── Rarity helpers ───────────────────────────────────────────────────────────
 const RARITY_LABELS: Record<string, string> = {
-  common: "ทั่วไป (Common)",
-  rare: "หายาก (Rare)",
-  epic: "มหากาพย์ (Epic)",
-  legendary: "ตำนาน (Legendary)",
-  holographic: "โฮโลกราฟิก (Holo)"
+  common: "B (Common)",
+  rare: "A (Rare)",
+  epic: "S (Epic)",
+  legendary: "SS (Legendary)",
+  holographic: "SSS (Mythic / Divine)"
+};
+
+const RARITY_SHORT: Record<string, string> = {
+  common: "B",
+  rare: "A",
+  epic: "S",
+  legendary: "SS",
+  holographic: "SSS"
 };
 
 const RARITY_CSS: Record<string, string> = {
@@ -566,11 +574,12 @@ export default function TeacherCardsPage() {
                 </thead>
                 <tbody>
                   {pendingRequests.map(req => {
-                    let rarityText = "ทั่วไป";
+                    let rarityText = "B";
                     let rarityClass = styles.rarityCommon;
-                    if (req.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
-                    else if (req.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
-                    else if (req.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
+                    if (req.rarity === "rare") { rarityText = "A"; rarityClass = styles.rarityRare; }
+                    else if (req.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; }
+                    else if (req.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; }
+                    else if (req.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolo; }
                     return (
                       <tr key={req.id}>
                         <td style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
@@ -655,7 +664,7 @@ export default function TeacherCardsPage() {
                   {/* Info */}
                   <div className={styles.manageCardInfo}>
                     <span className={`${styles.rarityBadge} ${RARITY_CSS[card.rarity] || styles.rarityCommon}`}>
-                      {card.rarity.toUpperCase()}
+                      {RARITY_SHORT[card.rarity] || card.rarity.toUpperCase()}
                     </span>
                     <p className={styles.manageCardName}>{card.name}</p>
                     <p className={styles.manageCardDesc}>{card.description}</p>

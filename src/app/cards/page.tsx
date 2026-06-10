@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService, cardService, CARD_POOL, Card, UserProfile, RedemptionRequest } from "@/lib/firebase";
+import { authService, cardService, getCardPool, syncCardsFromFirestore, Card, UserProfile, RedemptionRequest } from "@/lib/firebase";
 import { Sparkles, Gift, Award, CheckCircle, RefreshCw, X, ShieldAlert } from "lucide-react";
 import { audioSynth } from "@/lib/audioSynth";
 import styles from "./page.module.css";
@@ -61,6 +61,7 @@ export default function StudentCardsPage() {
     if (!user) return;
     setLoading(true);
     try {
+      await syncCardsFromFirestore();
       const fetchedStudents = await authService.getRegisteredStudents();
       const me = fetchedStudents.find(s => s.uid === user.uid) || null;
       setStudentProfile(me);
@@ -235,14 +236,14 @@ export default function StudentCardsPage() {
     return item?.redeemedCount || 0;
   };
 
-  // Filter CARD_POOL
-  const filteredCards = CARD_POOL.filter(card => {
+  // Filter getCardPool()
+  const filteredCards = getCardPool().filter(card => {
     if (activeFilter === "all") return true;
     return card.rarity === activeFilter;
   });
 
   const totalCommonAvailable = (studentProfile?.cardsCollected || []).reduce((acc, item) => {
-    const c = CARD_POOL.find(card => card.id === item.cardId);
+    const c = getCardPool().find(card => card.id === item.cardId);
     if (c && c.rarity === "common") {
       return acc + ((item.count || 0) - (item.redeemedCount || 0));
     }
@@ -284,17 +285,17 @@ export default function StudentCardsPage() {
       {studentProfile && (() => {
         const coll = studentProfile.cardsCollected || [];
         const countByRarity = (r: string) => coll.reduce((acc, item) => {
-          const card = CARD_POOL.find(c => c.id === item.cardId);
+          const card = getCardPool().find(c => c.id === item.cardId);
           return card?.rarity === r ? acc + (item.count || 0) : acc;
         }, 0);
         const totalOwned = coll.reduce((acc, item) => acc + (item.count || 0), 0);
-        const uniqueOwned = CARD_POOL.filter(c => coll.some(item => item.cardId === c.id && (item.count || 0) > 0)).length;
-        const completionPct = Math.round((uniqueOwned / CARD_POOL.length) * 100);
+        const uniqueOwned = getCardPool().filter(c => coll.some(item => item.cardId === c.id && (item.count || 0) > 0)).length;
+        const completionPct = Math.round((uniqueOwned / getCardPool().length) * 100);
         return (
           <div className={`${styles.statsPanel} glass-container`} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "16px", padding: "20px 24px", borderRadius: "16px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>อัลบั้ม</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--accent-cyan)" }}>{uniqueOwned}/{CARD_POOL.length}</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--accent-cyan)" }}>{uniqueOwned}/{getCardPool().length}</div>
               <div style={{ height: "4px", borderRadius: "4px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${completionPct}%`, background: "linear-gradient(90deg, var(--accent-cyan), var(--accent-purple))", borderRadius: "4px" }} />
               </div>
@@ -353,11 +354,11 @@ export default function StudentCardsPage() {
                 <div className={styles.gachaCardsGrid}>
                   {openedCards.map((card, idx) => {
                     let rarityClass = styles.rarityCommon;
-                    let rarityText = "ทั่วไป";
-                    if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
-                    else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
-                    else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
+                    let rarityText = "B";
+                    if (card.rarity === "rare") { rarityText = "A"; rarityClass = styles.rarityRare; }
+                    else if (card.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; }
+                    else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; }
+                    else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; }
 
                     return (
                       <div 
@@ -456,11 +457,11 @@ export default function StudentCardsPage() {
                 <div className={styles.gachaCardsGrid}>
                   {exchangeResultCards.map((card, idx) => {
                     let rarityClass = styles.rarityCommon;
-                    let rarityText = "ทั่วไป";
-                    if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
-                    else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
-                    else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-                    else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
+                    let rarityText = "B";
+                    if (card.rarity === "rare") { rarityText = "A"; rarityClass = styles.rarityRare; }
+                    else if (card.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; }
+                    else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; }
+                    else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; }
 
                     const isFlipped = exchangeCardsFlipped[idx];
 
@@ -654,11 +655,11 @@ export default function StudentCardsPage() {
               const isOwned = count > 0;
 
               let rarityClass = styles.rarityCommon;
-              let rarityText = "ทั่วไป";
-              if (card.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
-              else if (card.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
-              else if (card.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-              else if (card.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
+              let rarityText = "B";
+              if (card.rarity === "rare") { rarityText = "A"; rarityClass = styles.rarityRare; }
+              else if (card.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; }
+              else if (card.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; }
+              else if (card.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; }
 
               return (
                 <div 
@@ -740,11 +741,11 @@ export default function StudentCardsPage() {
         const isCommon = selectedCard.rarity === "common";
 
         let rarityClass = styles.rarityCommon;
-        let rarityText = "ทั่วไป";
-        if (selectedCard.rarity === "rare") { rarityText = "หายาก"; rarityClass = styles.rarityRare; }
-        else if (selectedCard.rarity === "epic") { rarityText = "มหากาพย์"; rarityClass = styles.rarityEpic; }
-        else if (selectedCard.rarity === "legendary") { rarityText = "ตำนาน"; rarityClass = styles.rarityLegendary; }
-        else if (selectedCard.rarity === "holographic") { rarityText = "✨ HOLOGRAPHIC"; rarityClass = styles.rarityHolographic; }
+        let rarityText = "B";
+        if (selectedCard.rarity === "rare") { rarityText = "A"; rarityClass = styles.rarityRare; }
+        else if (selectedCard.rarity === "epic") { rarityText = "S"; rarityClass = styles.rarityEpic; }
+        else if (selectedCard.rarity === "legendary") { rarityText = "SS"; rarityClass = styles.rarityLegendary; }
+        else if (selectedCard.rarity === "holographic") { rarityText = "SSS"; rarityClass = styles.rarityHolographic; }
 
         return (
           <div className={styles.modalOverlay} onClick={() => setSelectedCard(null)}>

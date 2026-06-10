@@ -3,18 +3,18 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService, CARD_POOL, UserProfile } from "@/lib/firebase";
+import { authService, getCardPool, syncCardsFromFirestore, UserProfile } from "@/lib/firebase";
 import { BookOpen } from "lucide-react";
 import styles from "./page.module.css";
 
 const RARITY_ORDER = ["holographic", "legendary", "epic", "rare", "common"];
 
 const RARITY_CONFIG: Record<string, { label: string; color: string; bg: string; glow: string }> = {
-  holographic: { label: "โฮโลกราฟิก", color: "#e879f9", bg: "rgba(236, 72, 153, 0.15)", glow: "rgba(236, 72, 153, 0.6)" },
-  legendary: { label: "ตำนาน", color: "#fbbf24", bg: "rgba(251, 191, 36, 0.12)", glow: "rgba(251, 191, 36, 0.6)" },
-  epic: { label: "มหากาพย์", color: "#a855f7", bg: "rgba(168, 85, 247, 0.12)", glow: "rgba(168, 85, 247, 0.5)" },
-  rare: { label: "หายาก", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)", glow: "rgba(59, 130, 246, 0.4)" },
-  common: { label: "ทั่วไป", color: "#9ca3af", bg: "rgba(156, 163, 175, 0.08)", glow: "rgba(156, 163, 175, 0.2)" },
+  holographic: { label: "SSS", color: "#e879f9", bg: "rgba(236, 72, 153, 0.15)", glow: "rgba(236, 72, 153, 0.6)" },
+  legendary: { label: "SS", color: "#fbbf24", bg: "rgba(251, 191, 36, 0.12)", glow: "rgba(251, 191, 36, 0.6)" },
+  epic: { label: "S", color: "#a855f7", bg: "rgba(168, 85, 247, 0.12)", glow: "rgba(168, 85, 247, 0.5)" },
+  rare: { label: "A", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)", glow: "rgba(59, 130, 246, 0.4)" },
+  common: { label: "B", color: "#9ca3af", bg: "rgba(156, 163, 175, 0.08)", glow: "rgba(156, 163, 175, 0.2)" },
 };
 
 const renderStars = (rarity: string) => {
@@ -48,10 +48,12 @@ export default function AlbumPage() {
 
   useEffect(() => {
     if (user?.role === "student") {
-      authService.getRegisteredStudents().then(students => {
-        const me = students.find(s => s.uid === user.uid) || null;
-        setProfile(me);
-        setLoading(false);
+      syncCardsFromFirestore().then(() => {
+        authService.getRegisteredStudents().then(students => {
+          const me = students.find(s => s.uid === user.uid) || null;
+          setProfile(me);
+          setLoading(false);
+        }).catch(() => setLoading(false));
       }).catch(() => setLoading(false));
     }
   }, [user]);
@@ -71,13 +73,13 @@ export default function AlbumPage() {
     return found ? (found.count || 0) : 0;
   };
 
-  const totalCards = CARD_POOL.length;
-  const ownedUnique = CARD_POOL.filter(card => getCount(card.id) > 0).length;
+  const totalCards = getCardPool().length;
+  const ownedUnique = getCardPool().filter(card => getCount(card.id) > 0).length;
   const completionPct = Math.round((ownedUnique / totalCards) * 100);
 
   const filteredCards = filterRarity === "all"
-    ? [...CARD_POOL].sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity))
-    : CARD_POOL.filter(c => c.rarity === filterRarity);
+    ? [...getCardPool()].sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity))
+    : getCardPool().filter(c => c.rarity === filterRarity);
 
   return (
     <div className={styles.container}>
