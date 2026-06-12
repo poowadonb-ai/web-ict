@@ -555,6 +555,28 @@
   .cardTitle {
     font-size: 1rem;
   }
+
+  .memberRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 12px;
+  }
+  
+  .memberRow input:first-child {
+    grid-column: span 2;
+  }
+  
+  .removeRowBtn {
+    grid-column: span 2;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.08);
+    color: #f87171;
+    padding: 8px;
+  }
 }
 
 /* Phase 2: Padlet Extras */

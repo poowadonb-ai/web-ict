@@ -65,6 +65,29 @@
   50% { transform: translateY(-3px); }
 }
 
+.navWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 20px;
+}
+
+.menuToggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: var(--transition-smooth);
+}
+
+.menuToggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .nav {
   display: flex;
   align-items: center;
@@ -185,41 +208,87 @@
   transform: translateY(-1px);
 }
 
-/* Responsive */
+/* Responsive Overlay Menu */
 @media (max-width: 900px) {
-  .header {
-    height: auto;
-    padding: 10px 16px;
+  .menuToggle {
+    display: block;
+    z-index: 101;
   }
 
-  .container {
-    flex-wrap: wrap;
-    gap: 8px;
+  .navWrapper {
+    position: fixed;
+    top: 66px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100vh - 66px);
+    background: rgba(6, 3, 17, 0.96);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    display: flex;
+    flex-direction: column;
+    padding: 32px 24px;
+    gap: 32px;
+    overflow-y: auto;
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 100;
+  }
+
+  .navOpen {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
   }
 
   .nav {
-    order: 3;
+    flex-direction: column;
+    align-items: stretch;
     width: 100%;
-    justify-content: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-top: 8px;
-    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .navLink {
-    padding: 6px 10px;
-    font-size: 0.8rem;
+    padding: 12px 20px;
+    font-size: 0.98rem;
+    width: 100%;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
 
-  .logoutText {
-    display: none;
+  .profileArea {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 16px;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 24px;
+  }
+
+  .userInfo {
+    width: 100%;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
   }
 
   .logoutBtn {
-    padding: 7px;
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+
+  .logoutText {
+    display: inline !important;
   }
 
   .userName {
-    max-width: 80px;
+    max-width: unset;
   }
 }
+

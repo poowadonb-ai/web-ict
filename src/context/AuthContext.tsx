@@ -10,6 +10,12 @@ interface AuthContextType {
   signIn: (role?: "teacher" | "student", email?: string) => Promise<void>;
   signOut: () => Promise<void>;
   registerProfile: (profileData: { fullName: string; grade: string; room: string; studentNo: string }) => Promise<void>;
+  signUpWithUsernamePassword: (
+    username: string,
+    password: string,
+    profileData: { fullName: string; grade: string; room: string; studentNo: string }
+  ) => Promise<void>;
+  signInWithUsernamePassword: (username: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,8 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           router.push("/classroom");
         }
       } else {
-        // Not logged in
-        if (pathname !== "/" && pathname !== "") {
+        // Not logged in - allow landing page and register page
+        if (pathname !== "/" && pathname !== "" && pathname !== "/register") {
           router.push("/");
         }
       }
@@ -95,8 +101,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUpWithUsernamePassword = async (
+    username: string,
+    password: string,
+    profileData: { fullName: string; grade: string; room: string; studentNo: string }
+  ) => {
+    setLoading(true);
+    try {
+      const profile = await authService.signUpWithUsernamePassword(username, password, profileData);
+      setUser(profile);
+      // Automatically redirect to classroom on success
+      router.push("/classroom");
+    } catch (error) {
+      console.error("Profile Sign Up Error:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signInWithUsernamePassword = async (username: string, password: string) => {
+    setLoading(true);
+    try {
+      const profile = await authService.signInWithUsernamePassword(username, password);
+      setUser(profile);
+      router.push("/classroom");
+    } catch (error) {
+      console.error("Username Sign In Error:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, registerProfile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signIn, 
+      signOut, 
+      registerProfile,
+      signUpWithUsernamePassword,
+      signInWithUsernamePassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

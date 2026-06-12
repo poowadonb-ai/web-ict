@@ -149,3 +149,32 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.captchaRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.captchaRow svg {
+  flex-shrink: 0;
+}
+
+.cancelLinkBox {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.cancelLink {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+}
+
+.cancelLink:hover {
+  color: var(--accent-cyan-light);
+  text-decoration: underline;
+}
+

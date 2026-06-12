@@ -22,7 +22,9 @@ import {
   updateDoc, 
   arrayUnion, 
   arrayRemove,
-  runTransaction
+  runTransaction,
+  where,
+  getDocs
 } from "firebase/firestore";
 
 // Interface definitions for our application data
@@ -665,6 +667,86 @@ class MockDbService {
 
     this.setItem("mock_current_user", mockUser);
     this.emit("authChange", mockUser);
+  }
+
+  public signUpMock(
+    username: string,
+    password: string,
+    profileData: { fullName: string; grade: string; room: string; studentNo: string }
+  ): UserProfile {
+    const customUsers = this.getItem<{ [username: string]: any }>("mock_custom_users", {});
+    const lowerUsername = username.trim().toLowerCase();
+    if (customUsers[lowerUsername]) {
+      throw new Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
+    }
+
+    customUsers[lowerUsername] = {
+      password,
+      ...profileData
+    };
+    this.setItem("mock_custom_users", customUsers);
+
+    const email = `${lowerUsername}@ictclassroom.local`;
+    const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
+    profiles[email] = {
+      fullName: profileData.fullName,
+      grade: profileData.grade,
+      room: profileData.room,
+      studentNo: profileData.studentNo,
+      packsCount: 1,
+      lastLoginDate: new Date().toISOString().split('T')[0]
+    };
+    this.setItem("mock_profiles", profiles);
+
+    const uniqueUid = `mock-student-${lowerUsername}`;
+    const mockUser: UserProfile = {
+      uid: uniqueUid,
+      email: email,
+      displayName: profileData.fullName,
+      role: "student",
+      isRegistered: true,
+      ...profileData,
+      packsCount: 1,
+      lastLoginDate: new Date().toISOString().split('T')[0]
+    };
+
+    this.setItem("mock_current_user", mockUser);
+    this.emit("authChange", mockUser);
+    return mockUser;
+  }
+
+  public signInMockCustom(username: string, password: string): UserProfile {
+    const customUsers = this.getItem<{ [username: string]: any }>("mock_custom_users", {});
+    const lowerUsername = username.trim().toLowerCase();
+    const userRecord = customUsers[lowerUsername];
+    if (!userRecord || userRecord.password !== password) {
+      throw new Error("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    }
+
+    const email = `${lowerUsername}@ictclassroom.local`;
+    const uniqueUid = `mock-student-${lowerUsername}`;
+
+    const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
+    const profile = profiles[email] || {};
+
+    const mockUser: UserProfile = {
+      uid: uniqueUid,
+      email: email,
+      displayName: userRecord.fullName,
+      role: "student",
+      isRegistered: true,
+      fullName: userRecord.fullName,
+      grade: userRecord.grade || "4",
+      room: userRecord.room,
+      studentNo: userRecord.studentNo,
+      packsCount: profile.packsCount || 0,
+      cardsCollected: profile.cardsCollected || [],
+      lastLoginDate: profile.lastLoginDate
+    };
+
+    this.setItem("mock_current_user", mockUser);
+    this.emit("authChange", mockUser);
+    return mockUser;
   }
 
   public registerProfile(profileData: { fullName: string; grade: string; room: string; studentNo: string }) {
@@ -1546,6 +1628,82 @@ export const authService = {
       await setDoc(userDocRef, newUser);
       return newUser;
     }
+  },
+
+  signUpWithUsernamePassword: async (
+    username: string,
+    password: string,
+    profileData: { fullName: string; grade: string; room: string; studentNo: string }
+  ): Promise<UserProfile> => {
+    const cleanUsername = username.trim().toLowerCase();
+    const email = `${cleanUsername}@ictclassroom.local`;
+
+    if (isMockMode()) {
+      return mockDb.signUpMock(username, password, profileData);
+    }
+
+    const { createUserWithEmailAndPassword } = await import("firebase/auth");
+    
+    // Check if username already exists in Firestore
+    const q = query(collection(db, "users"), where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      throw new Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
+    }
+
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = credential.user;
+
+    const newUser: UserProfile = {
+      uid: user.uid,
+      email: email,
+      displayName: profileData.fullName,
+      role: "student",
+      isRegistered: true,
+      fullName: profileData.fullName,
+      grade: profileData.grade,
+      room: profileData.room,
+      studentNo: profileData.studentNo,
+      packsCount: 1,
+      lastLoginDate: new Date().toISOString().split('T')[0]
+    };
+
+    await setDoc(doc(db, "users", user.uid), newUser);
+    return newUser;
+  },
+
+  signInWithUsernamePassword: async (username: string, password: string): Promise<UserProfile> => {
+    const cleanUsername = username.trim().toLowerCase();
+    const email = `${cleanUsername}@ictclassroom.local`;
+
+    if (isMockMode()) {
+      return mockDb.signInMockCustom(username, password);
+    }
+
+    const { signInWithEmailAndPassword } = await import("firebase/auth");
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    const user = credential.user;
+
+    const userDocRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userDocRef);
+    if (!userSnap.exists()) {
+      throw new Error("ไม่พบข้อมูลผู้ใช้");
+    }
+
+    const data = userSnap.data();
+    return {
+      uid: user.uid,
+      email: email,
+      displayName: data.displayName || data.fullName,
+      role: data.role || "student",
+      isRegistered: data.isRegistered || false,
+      fullName: data.fullName,
+      grade: data.grade,
+      room: data.room,
+      studentNo: data.studentNo,
+      packsCount: data.packsCount || 0,
+      lastLoginDate: data.lastLoginDate
+    };
   },
 
   registerProfile: async (profileData: { fullName: string; grade: string; room: string; studentNo: string }): Promise<void> => {

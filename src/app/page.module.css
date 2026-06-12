@@ -426,3 +426,108 @@
   .iconBackground { width: 66px; height: 66px; }
   .mainIcon { width: 36px; height: 36px; }
 }
+
+/* Tab Buttons */
+.tabButtons {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 8px;
+}
+
+.tabBtn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.tabBtn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tabBtnActive {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom Login Form */
+.customLoginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formInputGroup label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.customInput {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  color: white;
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  transition: var(--transition-smooth);
+  width: 100%;
+}
+
+.customInput:focus {
+  border-color: var(--accent-purple);
+  background: rgba(168, 85, 247, 0.05);
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.2);
+}
+
+.loginErrorAlert {
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.registerLinkContainer {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.registerLink {
+  color: var(--accent-cyan-light);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.registerLink:hover {
+  color: var(--accent-purple-light);
+}
+

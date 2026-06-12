@@ -275,3 +275,31 @@
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .podium {
+    gap: 6px;
+    padding: 10px;
+  }
+  
+  .podiumBase {
+    font-size: 1.15rem;
+    padding: 8px 16px;
+    min-width: 80px;
+  }
+  
+  .podiumBase1 { height: 65px; }
+  .podiumBase2 { height: 48px; }
+  .podiumBase3 { height: 35px; }
+  
+  .podiumName {
+    font-size: 0.85rem;
+    max-width: 80px;
+  }
+  
+  .holoBadge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+}
+
