@@ -72,7 +72,8 @@ export default function ManageStudentsPage() {
 
   // Filter students
   const filteredStudents = students.filter(student => {
-    const matchesRoom = selectedRoom === "all" || student.room === selectedRoom;
+    const gradeRoom = `${student.grade || "4"}-${student.room}`;
+    const matchesRoom = selectedRoom === "all" || gradeRoom === selectedRoom;
     const matchesSearch = 
       (student.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.studentNo || "").includes(searchQuery);
@@ -141,11 +142,16 @@ export default function ManageStudentsPage() {
               onChange={(e) => setSelectedRoom(e.target.value)}
             >
               <option value="all">ทุกห้องเรียน</option>
-              {["1","2", "3", "4", "5", "6", "12", "13"].map((r) => (
-                <option key={r} value={r}>
-                  ม.4/{r}
-                </option>
-              ))}
+              <optgroup label="ม.4">
+                {["2","3","4","5","6","12","13"].map((r) => (
+                  <option key={`4-${r}`} value={`4-${r}`}>ม.4/{r}</option>
+                ))}
+              </optgroup>
+              <optgroup label="ม.5">
+                {["2","3"].map((r) => (
+                  <option key={`5-${r}`} value={`5-${r}`}>ม.5/{r}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
 
@@ -183,7 +189,7 @@ export default function ManageStudentsPage() {
             <tbody>
               {filteredStudents.map(student => (
                 <tr key={student.uid}>
-                  <td>ม.4/{student.room}</td>
+                  <td>ม.{student.grade || "4"}/{student.room}</td>
                   <td>{student.studentNo}</td>
                   <td className={styles.studentNameCell}>{student.fullName}</td>
                   <td style={{ color: "var(--accent-purple)", fontWeight: "bold" }}>
@@ -233,7 +239,7 @@ export default function ManageStudentsPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                 <div className={styles.formGroup}>
-                  <label>ห้อง (ม.4/...)</label>
+                  <label>ห้อง (ม.{editingStudent?.grade || "4"}/...)</label>
                   <select
                     value={editRoom}
                     onChange={(e) => setEditRoom(e.target.value)}

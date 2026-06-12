@@ -101,7 +101,7 @@ export default function TeacherCardsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("distribute");
 
   // distribute tab
-  const [selectedRoom, setSelectedRoom] = useState("2");
+  const [selectedRoom, setSelectedRoom] = useState("4-2");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [packCount, setPackCount] = useState<number>(1);
@@ -173,7 +173,8 @@ export default function TeacherCardsPage() {
 
   // ── Distribute helpers ────────────────────────────────────────────────────
   const filteredStudents = students.filter(student => {
-    const matchesRoom = student.room === selectedRoom;
+    const gradeRoom = `${student.grade || "4"}-${student.room}`;
+    const matchesRoom = gradeRoom === selectedRoom;
     const matchesSearch =
       (student.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.studentNo || "").includes(searchQuery);
@@ -575,9 +576,16 @@ export default function TeacherCardsPage() {
                 onChange={(e) => { setSelectedRoom(e.target.value); setSelectedStudents([]); }}
                 className={styles.selectFilter}
               >
-                {["2", "3", "4", "5", "6", "12", "13"].map((r) => (
-                  <option key={r} value={r}>ห้อง ม.4/{r}</option>
-                ))}
+                <optgroup label="ม.4">
+                  {["2", "3", "4", "5", "6", "12", "13"].map((r) => (
+                    <option key={`4-${r}`} value={`4-${r}`}>ห้อง ม.4/{r}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="ม.5">
+                  {["2", "3"].map((r) => (
+                    <option key={`5-${r}`} value={`5-${r}`}>ห้อง ม.5/{r}</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
             <div className={styles.searchGroup}>
@@ -709,7 +717,7 @@ export default function TeacherCardsPage() {
                         <td style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                           {new Date(req.createdAt).toLocaleString("th-TH")}
                         </td>
-                        <td>ม.4/{req.studentRoom}</td>
+                        <td>ม.{req.studentGrade || "4"}/{req.studentRoom}</td>
                         <td style={{ fontWeight: "600" }}>{req.studentName}</td>
                         <td>
                           <div className={styles.cardInfoCell}>

@@ -83,7 +83,7 @@ export default function LeaderboardPage() {
   }
 
   const filtered = entries.filter(e =>
-    selectedRoom === "all" || e.student.room === selectedRoom
+    selectedRoom === "all" || `${e.student.grade || "4"}-${e.student.room}` === selectedRoom
   );
 
   const myRank = filtered.findIndex(e => e.student.uid === user?.uid) + 1;
@@ -109,9 +109,16 @@ export default function LeaderboardPage() {
         <Filter size={18} style={{ color: "var(--text-secondary)" }} />
         <select value={selectedRoom} onChange={e => setSelectedRoom(e.target.value)} className={styles.filterSelect}>
           <option value="all">ทุกห้องเรียน</option>
-          {["1","2","3","4","5","6","12","13"].map(r => (
-            <option key={r} value={r}>ม.4/{r}</option>
-          ))}
+          <optgroup label="ม.4">
+            {["2","3","4","5","6","12","13"].map(r => (
+              <option key={`4-${r}`} value={`4-${r}`}>ม.4/{r}</option>
+            ))}
+          </optgroup>
+          <optgroup label="ม.5">
+            {["2","3"].map(r => (
+              <option key={`5-${r}`} value={`5-${r}`}>ม.5/{r}</option>
+            ))}
+          </optgroup>
         </select>
         {myRank > 0 && user?.role === "student" && (
           <span className={styles.myRankBadge}>อันดับของคุณ: #{myRank}</span>
@@ -125,7 +132,7 @@ export default function LeaderboardPage() {
           <div className={`${styles.podiumItem} ${styles.podiumSecond}`}>
             <Medal className={styles.medalSilver} size={32} />
             <div className={styles.podiumName}>{filtered[1].student.fullName?.split(" ")[0]}</div>
-            <div className={styles.podiumRoom}>ม.4/{filtered[1].student.room}</div>
+            <div className={styles.podiumRoom}>ม.{filtered[1].student.grade || "4"}/{filtered[1].student.room}</div>
             <div className={styles.podiumCards}>{filtered[1].totalCards} ใบ</div>
             <div className={`${styles.podiumBase} ${styles.podiumBase2}`}>#2</div>
           </div>
@@ -133,7 +140,7 @@ export default function LeaderboardPage() {
           <div className={`${styles.podiumItem} ${styles.podiumFirst}`}>
             <Crown className={styles.crownGold} size={40} />
             <div className={styles.podiumName}>{filtered[0].student.fullName?.split(" ")[0]}</div>
-            <div className={styles.podiumRoom}>ม.4/{filtered[0].student.room}</div>
+            <div className={styles.podiumRoom}>ม.{filtered[0].student.grade || "4"}/{filtered[0].student.room}</div>
             <div className={styles.podiumCards}>{filtered[0].totalCards} ใบ</div>
             {filtered[0].holoCount > 0 && <div className={styles.holoBadge}>✨ HOLO x{filtered[0].holoCount}</div>}
             <div className={`${styles.podiumBase} ${styles.podiumBase1}`}>#1</div>
@@ -142,7 +149,7 @@ export default function LeaderboardPage() {
           <div className={`${styles.podiumItem} ${styles.podiumThird}`}>
             <Medal className={styles.medalBronze} size={32} />
             <div className={styles.podiumName}>{filtered[2].student.fullName?.split(" ")[0]}</div>
-            <div className={styles.podiumRoom}>ม.4/{filtered[2].student.room}</div>
+            <div className={styles.podiumRoom}>ม.{filtered[2].student.grade || "4"}/{filtered[2].student.room}</div>
             <div className={styles.podiumCards}>{filtered[2].totalCards} ใบ</div>
             <div className={`${styles.podiumBase} ${styles.podiumBase3}`}>#3</div>
           </div>
@@ -184,7 +191,7 @@ export default function LeaderboardPage() {
                       {isMe && <span className={styles.meBadge}>คุณ</span>}
                     </div>
                   </td>
-                  <td>ม.4/{entry.student.room}</td>
+                  <td>ม.{entry.student.grade || "4"}/{entry.student.room}</td>
                   <td className={styles.holoCell}>{entry.holoCount > 0 ? `✨ ${entry.holoCount}` : "-"}</td>
                   <td>{entry.legendaryCount > 0 ? entry.legendaryCount : "-"}</td>
                   <td>{entry.epicCount > 0 ? entry.epicCount : "-"}</td>

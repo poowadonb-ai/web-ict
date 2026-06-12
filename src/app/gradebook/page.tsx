@@ -105,7 +105,8 @@ export default function GradebookPage() {
 
   // Filter students
   const filteredStudents = students.filter(student => {
-    const matchesRoom = selectedRoom === "all" || student.room === selectedRoom;
+    const gradeRoom = `${student.grade || "4"}-${student.room}`;
+    const matchesRoom = selectedRoom === "all" || gradeRoom === selectedRoom;
     const matchesSearch = 
       (student.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (student.studentNo || "").includes(searchQuery);
@@ -127,7 +128,7 @@ export default function GradebookPage() {
     filteredStudents.forEach(student => {
       const row = [
         student.studentNo || "-",
-        `ม.4/${student.room || "-"}`,
+        `ม.${student.grade || "4"}/${student.room || "-"}`,
         `"${(student.fullName || "").replace(/"/g, '""')}"`,
         String(student.bonusPoints || 0)
       ];
@@ -148,7 +149,7 @@ export default function GradebookPage() {
     
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `สมุดคะแนน_ม4_ห้อง_${selectedRoom === "all" ? "ทั้งหมด" : selectedRoom}.csv`);
+    link.setAttribute("download", `สมุดคะแนน_${selectedRoom === "all" ? "ทุกห้อง" : selectedRoom.replace("-", "/")}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -167,7 +168,7 @@ export default function GradebookPage() {
           <ClipboardList className={styles.headerIcon} />
           <div>
             <h1 className="gradient-text">สมุดคะแนนและติดตามงาน</h1>
-            <p className={styles.subtitle}>ตารางคะแนนรวมนักเรียนชั้น ม.4 ทั้งหมด ตรวจสอบสถานะการส่งงานและส่งออก Excel</p>
+            <p className={styles.subtitle}>ตารางคะแนนรวมนักเรียนชั้น ม.4 และ ม.5 ตรวจสอบสถานะการส่งงานและส่งออก Excel</p>
           </div>
         </div>
 
@@ -225,12 +226,17 @@ export default function GradebookPage() {
             onChange={(e) => setSelectedRoom(e.target.value)}
             className={styles.selectFilter}
           >
-            <option value="all">ม.4 ทุกห้องเรียน</option>
-            {["2", "3", "4", "5", "6", "12", "13"].map((r) => (
-              <option key={r} value={r}>
-                ห้อง ม.4/{r}
-              </option>
-            ))}
+            <option value="all">ทุกห้องเรียน</option>
+            <optgroup label="ม.4">
+              {["2", "3", "4", "5", "6", "12", "13"].map((r) => (
+                <option key={`4-${r}`} value={`4-${r}`}>ห้อง ม.4/{r}</option>
+              ))}
+            </optgroup>
+            <optgroup label="ม.5">
+              {["2", "3"].map((r) => (
+                <option key={`5-${r}`} value={`5-${r}`}>ห้อง ม.5/{r}</option>
+              ))}
+            </optgroup>
           </select>
         </div>
 
@@ -277,7 +283,7 @@ export default function GradebookPage() {
               {filteredStudents.map(student => (
                 <tr key={student.uid}>
                   <td className={`${styles.tdFixed} ${styles.tdNo}`}>{student.studentNo}</td>
-                  <td className={styles.tdFixed}>ม.4/{student.room}</td>
+                  <td className={styles.tdFixed}>ม.{student.grade || "4"}/{student.room}</td>
                   <td className={`${styles.tdFixedName} ${styles.tdName}`}>{student.fullName}</td>
                   <td className={styles.tdScore} style={{ color: "#38a169", fontWeight: "bold", textAlign: "center" }}>
                     +{student.bonusPoints || 0}

@@ -137,6 +137,7 @@ export interface RedemptionRequest {
   studentUid: string;
   studentName: string;
   studentRoom: string;
+  studentGrade?: string;
   cardId: string;
   cardName: string;
   rarity: "common" | "rare" | "epic" | "legendary" | "holographic";

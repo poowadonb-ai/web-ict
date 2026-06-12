@@ -22,10 +22,18 @@ export default function RegisterPage() {
 
   // Common Profile states
   const [fullName, setFullName] = useState("");
+  const [grade, setGrade] = useState("4");
   const [room, setRoom] = useState("2");
   const [studentNo, setStudentNo] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Room options per grade
+  const ROOMS_BY_GRADE: Record<string, string[]> = {
+    "4": ["2", "3", "4", "5", "6", "12", "13"],
+    "5": ["2", "3"],
+  };
+  const roomOptions = ROOMS_BY_GRADE[grade] || ROOMS_BY_GRADE["4"];
 
   // Custom Signup credentials states (Used only when not logged in via Google)
   const [username, setUsername] = useState("");
@@ -78,7 +86,7 @@ export default function RegisterPage() {
     try {
       await registerProfile({
         fullName: fullName.trim(),
-        grade: "4", // Hard lock to ม.4
+        grade,
         room,
         studentNo: studentNo.trim()
       });
@@ -134,7 +142,7 @@ export default function RegisterPage() {
         password,
         {
           fullName: fullName.trim(),
-          grade: "4",
+          grade,
           room,
           studentNo: studentNo.trim()
         }
@@ -252,8 +260,14 @@ export default function RegisterPage() {
             <div className={styles.row}>
               <div className={styles.formGroup}>
                 <label htmlFor="grade">ระดับชั้น</label>
-                <select id="grade" value="4" disabled={true}>
+                <select
+                  id="grade"
+                  value={grade}
+                  onChange={(e) => { setGrade(e.target.value); setRoom(ROOMS_BY_GRADE[e.target.value]?.[0] || "2"); }}
+                  disabled={isSubmitting}
+                >
                   <option value="4">มัธยมศึกษาปีที่ 4 (ม.4)</option>
+                  <option value="5">มัธยมศึกษาปีที่ 5 (ม.5)</option>
                 </select>
               </div>
 
@@ -265,13 +279,9 @@ export default function RegisterPage() {
                   onChange={(e) => setRoom(e.target.value)}
                   disabled={isSubmitting}
                 >
-                  <option value="2">ม.4/2</option>
-                  <option value="3">ม.4/3</option>
-                  <option value="4">ม.4/4</option>
-                  <option value="5">ม.4/5</option>
-                  <option value="6">ม.4/6</option>
-                  <option value="12">ม.4/12</option>
-                  <option value="13">ม.4/13</option>
+                  {roomOptions.map(r => (
+                    <option key={r} value={r}>ม.{grade}/{r}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -356,8 +366,14 @@ export default function RegisterPage() {
             <div className={styles.row}>
               <div className={styles.formGroup}>
                 <label htmlFor="gradeCustom">ระดับชั้น</label>
-                <select id="gradeCustom" value="4" disabled={true}>
+                <select
+                  id="gradeCustom"
+                  value={grade}
+                  onChange={(e) => { setGrade(e.target.value); setRoom(ROOMS_BY_GRADE[e.target.value]?.[0] || "2"); }}
+                  disabled={isSubmitting}
+                >
                   <option value="4">ม.4</option>
+                  <option value="5">ม.5</option>
                 </select>
               </div>
 
@@ -369,13 +385,9 @@ export default function RegisterPage() {
                   onChange={(e) => setRoom(e.target.value)}
                   disabled={isSubmitting}
                 >
-                  <option value="2">ม.4/2</option>
-                  <option value="3">ม.4/3</option>
-                  <option value="4">ม.4/4</option>
-                  <option value="5">ม.4/5</option>
-                  <option value="6">ม.4/6</option>
-                  <option value="12">ม.4/12</option>
-                  <option value="13">ม.4/13</option>
+                  {roomOptions.map(r => (
+                    <option key={r} value={r}>ม.{grade}/{r}</option>
+                  ))}
                 </select>
               </div>
             </div>
