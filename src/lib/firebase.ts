@@ -730,7 +730,7 @@ class MockDbService {
       grade: profileData.grade,
       room: profileData.room,
       studentNo: profileData.studentNo,
-      packsCount: 1,
+      packsCount: 3,
       lastLoginDate: new Date().toISOString().split('T')[0]
     };
     this.setItem("mock_profiles", profiles);
@@ -743,7 +743,7 @@ class MockDbService {
       role: "student",
       isRegistered: true,
       ...profileData,
-      packsCount: 1,
+      packsCount: 3,
       lastLoginDate: new Date().toISOString().split('T')[0]
     };
 
@@ -791,13 +791,19 @@ class MockDbService {
     if (!user) return;
 
     const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
-    profiles[user.email || ""] = profileData;
+    profiles[user.email || ""] = {
+      ...profileData,
+      packsCount: 3,
+      lastLoginDate: new Date().toISOString().split('T')[0]
+    };
     this.setItem("mock_profiles", profiles);
 
     const updatedUser: UserProfile = {
       ...user,
       isRegistered: true,
-      ...profileData
+      ...profileData,
+      packsCount: 3,
+      lastLoginDate: new Date().toISOString().split('T')[0]
     };
     this.setItem("mock_current_user", updatedUser);
     this.emit("authChange", updatedUser);
@@ -1701,7 +1707,7 @@ export const authService = {
       grade: profileData.grade,
       room: profileData.room,
       studentNo: profileData.studentNo,
-      packsCount: 1,
+      packsCount: 3,
       lastLoginDate: new Date().toISOString().split('T')[0]
     };
 
@@ -1755,7 +1761,9 @@ export const authService = {
     const userDocRef = doc(db, "users", currentUser.uid);
     await setDoc(userDocRef, {
       ...profileData,
-      isRegistered: true
+      isRegistered: true,
+      packsCount: 3,
+      lastLoginDate: new Date().toISOString().split('T')[0]
     }, { merge: true });
   },
 
