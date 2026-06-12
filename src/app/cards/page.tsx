@@ -903,26 +903,40 @@ export default function StudentCardsPage() {
           </div>
 
           {/* Exchange Section */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", padding: "12px 16px", background: "rgba(255,255,255,0.05)", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <RefreshCw size={16} color="#9ca3af" />
-                <span style={{ fontSize: "0.95rem", fontWeight: "600", color: "#e2e8f0" }}>ระบบย่อยการ์ด (Recycle)</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px", padding: "16px", background: "rgba(255,255,255,0.03)", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <RefreshCw size={16} color="var(--accent-cyan)" />
+                  <span style={{ fontSize: "0.95rem", fontWeight: "700", color: "#e2e8f0" }}>ระบบหลอมการ์ดทั่วไป (Recycle / Fusion)</span>
+                </div>
+                <p style={{ fontSize: "0.85rem", margin: "4px 0 0 0", color: "#a0aec0", lineHeight: "1.4" }}>
+                  การ์ดทั่วไปที่คุณมีสำหรับการหลอม: <span style={{ color: totalCommonAvailable >= 5 ? "#10b981" : "#f59e0b", fontWeight: "bold" }}>{totalCommonAvailable}</span> ใบ
+                  <br/>* ใช้การ์ดระดับทั่วไป 5 ใบ เพื่อนำมาหลอมสุ่มรับการ์ดใหม่ **2 ใบ** ที่ระดับความแรร์สูงขึ้น!
+                </p>
               </div>
-              <p style={{ fontSize: "0.85rem", margin: "4px 0 0 0", color: "#a0aec0" }}>
-                การ์ดทั่วไปที่คุณมี: <span style={{ color: totalCommonAvailable >= 5 ? "#10b981" : "#f59e0b", fontWeight: "bold" }}>{totalCommonAvailable}</span> ใบ
-                <br/>* ใช้การ์ดระดับทั่วไป 5 ใบ เพื่อสุ่มการ์ดใหม่ 1 ใบ
-              </p>
+              <button 
+                className="btn-primary"
+                onClick={handleExchangeCommonCards}
+                disabled={isExchangeMode || totalCommonAvailable < 5}
+                style={{ display: "flex", gap: "8px", alignItems: "center", padding: "8px 16px", opacity: totalCommonAvailable < 5 ? 0.5 : 1, background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", border: "none" }}
+              >
+                <RefreshCw size={16} />
+                <span>หลอมการ์ดใหม่ (-5 ใบ)</span>
+              </button>
             </div>
-            <button 
-              className="btn-primary"
-              onClick={handleExchangeCommonCards}
-              disabled={isExchangeMode || totalCommonAvailable < 5}
-              style={{ display: "flex", gap: "8px", alignItems: "center", padding: "8px 16px", opacity: totalCommonAvailable < 5 ? 0.5 : 1, background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", border: "none" }}
-            >
-              <RefreshCw size={16} />
-              <span>สุ่มการ์ดใหม่ (-5 ใบ)</span>
-            </button>
+            
+            {/* Explanatory Tip Box */}
+            <div style={{ display: "flex", gap: "8px", padding: "10px 12px", background: "rgba(6, 182, 212, 0.06)", borderRadius: "8px", border: "1px solid rgba(6, 182, 212, 0.15)", fontSize: "0.78rem", color: "var(--accent-cyan-light)", lineHeight: "1.4" }}>
+              <span style={{ fontSize: "1rem" }}>💡</span>
+              <div>
+                <strong>คำอธิบายเพิ่มเติมสำหรับการหลอมการ์ด:</strong>
+                <div style={{ marginTop: "2px", opacity: 0.9 }}>
+                  การ์ดระดับทั่วไป (Common) ทั้งหมดจะมีมูลค่า <strong>0 คะแนน</strong> (สำหรับประดับสมุดสะสมเท่านั้น) 
+                  ดังนั้น นักเรียนสามารถนำมาหลอมได้เลยโดย<strong>ไม่เสียคะแนนโบนัสใดๆ</strong> และมีสิทธิ์ลุ้นได้รับการ์ดระดับสูง (Rare/Epic/Legendary/Holo) ที่มีแต้มคะแนนพิเศษเพื่อนำไปแลกคะแนนจริงกับคุณครูครับ!
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Cards Grid */}
