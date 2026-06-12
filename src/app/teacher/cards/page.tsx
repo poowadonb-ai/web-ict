@@ -112,6 +112,7 @@ export default function TeacherCardsPage() {
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [isCreating, setIsCreating] = useState(false); // true = new card mode
   const [editForm, setEditForm] = useState<Partial<Card>>({});
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("all");
   const [uploadingImg, setUploadingImg] = useState(false);
   const [compressionInfo, setCompressionInfo] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string>("");
@@ -775,9 +776,30 @@ export default function TeacherCardsPage() {
             </div>
           </div>
 
+          {/* Category Filter Bar */}
+          <div className={styles.typeFilterRow}>
+            {[
+              { id: "all", label: "ทั้งหมด" },
+              { id: "computer_act", label: "⚖️ พรบ.คอมพิวเตอร์" },
+              { id: "cosmetic", label: "🎨 ตกแต่งโปรไฟล์" },
+              { id: "bonus", label: "⭐ เพิ่มคะแนนพิเศษ" },
+              { id: "privilege", label: "🔑 สิทธิพิเศษ" }
+            ].map(filter => (
+              <button
+                key={filter.id}
+                onClick={() => setSelectedTypeFilter(filter.id)}
+                className={`${styles.typeFilterBtn} ${selectedTypeFilter === filter.id ? styles.typeFilterBtnActive : ""}`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
           {/* Card Grid */}
           <div className={styles.cardManagerGrid}>
-            {cardPool.map(card => {
+            {cardPool
+              .filter(card => selectedTypeFilter === "all" || card.type === selectedTypeFilter)
+              .map(card => {
               const drawnCount = getDrawnCount(card.id);
               const modified = isOverridden(card.id);
               const custom = isCustomCard(card.id);
@@ -917,6 +939,28 @@ export default function TeacherCardsPage() {
                 />
               </div>
 
+              <div className={styles.formGroup}>
+                <label>ประเภทการ์ด</label>
+                <select
+                  value={editForm.type || "cosmetic"}
+                  onChange={e => {
+                    const newType = e.target.value as Card["type"];
+                    const updates: Partial<Card> = { type: newType };
+                    // If Computer Act, automatically lock to Rank A (rare)
+                    if (newType === "computer_act") {
+                      updates.rarity = "rare";
+                    }
+                    setEditForm(p => ({ ...p, ...updates }));
+                  }}
+                  className={styles.formSelect}
+                >
+                  <option value="cosmetic">🎨 ตกแต่งโปรไฟล์ความสวยงาม (Cosmetic)</option>
+                  <option value="bonus">⭐ เพิ่มคะแนนพิเศษ (Bonus)</option>
+                  <option value="privilege">🔑 สิทธิพิเศษในการเรียน (Privilege)</option>
+                  <option value="computer_act">⚖️ การ์ด พรบ คอมพิวเตอร์ (Rank A - Rare)</option>
+                </select>
+              </div>
+
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
                   <label>ระดับความแรร์</label>
@@ -924,11 +968,17 @@ export default function TeacherCardsPage() {
                     value={editForm.rarity || "common"}
                     onChange={e => setEditForm(p => ({ ...p, rarity: e.target.value as Card["rarity"] }))}
                     className={styles.formSelect}
+                    disabled={editForm.type === "computer_act"}
                   >
                     {Object.entries(RARITY_LABELS).map(([val, label]) => (
                       <option key={val} value={val}>{label}</option>
                     ))}
                   </select>
+                  {editForm.type === "computer_act" && (
+                    <span className={styles.fieldHelpText} style={{ color: "#fbbf24", fontSize: "0.75rem", marginTop: "4px" }}>
+                      ⚠️ ล็อกเป็น Rank A (Rare) ตามข้อกำหนด พรบ คอมพิวเตอร์
+                    </span>
+                  )}
                 </div>
                 <div className={styles.formGroup}>
                   <label>คะแนนโบนัส</label>

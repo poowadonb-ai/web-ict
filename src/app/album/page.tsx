@@ -424,6 +424,7 @@ export default function AlbumPage() {
                       {selectedCard.type === "cosmetic" ? "🎨 ตกแต่งโปรไฟล์ความสวยงาม" :
                        selectedCard.type === "bonus" ? "⭐ เพิ่มคะแนนพิเศษเมื่อสะสมสำเร็จ" :
                        selectedCard.type === "privilege" ? "🔑 สิทธิพิเศษในการเรียนการสอน" :
+                       selectedCard.type === "computer_act" ? "⚖️ การ์ด พรบ คอมพิวเตอร์ (Rank A)" :
                        "🃏 การ์ดสะสมทั่วไป"}
                     </p>
                   </div>

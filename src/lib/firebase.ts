@@ -119,7 +119,7 @@ export interface Card {
   imageUrl: string;
   description: string;
   bonusPoints: number;
-  type: "cosmetic" | "bonus" | "privilege";
+  type: "cosmetic" | "bonus" | "privilege" | "computer_act";
 }
 
 export interface CardPack {
@@ -299,6 +299,42 @@ export const CARD_POOL: Card[] = [
     description: "การ์ดโฮโลกราฟิกหายากที่สุดในโลก! ผู้โชคดี 1 ใน 500 คนเท่านั้น! พลังงานดิจิทัลสูงสุด! (+10 คะแนนโบนัส)",
     bonusPoints: 10,
     type: "bonus"
+  },
+  {
+    id: "card-comp-1",
+    name: "การ์ดแฮกเกอร์หมวกขาว (White Hat Hacker)",
+    rarity: "rare",
+    imageUrl: "/cards/card_white_hat.png",
+    description: "เจาะระบบเพื่อค้นหาช่องโหว่และช่วยปรับปรุงระบบความปลอดภัยตามกฎหมาย (+1 คะแนนโบนัส)",
+    bonusPoints: 1,
+    type: "computer_act"
+  },
+  {
+    id: "card-comp-2",
+    name: "การ์ดรหัสผ่านสุดปลอดภัย (Strong Password)",
+    rarity: "rare",
+    imageUrl: "/cards/card_strong_pwd.png",
+    description: "ตั้งรหัสผ่านที่ซับซ้อน ป้องกันการเข้าถึงข้อมูลระบบโดยมิชอบ ตาม พรบ.คอมฯ มาตรา 5 (+1 คะแนนโบนัส)",
+    bonusPoints: 1,
+    type: "computer_act"
+  },
+  {
+    id: "card-comp-3",
+    name: "การ์ดผู้รักษาความลับ (Data Confidentiality)",
+    rarity: "rare",
+    imageUrl: "/cards/card_confidentiality.png",
+    description: "ไม่เปิดเผยหรือแพร่กระจายข้อมูลส่วนบุคคลของผู้อื่นโดยไม่ได้รับอนุญาตตามกฎหมาย (+1 คะแนนโบนัส)",
+    bonusPoints: 1,
+    type: "computer_act"
+  },
+  {
+    id: "card-comp-4",
+    name: "การ์ดต้านข่าวลวง (Anti-Fake News System)",
+    rarity: "rare",
+    imageUrl: "/cards/card_anti_fake.png",
+    description: "ตรวจสอบก่อนแชร์ ป้องกันการนำเข้าข้อมูลคอมพิวเตอร์อันเป็นเท็จ ตามมาตรา 14 (+1 คะแนนโบนัส)",
+    bonusPoints: 1,
+    type: "computer_act"
   }
 ];
 

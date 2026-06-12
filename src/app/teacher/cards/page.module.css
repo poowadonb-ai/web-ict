@@ -491,6 +491,45 @@
   gap: 12px;
 }
 
+.typeFilterRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.typeFilterBtn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.typeFilterBtn:hover {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.typeFilterBtnActive {
+  color: white;
+  background: rgba(168, 85, 247, 0.15) !important;
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+}
+
+.fieldHelpText {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
 .manageHint {
   color: var(--text-secondary);
   font-size: 0.95rem;
