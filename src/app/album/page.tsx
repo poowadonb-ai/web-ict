@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { authService, getCardPool, syncCardsFromFirestore, UserProfile } from "@/lib/firebase";
-import { BookOpen } from "lucide-react";
+import { BookOpen, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import styles from "./page.module.css";
 
 const RARITY_ORDER = ["holographic", "legendary", "epic", "rare", "common"];
@@ -39,6 +39,72 @@ export default function AlbumPage() {
   const [loading, setLoading] = useState(true);
   const [filterRarity, setFilterRarity] = useState<string>("all");
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  // 3D Card Viewer states
+  const [selectedCard, setSelectedCard] = useState<any | null>(null);
+  const [zoomScale, setZoomScale] = useState(1.0);
+  const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({});
+  const [shimmerStyle, setShimmerStyle] = useState<React.CSSProperties>({});
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedCard(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!isHovered) {
+      setTiltStyle({
+        transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(${zoomScale})`,
+        transition: "transform 0.3s ease",
+      });
+    }
+  }, [zoomScale, isHovered]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const box = card.getBoundingClientRect();
+    const x = e.clientX - box.left;
+    const y = e.clientY - box.top;
+    const px = x / box.width - 0.5;
+    const py = y / box.height - 0.5;
+    const rotateX = -py * 25;
+    const rotateY = px * 25;
+    const shimmerX = (x / box.width) * 100;
+    const shimmerY = (y / box.height) * 100;
+
+    setTiltStyle({
+      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoomScale})`,
+      transition: "none",
+    });
+
+    setShimmerStyle({
+      "--shimmer-x": `${shimmerX}%`,
+      "--shimmer-y": `${shimmerY}%`,
+      opacity: 0.65,
+    } as React.CSSProperties);
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setTiltStyle({
+      transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(${zoomScale})`,
+      transition: "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)",
+    });
+    setShimmerStyle({
+      opacity: 0,
+      transition: "opacity 0.5s ease",
+    });
+  };
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "student")) {
@@ -142,6 +208,20 @@ export default function AlbumPage() {
             <div
               key={card.id}
               className={`${styles.cardSlot} ${hasCard ? styles.owned : styles.locked} ${rarityClass}`}
+              onClick={() => {
+                if (hasCard) {
+                  setSelectedCard(card);
+                  setZoomScale(1.0);
+                  setIsHovered(false);
+                  setTiltStyle({
+                    transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1.0)`,
+                  });
+                  setShimmerStyle({
+                    opacity: 0,
+                  });
+                }
+              }}
+              style={hasCard ? { cursor: "pointer" } : undefined}
             >
               {hasCard && <div className={styles.bgGlow} />}
               {hasCard && card.rarity === "legendary" && <div className={styles.legendaryRays} />}
@@ -206,6 +286,159 @@ export default function AlbumPage() {
           );
         })}
       </div>
+
+      {/* 3D Card Viewer Modal */}
+      {selectedCard && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedCard(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.closeBtn} onClick={() => setSelectedCard(null)} aria-label="ปิด">
+              <X size={24} />
+            </button>
+            
+            <div className={styles.viewerRow}>
+              {/* Left Column: 3D Interactive Card */}
+              <div className={styles.viewerColumn}>
+                <div className={styles.largeCardWrapper}>
+                  <div 
+                    className={`${styles.largeCard} ${
+                      selectedCard.rarity === "rare" ? styles.rarityRare :
+                      selectedCard.rarity === "epic" ? styles.rarityEpic :
+                      selectedCard.rarity === "legendary" ? styles.rarityLegendary :
+                      selectedCard.rarity === "holographic" ? styles.rarityHolographic :
+                      styles.rarityCommon
+                    }`}
+                    style={tiltStyle}
+                    onMouseMove={handleMouseMove}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <div className={styles.bgGlow} />
+                    {selectedCard.rarity === "legendary" && <div className={styles.legendaryRays} />}
+                    {selectedCard.rarity === "holographic" && <div className={styles.holoFoil} />}
+                    
+                    {/* The Interactive Shimmer Overlay */}
+                    <div 
+                      className={styles.holoShimmerOverlay} 
+                      style={shimmerStyle}
+                    />
+
+                    {/* Card Particles for Epic/Legendary/Holo */}
+                    {(selectedCard.rarity === "epic" || selectedCard.rarity === "legendary" || selectedCard.rarity === "holographic") && (
+                      <div className={styles.particles}>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    )}
+                    <div className={styles.shineSweep} />
+
+                    <div className={styles.rarityHeader}>
+                      <div className={styles.rarityBadge} style={{ 
+                        color: RARITY_CONFIG[selectedCard.rarity].color, 
+                        background: RARITY_CONFIG[selectedCard.rarity].bg 
+                      }}>
+                        {RARITY_CONFIG[selectedCard.rarity].label}
+                      </div>
+                      {renderStars(selectedCard.rarity)}
+                    </div>
+
+                    <div className={styles.largeCardImageArea}>
+                      {selectedCard.imageUrl === "__HOLOGRAPHIC__" || imageErrors[selectedCard.id] ? (
+                        <div className={styles.cyberHoloFallback}>
+                          <div className={styles.cyberGrid} />
+                          <div className={styles.cyberHoloRing} />
+                          <div className={styles.cyberHoloSymbol}>✨</div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={selectedCard.imageUrl} 
+                          alt={selectedCard.name} 
+                          className={styles.cardImg} 
+                        />
+                      )}
+                    </div>
+
+                    <div className={styles.largeCardInfo}>
+                      <div className={styles.largeCardName}>{selectedCard.name}</div>
+                      <div className={styles.largeCardRarityName} style={{ color: RARITY_CONFIG[selectedCard.rarity].color }}>
+                        ระดับ: {
+                          selectedCard.rarity === "holographic" ? "Holographic (SSS)" :
+                          selectedCard.rarity === "legendary" ? "Legendary (SS)" :
+                          selectedCard.rarity === "epic" ? "Epic (S)" :
+                          selectedCard.rarity === "rare" ? "Rare (A)" :
+                          "Common (B)"
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Zoom Controls */}
+                <div className={styles.controlsRow}>
+                  <button 
+                    className={styles.controlBtn} 
+                    onClick={() => setZoomScale(prev => Math.max(0.6, prev - 0.1))}
+                    title="ซูมออก"
+                  >
+                    <ZoomOut size={18} />
+                  </button>
+                  <span className={styles.zoomValue}>{Math.round(zoomScale * 100)}%</span>
+                  <button 
+                    className={styles.controlBtn} 
+                    onClick={() => setZoomScale(prev => Math.min(2.0, prev + 0.1))}
+                    title="ซูมเข้า"
+                  >
+                    <ZoomIn size={18} />
+                  </button>
+                  <button 
+                    className={styles.controlBtn} 
+                    onClick={() => setZoomScale(1.0)}
+                    title="รีเซ็ต"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Card Details Info */}
+              <div className={styles.detailsColumn}>
+                <div className={styles.detailsHeader}>
+                  <span className={styles.categoryBadge}>ข้อมูลการ์ด</span>
+                  <h2 className={styles.detailsTitle}>{selectedCard.name}</h2>
+                  <div className={styles.bonusPointsBadge}>
+                    โบนัสคะแนน: +{selectedCard.bonusPoints || 0} คะแนน
+                  </div>
+                </div>
+
+                <div className={styles.detailsDivider} />
+
+                <div className={styles.detailsBody}>
+                  <div className={styles.infoSection}>
+                    <h4>คำอธิบายการ์ด</h4>
+                    <p className={styles.detailsDesc}>{selectedCard.description || "ไม่มีคำอธิบายสำหรับการ์ดใบนี้"}</p>
+                  </div>
+
+                  <div className={styles.infoSection}>
+                    <h4>ประเภทความสามารถ</h4>
+                    <p className={styles.detailsType}>
+                      {selectedCard.type === "cosmetic" ? "🎨 ตกแต่งโปรไฟล์ความสวยงาม" :
+                       selectedCard.type === "bonus" ? "⭐ เพิ่มคะแนนพิเศษเมื่อสะสมสำเร็จ" :
+                       selectedCard.type === "privilege" ? "🔑 สิทธิพิเศษในการเรียนการสอน" :
+                       "🃏 การ์ดสะสมทั่วไป"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.detailsDivider} />
+                
+                <div className={styles.interactionTip}>
+                  💡 เคล็ดลับ: เลื่อนเมาส์บนตัวการ์ดเพื่อเอียงมุมมอง 3 มิติ และสะท้อนแสงฟอยล์พิเศษ!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
