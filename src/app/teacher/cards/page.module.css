@@ -362,6 +362,59 @@
   transform: translateY(-1px);
 }
 
+/* ─── Requests Toolbar ──────────────────────────────────────────────────── */
+.requestsToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.requestsCount {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.requestsCount strong {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.approveAllBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  letter-spacing: 0.3px;
+}
+
+.approveAllBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  background: linear-gradient(135deg, #34d399, #10b981);
+}
+
+.approveAllBtn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
 /* Loading */
 .loadingContainer {
   display: flex;

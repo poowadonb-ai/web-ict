@@ -219,6 +219,25 @@ export default function TeacherCardsPage() {
     }
   };
 
+  const handleApproveAll = async () => {
+    if (pendingRequests.length === 0) return;
+    const confirmed = confirm(
+      `อนุมัติคำขอทั้งหมด ${pendingRequests.length} รายการใช่หรือไม่?\n\nการกระทำนี้จะให้คะแนนโบนัสแก่นักเรียนทุกคนในรายการทันที`
+    );
+    if (!confirmed) return;
+    try {
+      setLoading(true);
+      await Promise.all(pendingRequests.map(req => cardService.approveRedemption(req.id)));
+      setSuccessMsg(`✅ อนุมัติคำขอทั้งหมด ${pendingRequests.length} รายการเรียบร้อยแล้ว!`);
+      setTimeout(() => setSuccessMsg(""), 4000);
+      await loadData();
+    } catch (err) {
+      console.error("Error approving all requests:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleReject = async (requestId: string) => {
     try {
       setLoading(true);
@@ -652,6 +671,19 @@ export default function TeacherCardsPage() {
               <p className={styles.emptySub}>คำขอของนักเรียนจะปรากฏที่นี่เมื่อพวกเขาเปิดการ์ดโบนัสและกดยืนยันใช้งานการ์ด</p>
             </div>
           ) : (
+            <>
+              <div className={styles.requestsToolbar}>
+                <p className={styles.requestsCount}>
+                  📋 คำขอรอการอนุมัติ <strong>{pendingRequests.length}</strong> รายการ
+                </p>
+                <button
+                  onClick={handleApproveAll}
+                  className={styles.approveAllBtn}
+                >
+                  <Check size={16} />
+                  <span>อนุมัติทั้งหมด ({pendingRequests.length} รายการ)</span>
+                </button>
+              </div>
             <div className={styles.tableWrapper}>
               <table className={styles.table}>
                 <thead>
@@ -704,6 +736,7 @@ export default function TeacherCardsPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       )}
