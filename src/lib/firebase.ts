@@ -896,6 +896,83 @@ class MockDbService {
     this.setItem("mock_lessons", lessons.filter(l => l.id !== id));
   }
 
+  public updateLesson(
+    id: string,
+    title: string,
+    content: string,
+    canvaUrl: string,
+    youtubeUrl: string,
+    hasAssignment?: boolean,
+    assignmentType?: "individual" | "group",
+    assignmentDescription?: string,
+    targetRooms?: string[],
+    existingAssignmentId?: string
+  ) {
+    const user = this.currentUser;
+    if (!user || user.role !== "teacher") return;
+
+    let assignmentId = existingAssignmentId || "";
+    const boards = this.getBoards();
+
+    if (hasAssignment) {
+      if (assignmentId) {
+        // Update existing board in mock
+        const updatedBoards = boards.map(b => {
+          if (b.id === assignmentId) {
+            return {
+              ...b,
+              title: `งาน: ${title}`,
+              description: assignmentDescription || `ส่งงานสำหรับบทเรียน: ${title}`,
+              type: assignmentType || "individual",
+              targetRooms: targetRooms || []
+            };
+          }
+          return b;
+        });
+        this.setItem("mock_boards", updatedBoards);
+      } else {
+        // Create new board
+        assignmentId = "board-" + Math.random().toString(36).substr(2, 9);
+        const newBoard: AssignmentBoard = {
+          id: assignmentId,
+          title: `งาน: ${title}`,
+          description: assignmentDescription || `ส่งงานสำหรับบทเรียน: ${title}`,
+          createdAt: Date.now(),
+          type: assignmentType || "individual",
+          lessonId: id,
+          isLocked: false,
+          targetRooms: targetRooms || []
+        };
+        this.setItem("mock_boards", [newBoard, ...boards]);
+      }
+    } else {
+      if (assignmentId) {
+        // Delete board
+        this.setItem("mock_boards", boards.filter(b => b.id !== assignmentId));
+        assignmentId = "";
+      }
+    }
+
+    const lessons = this.getLessons();
+    const updatedLessons = lessons.map(l => {
+      if (l.id === id) {
+        return {
+          ...l,
+          title,
+          content,
+          canvaUrl,
+          youtubeUrl,
+          hasAssignment: !!hasAssignment,
+          assignmentId,
+          assignmentType,
+          targetRooms: targetRooms || []
+        };
+      }
+      return l;
+    });
+    this.setItem("mock_lessons", updatedLessons);
+  }
+
   // BOARDS API (Padlet Boards)
   public getBoards(): AssignmentBoard[] {
     return this.getItem<AssignmentBoard[]>("mock_boards", [
@@ -2037,6 +2114,82 @@ export const lessonService = {
       return;
     }
     await deleteDoc(doc(db, "lessons", id));
+  },
+
+  updateLesson: async (
+    id: string,
+    title: string,
+    content: string,
+    canvaUrl: string,
+    youtubeUrl: string,
+    hasAssignment?: boolean,
+    assignmentType?: "individual" | "group",
+    assignmentDescription?: string,
+    targetRooms?: string[],
+    existingAssignmentId?: string
+  ): Promise<void> => {
+    if (isMockMode()) {
+      mockDb.updateLesson(
+        id,
+        title,
+        content,
+        canvaUrl,
+        youtubeUrl,
+        hasAssignment,
+        assignmentType,
+        assignmentDescription,
+        targetRooms,
+        existingAssignmentId
+      );
+      return;
+    }
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error("No user signed in");
+
+    let assignmentId = existingAssignmentId || "";
+
+    if (hasAssignment) {
+      if (assignmentId) {
+        // Update existing board
+        await updateDoc(doc(db, "boards", assignmentId), {
+          title: `งาน: ${title}`,
+          description: assignmentDescription || `ส่งงานสำหรับบทเรียน: ${title}`,
+          type: assignmentType || "individual",
+          targetRooms: targetRooms || []
+        });
+      } else {
+        // Create new board
+        const boardRef = await addDoc(collection(db, "boards"), {
+          title: `งาน: ${title}`,
+          description: assignmentDescription || `ส่งงานสำหรับบทเรียน: ${title}`,
+          createdAt: Date.now(),
+          type: assignmentType || "individual",
+          lessonId: id,
+          isLocked: false,
+          targetRooms: targetRooms || []
+        });
+        assignmentId = boardRef.id;
+      }
+    } else {
+      // Delete board if assignment disabled
+      if (assignmentId) {
+        await deleteDoc(doc(db, "boards", assignmentId));
+        assignmentId = "";
+      }
+    }
+
+    // Update lesson
+    await updateDoc(doc(db, "lessons", id), {
+      title,
+      content,
+      canvaUrl,
+      youtubeUrl,
+      hasAssignment: !!hasAssignment,
+      assignmentId,
+      assignmentType: assignmentType || "",
+      targetRooms: targetRooms || []
+    });
   }
 };
 

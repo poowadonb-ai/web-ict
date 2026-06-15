@@ -10,7 +10,7 @@ import {
   AssignmentBoard, 
   Submission 
 } from "@/lib/firebase";
-import { getYouTubeEmbedUrl, getCanvaEmbedUrl } from "@/lib/utils";
+import { getYouTubeEmbedUrl, getCanvaEmbedUrl, resolveCanvaUrlIfNeeded } from "@/lib/utils";
 import { 
   Plus, Trash2, Calendar, FileText, Video, ExternalLink, X, BookOpen, 
   ClipboardList, Users, Edit, UserPlus, Trash, ChevronRight 
@@ -37,6 +37,7 @@ export default function ClassroomPage() {
   const [targetRoomsState, setTargetRoomsState] = useState<string[]>(["2", "3", "4", "5", "6", "12", "13"]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
 
   // Student Submission Modal State
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -84,6 +85,37 @@ export default function ClassroomPage() {
     );
   }
 
+  const handleOpenAddModal = () => {
+    setError("");
+    setEditingLesson(null);
+    setTitle("");
+    setContent("");
+    setCanvaUrl("");
+    setYoutubeUrl("");
+    setHasAssignment(false);
+    setAssignmentType("individual");
+    setAssignmentDescription("");
+    setTargetRoomsState(["2", "3", "4", "5", "6", "12", "13"]);
+    setShowAddModal(true);
+  };
+
+  const handleOpenEditModal = (lesson: Lesson) => {
+    setError("");
+    setEditingLesson(lesson);
+    setTitle(lesson.title);
+    setContent(lesson.content);
+    setCanvaUrl(lesson.canvaUrl || "");
+    setYoutubeUrl(lesson.youtubeUrl || "");
+    setHasAssignment(!!lesson.hasAssignment);
+    setAssignmentType(lesson.assignmentType || "individual");
+
+    const linkedBoard = boards.find(b => b.id === lesson.assignmentId);
+    setAssignmentDescription(linkedBoard?.description || "");
+    setTargetRoomsState(linkedBoard?.targetRooms || lesson.targetRooms || ["2", "3", "4", "5", "6", "12", "13"]);
+
+    setShowAddModal(true);
+  };
+
   const handleAddLesson = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -95,16 +127,32 @@ export default function ClassroomPage() {
 
     setIsSubmitting(true);
     try {
-      await lessonService.addLesson(
-        title.trim(),
-        content.trim(),
-        canvaUrl.trim(),
-        youtubeUrl.trim(),
-        hasAssignment,
-        assignmentType,
-        hasAssignment ? assignmentDescription.trim() : "",
-        hasAssignment ? targetRoomsState : []
-      );
+      const resolvedCanva = await resolveCanvaUrlIfNeeded(canvaUrl.trim());
+      if (editingLesson) {
+        await lessonService.updateLesson(
+          editingLesson.id,
+          title.trim(),
+          content.trim(),
+          resolvedCanva,
+          youtubeUrl.trim(),
+          hasAssignment,
+          assignmentType,
+          hasAssignment ? assignmentDescription.trim() : "",
+          hasAssignment ? targetRoomsState : [],
+          editingLesson.assignmentId || ""
+        );
+      } else {
+        await lessonService.addLesson(
+          title.trim(),
+          content.trim(),
+          resolvedCanva,
+          youtubeUrl.trim(),
+          hasAssignment,
+          assignmentType,
+          hasAssignment ? assignmentDescription.trim() : "",
+          hasAssignment ? targetRoomsState : []
+        );
+      }
       
       // Reset Form & Close Modal
       setTitle("");
@@ -115,6 +163,7 @@ export default function ClassroomPage() {
       setAssignmentType("individual");
       setAssignmentDescription("");
       setTargetRoomsState(["2", "3", "4", "5", "6", "12", "13"]);
+      setEditingLesson(null);
       setShowAddModal(false);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการบันทึกบทเรียน";
@@ -216,6 +265,7 @@ export default function ClassroomPage() {
 
     setSubmittingWork(true);
     try {
+      const resolvedLink = await resolveCanvaUrlIfNeeded(subLink.trim());
       if (editingSubId) {
         // Delete previous submission first
         await submissionService.deleteSubmission(editingSubId);
@@ -225,7 +275,7 @@ export default function ClassroomPage() {
         activeBoardId,
         subTitle.trim(),
         subDesc.trim(),
-        subLink.trim(),
+        resolvedLink,
         activeBoardType === "group",
         activeBoardType === "group" ? groupMembers : []
       );
@@ -257,7 +307,7 @@ export default function ClassroomPage() {
         </div>
 
         {isTeacher && (
-          <button onClick={() => setShowAddModal(true)} className="btn-primary">
+          <button onClick={handleOpenAddModal} className="btn-primary">
             <Plus size={18} />
             <span>สร้างบทเรียนใหม่</span>
           </button>
@@ -308,13 +358,22 @@ export default function ClassroomPage() {
                     })} น.</span>
                   </div>
                   {isTeacher && (
-                    <button 
-                      onClick={() => handleDeleteLesson(lesson)} 
-                      className={styles.deleteBtn}
-                      title="ลบบทเรียน"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button 
+                        onClick={() => handleOpenEditModal(lesson)} 
+                        className={styles.editBtn}
+                        title="แก้ไขบทเรียน"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteLesson(lesson)} 
+                        className={styles.deleteBtn}
+                        title="ลบบทเรียน"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   )}
                 </header>
 
@@ -486,13 +545,13 @@ export default function ClassroomPage() {
         </div>
       )}
 
-      {/* Add Lesson Modal */}
+      {/* Add/Edit Lesson Modal */}
       {showAddModal && (
         <div className={styles.modalOverlay}>
           <div className={`${styles.modal} glass-container`}>
             <header className={styles.modalHeader}>
-              <h3>สร้างบทเรียนใหม่</h3>
-              <button onClick={() => setShowAddModal(false)} className={styles.closeBtn}>
+              <h3>{editingLesson ? "แก้ไขบทเรียน" : "สร้างบทเรียนใหม่"}</h3>
+              <button onClick={() => { setShowAddModal(false); setEditingLesson(null); }} className={styles.closeBtn}>
                 <X size={20} />
               </button>
             </header>
@@ -623,7 +682,7 @@ export default function ClassroomPage() {
               <footer className={styles.modalFooter}>
                 <button 
                   type="button" 
-                  onClick={() => setShowAddModal(false)} 
+                  onClick={() => { setShowAddModal(false); setEditingLesson(null); }} 
                   className="btn-secondary"
                   disabled={isSubmitting}
                 >
@@ -634,7 +693,7 @@ export default function ClassroomPage() {
                   className="btn-primary"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "กำลังบันทึก..." : "โพสบทเรียน"}
+                  {isSubmitting ? "กำลังบันทึก..." : (editingLesson ? "บันทึกการแก้ไข" : "โพสบทเรียน")}
                 </button>
               </footer>
             </form>

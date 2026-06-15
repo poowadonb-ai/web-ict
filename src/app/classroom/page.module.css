@@ -166,6 +166,24 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+.editBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.editBtn:hover {
+  color: var(--accent-cyan);
+  background: rgba(6, 182, 212, 0.15);
+}
+
 .lessonTitle {
   font-size: 1.45rem;
   font-weight: 800;

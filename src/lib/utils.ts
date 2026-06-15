@@ -66,3 +66,26 @@ export function getCanvaEmbedUrl(url: string): string | null {
 
   return null;
 }
+
+/**
+ * Checks if the URL is a short link (canva.link) and resolves it using the server API.
+ * Returns the resolved full Canva URL or the original URL if not a short link or error.
+ */
+export async function resolveCanvaUrlIfNeeded(url: string): Promise<string> {
+  if (!url) return url;
+  const trimmed = url.trim();
+  if (trimmed.includes("canva.link")) {
+    try {
+      const res = await fetch(`/api/resolve-canva?url=${encodeURIComponent(trimmed)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.resolvedUrl) {
+          return data.resolvedUrl;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to auto-resolve short link:", e);
+    }
+  }
+  return trimmed;
+}

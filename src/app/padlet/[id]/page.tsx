@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { boardService, submissionService, AssignmentBoard, Submission } from "@/lib/firebase";
-import { getCanvaEmbedUrl, getYouTubeEmbedUrl } from "@/lib/utils";
+import { getCanvaEmbedUrl, getYouTubeEmbedUrl, resolveCanvaUrlIfNeeded } from "@/lib/utils";
 import { 
   ArrowLeft, Plus, Heart, MessageSquare, Send, Trash2, 
   ExternalLink, User, FileText, Video, X, Lock, Unlock, Edit3, UserPlus, Users
@@ -157,6 +157,7 @@ export default function PadletBoardPage() {
 
     setIsSubmitting(true);
     try {
+      const resolvedLink = await resolveCanvaUrlIfNeeded(subLink.trim());
       if (editingSubId) {
         // Delete the previous submission first to update it cleanly
         await submissionService.deleteSubmission(editingSubId);
@@ -166,7 +167,7 @@ export default function PadletBoardPage() {
         boardId,
         subTitle.trim(),
         subDesc.trim(),
-        subLink.trim(),
+        resolvedLink,
         board?.type === "group",
         board?.type === "group" ? groupMembers : []
       );
