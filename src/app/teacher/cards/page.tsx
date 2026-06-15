@@ -229,9 +229,30 @@ export default function TeacherCardsPage() {
     if (!confirmed) return;
     try {
       setLoading(true);
-      await Promise.all(pendingRequests.map(req => cardService.approveRedemption(req.id)));
-      setSuccessMsg(`✅ อนุมัติคำขอทั้งหมด ${pendingRequests.length} รายการเรียบร้อยแล้ว!`);
-      setTimeout(() => setSuccessMsg(""), 4000);
+      let successCount = 0;
+      let failCount = 0;
+      const errors: string[] = [];
+
+      for (const req of pendingRequests) {
+        try {
+          await cardService.approveRedemption(req.id);
+          successCount++;
+        } catch (err: any) {
+          console.error(`Error approving request ${req.id}:`, err);
+          failCount++;
+          errors.push(`${req.studentName} (${req.cardName}): ${err?.message || err}`);
+        }
+      }
+
+      if (successCount > 0) {
+        setSuccessMsg(`✅ อนุมัติคำขอทั้งหมด ${successCount} รายการเรียบร้อยแล้ว!`);
+        setTimeout(() => setSuccessMsg(""), 4000);
+      }
+      
+      if (failCount > 0) {
+        alert(`พบข้อผิดพลาดในการอนุมัติ ${failCount} รายการ:\n` + errors.join("\n"));
+      }
+      
       await loadData();
     } catch (err) {
       console.error("Error approving all requests:", err);
