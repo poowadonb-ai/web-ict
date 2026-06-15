@@ -1700,31 +1700,35 @@ export const authService = {
     // Set flag to prevent onAuthStateChanged from racing with us
     _isSigningUp = true;
 
-    let credential;
+    let credential: any;
     try {
       credential = await createUserWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
       _isSigningUp = false;
+      console.error("Firebase SignUp Error:", err);
+      const errMsg = err?.message || String(err) || "";
+      const errCode = err?.code || "";
+
       // Translate Firebase error messages to Thai
-      if (err?.code === "auth/email-already-in-use") {
+      if (errCode === "auth/email-already-in-use" || errMsg.includes("email-already-in-use")) {
         throw new Error("ชื่อผู้ใช้นี้ถูกใช้งานแล้ว");
       }
-      if (err?.code === "auth/weak-password") {
+      if (errCode === "auth/weak-password" || errMsg.includes("weak-password")) {
         throw new Error("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
       }
-      if (err?.code === "auth/invalid-email") {
+      if (errCode === "auth/invalid-email" || errMsg.includes("invalid-email")) {
         throw new Error("ชื่อผู้ใช้ไม่ถูกต้อง กรุณาใช้ภาษาอังกฤษหรือตัวเลขเท่านั้น");
       }
-      if (err?.code === "auth/operation-not-allowed") {
-        throw new Error("ระบบยังไม่เปิดให้สมัครสมาชิกด้วยรหัสผ่าน กรุณาติดต่อครูผู้สอน");
+      if (errCode === "auth/operation-not-allowed" || errMsg.includes("operation-not-allowed")) {
+        throw new Error("ระบบสมัครสมาชิกด้วยรหัสผ่านยังไม่ได้เปิดใช้งาน กรุณาเปิดใช้งาน 'Email/Password' ใน Firebase Console");
       }
-      if (err?.code === "auth/network-request-failed") {
+      if (errCode === "auth/network-request-failed" || errMsg.includes("network-request-failed")) {
         throw new Error("ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้ กรุณาตรวจสอบการเชื่อมต่อ");
       }
-      if (err?.code === "auth/too-many-requests") {
+      if (errCode === "auth/too-many-requests" || errMsg.includes("too-many-requests")) {
         throw new Error("มีการลองสมัครสมาชิกมากเกินไป กรุณารอสักครู่แล้วลองใหม่");
       }
-      throw new Error("เกิดข้อผิดพลาดในการสมัครสมาชิก: " + (err?.message || "กรุณาลองใหม่อีกครั้ง"));
+      throw new Error("เกิดข้อผิดพลาดในการสมัครสมาชิก: " + (errMsg || "กรุณาลองใหม่อีกครั้ง"));
     }
 
     const user = credential.user;
@@ -1765,19 +1769,23 @@ export const authService = {
     try {
       credential = await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
-      if (err?.code === "auth/user-not-found" || err?.code === "auth/invalid-credential") {
+      console.error("Firebase SignIn Error:", err);
+      const errMsg = err?.message || String(err) || "";
+      const errCode = err?.code || "";
+
+      if (errCode === "auth/user-not-found" || errCode === "auth/invalid-credential" || errMsg.includes("user-not-found") || errMsg.includes("invalid-credential")) {
         throw new Error("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
       }
-      if (err?.code === "auth/wrong-password") {
+      if (errCode === "auth/wrong-password" || errMsg.includes("wrong-password")) {
         throw new Error("รหัสผ่านไม่ถูกต้อง");
       }
-      if (err?.code === "auth/too-many-requests") {
+      if (errCode === "auth/too-many-requests" || errMsg.includes("too-many-requests")) {
         throw new Error("มีการลองเข้าสู่ระบบมากเกินไป กรุณารอสักครู่แล้วลองใหม่");
       }
-      if (err?.code === "auth/network-request-failed") {
+      if (errCode === "auth/network-request-failed" || errMsg.includes("network-request-failed")) {
         throw new Error("ไม่สามารถเชื่อมต่ออินเทอร์เน็ตได้ กรุณาตรวจสอบการเชื่อมต่อ");
       }
-      throw new Error("เข้าสู่ระบบไม่สำเร็จ: " + (err?.message || "กรุณาลองใหม่อีกครั้ง"));
+      throw new Error("เข้าสู่ระบบไม่สำเร็จ: " + (errMsg || "กรุณาลองใหม่อีกครั้ง"));
     }
     const user = credential.user;
 
