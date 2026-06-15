@@ -92,7 +92,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       await authService.registerProfile(profileData);
-      // Let onAuthStateChanged handle the redirect to /classroom
+      // Update user state with registered profile data so redirect logic works
+      setUser(prev => prev ? {
+        ...prev,
+        ...profileData,
+        isRegistered: true,
+        packsCount: prev.packsCount || 3,
+        lastLoginDate: new Date().toISOString().split('T')[0]
+      } : prev);
     } catch (error) {
       console.error("Profile Registration Error:", error);
       throw error;
