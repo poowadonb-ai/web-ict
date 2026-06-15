@@ -549,6 +549,12 @@
   font-size: 0.72rem;
   color: var(--text-secondary);
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 4.2em; /* 3 lines * 1.4 line-height = 4.2em */
 }
 
 .lockedMsg {
@@ -665,7 +671,7 @@
 /* 3D Container & Interactive Card */
 .largeCardWrapper {
   width: 280px;
-  height: 373px;
+  height: auto;
   perspective: 1200px;
   display: flex;
   justify-content: center;
@@ -674,7 +680,7 @@
 
 .largeCard {
   width: 100%;
-  height: 100%;
+  height: auto;
   border-radius: 20px;
   border: 2px solid var(--glass-border);
   background: linear-gradient(135deg, #0d0622 0%, #050212 100%);

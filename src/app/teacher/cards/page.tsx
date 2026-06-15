@@ -336,20 +336,52 @@ export default function TeacherCardsPage() {
     setUploadingImg(true);
 
     try {
-      // ── Compress → Data URL (no server needed, works on Vercel) ────────────
-      const { dataUrl, originalKB, finalKB } = await compressToDataUrl(file, 800, 0.82);
-      const saved = Math.round((1 - finalKB / originalKB) * 100);
+      let resolvedUrl = "";
 
-      if (saved > 0) {
-        setCompressionInfo(`ย่อขนาดแล้ว: ${originalKB} KB → ${finalKB} KB (ลด ${saved}%)`);
+      // 1. Try uploading to /api/cards/upload API route first
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("cardId", editingCard.id);
+
+        const res = await fetch("/api/cards/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.imageUrl) {
+            resolvedUrl = data.imageUrl;
+            setCompressionInfo("อัปโหลดไฟล์ภาพไปยังเซิร์ฟเวอร์เรียบร้อยแล้ว");
+          } else if (data.error) {
+            console.warn("Upload API returned error:", data.error);
+          }
+        } else {
+          console.warn("Upload API status code:", res.status);
+        }
+      } catch (uploadErr) {
+        console.warn("Server upload failed, falling back to base64 compression:", uploadErr);
       }
 
-      // Revoke old blob URL and use data URL as the actual value
+      // 2. Fallback to base64 compression if server upload failed or was bypassed
+      if (!resolvedUrl) {
+        const { dataUrl, originalKB, finalKB } = await compressToDataUrl(file, 800, 0.82);
+        const saved = Math.round((1 - finalKB / originalKB) * 100);
+        if (saved > 0) {
+          setCompressionInfo(`เซิร์ฟเวอร์ไม่อนุญาตให้อัปโหลด ย่อขนาดแล้ว: ${originalKB} KB → ${finalKB} KB (ลด ${saved}%)`);
+        } else {
+          setCompressionInfo("ใช้รูปภาพรูปแบบ Base64");
+        }
+        resolvedUrl = dataUrl;
+      }
+
+      // Revoke old blob URL and use resolved URL as the actual value
       URL.revokeObjectURL(previewBlobUrl);
-      setPreviewUrl(dataUrl);
-      setEditForm(prev => ({ ...prev, imageUrl: dataUrl }));
+      setPreviewUrl(resolvedUrl);
+      setEditForm(prev => ({ ...prev, imageUrl: resolvedUrl }));
     } catch (err) {
-      console.error("Compress error:", err);
+      console.error("Image processing error:", err);
       alert("ไม่สามารถประมวลผลภาพได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setUploadingImg(false);

@@ -1005,7 +1005,7 @@ export default function StudentCardsPage() {
                   )}
 
                   <div className={styles.cardBody}>
-                    <h3 className={styles.cardTitle}>{card.name}</h3>
+                    <h3 className={styles.cardTitle}>{isOwned ? card.name : "???"}</h3>
                     {isOwned ? (
                       <div className={styles.ownedMeta}>
                         <span className={styles.ownedCount}>ครอบครอง: {count} ใบ</span>
