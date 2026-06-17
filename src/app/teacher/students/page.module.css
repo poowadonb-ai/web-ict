@@ -154,6 +154,26 @@
   transform: translateY(-1px);
 }
 
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  transition: all 0.2s ease;
+}
+
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-1px);
+}
+
 /* Modal */
 .modalOverlay {
   position: fixed;
@@ -291,3 +311,328 @@
     width: 100%;
   }
 }
+
+/* Duplicate Detection Section */
+.duplicateSection {
+  background: rgba(245, 158, 11, 0.05) !important; /* Soft Amber background */
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+  padding: 24px;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.duplicateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.duplicateHeader h3 {
+  margin: 0;
+  color: #f59e0b; /* Amber */
+  font-size: 1.15rem;
+}
+
+.duplicateHeader p {
+  margin: 4px 0 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.warningIcon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
+}
+
+.duplicateList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.duplicateCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.duplicateCard:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.duplicateGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+}
+
+.duplicateStudent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.studentLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.studentName {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.studentMeta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.studentEmail {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: monospace;
+}
+
+.mergeArrowArea {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+}
+
+.mergeIcon {
+  transform: rotate(90deg);
+}
+
+.duplicateFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.reasonTag {
+  font-size: 0.85rem;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.mergeBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-blue) 100%);
+  color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+}
+
+.mergeBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+/* Compare and Merge Modal */
+.mergeModal {
+  background: var(--bg-primary);
+  border-radius: 20px;
+  padding: 30px;
+  width: 100%;
+  max-width: 800px; /* Wider modal for side-by-side comparison */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.mergeModalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modalDesc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.compareGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.compareCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.compareCard:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.compareCardSelected {
+  border-color: var(--accent-purple) !important;
+  background: rgba(139, 92, 246, 0.05) !important;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.15);
+}
+
+.compareCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 12px;
+}
+
+.compareCardHeader input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-purple);
+  cursor: pointer;
+}
+
+.radioLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.compareCardSelected .radioLabel {
+  color: var(--accent-purple);
+}
+
+.compareCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.compareRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+  padding-bottom: 8px;
+}
+
+.compareRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.compareLabel {
+  color: var(--text-secondary);
+}
+
+.compareVal {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.mergeSummary {
+  background: rgba(139, 92, 246, 0.04) !important;
+  border: 1px solid rgba(139, 92, 246, 0.15) !important;
+  padding: 16px 20px;
+  border-radius: 12px;
+}
+
+.mergeWarning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.mergeWarning svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .duplicateGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .mergeIcon {
+    transform: rotate(180deg);
+  }
+  .compareGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.duplicateListContainer {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-top: 10px;
+}
+
+/* Custom scrollbar for duplicate list container */
+.duplicateListContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.duplicateListContainer::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+.duplicateListContainer::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 4px;
+}
+
+.duplicateListContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.4);
+}
+

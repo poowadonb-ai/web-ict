@@ -1302,6 +1302,150 @@ class MockDbService {
     }
   }
 
+  public mergeStudents(sourceUid: string, targetUid: string) {
+    const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
+    
+    // Find target and source emails
+    let sourceEmail = "";
+    let targetEmail = "";
+    
+    Object.keys(profiles).forEach(email => {
+      const mockUid = `mock-student-${email.replace(/[^a-zA-Z0-9]/g, "-")}`;
+      if (mockUid === sourceUid) sourceEmail = email;
+      if (mockUid === targetUid) targetEmail = email;
+    });
+
+    if (sourceUid === "mock-student-somchai") sourceEmail = "student.somchai@school.ac.th";
+    if (sourceUid === "mock-student-somsri") sourceEmail = "student.somsri@school.ac.th";
+    if (targetUid === "mock-student-somchai") targetEmail = "student.somchai@school.ac.th";
+    if (targetUid === "mock-student-somsri") targetEmail = "student.somsri@school.ac.th";
+
+    if (!sourceEmail || !targetEmail || sourceEmail === targetEmail) {
+      throw new Error("ไม่สามารถระบุบัญชีผู้ใช้เพื่อรวมข้อมูลได้");
+    }
+
+    const sourceProfile = profiles[sourceEmail] || {};
+    const targetProfile = profiles[targetEmail] || {};
+
+    // 1. Merge cardsCollected
+    const sourceCards: CardCollected[] = sourceProfile.cardsCollected || [];
+    const targetCards: CardCollected[] = targetProfile.cardsCollected || [];
+    const mergedCardsMap = new Map<string, CardCollected>();
+
+    targetCards.forEach(c => {
+      mergedCardsMap.set(c.cardId, { ...c });
+    });
+
+    sourceCards.forEach(c => {
+      const existing = mergedCardsMap.get(c.cardId);
+      if (existing) {
+        existing.count = (existing.count || 0) + (c.count || 0);
+        existing.redeemedCount = (existing.redeemedCount || 0) + (c.redeemedCount || 0);
+      } else {
+        mergedCardsMap.set(c.cardId, { ...c });
+      }
+    });
+
+    // 2. Merge stats
+    targetProfile.cardsCollected = Array.from(mergedCardsMap.values());
+    targetProfile.packsCount = (targetProfile.packsCount || 0) + (sourceProfile.packsCount || 0);
+    targetProfile.bonusPoints = (targetProfile.bonusPoints || 0) + (sourceProfile.bonusPoints || 0);
+    targetProfile.totalPacksOpened = (targetProfile.totalPacksOpened || 0) + (sourceProfile.totalPacksOpened || 0);
+
+    profiles[targetEmail] = targetProfile;
+    // Delete source profile
+    delete profiles[sourceEmail];
+    
+    this.setItem("mock_profiles", profiles);
+
+    // 3. Update mock custom users if they exist (password logins)
+    const customUsers = this.getItem<{ [username: string]: any }>("mock_custom_users", {});
+    const sourceUsername = sourceEmail.split("@")[0];
+    if (customUsers[sourceUsername]) {
+      delete customUsers[sourceUsername];
+      this.setItem("mock_custom_users", customUsers);
+    }
+
+    // 4. Update mock submissions
+    const allSubmissions = this.getItem<Submission[]>("mock_submissions", []);
+    const updatedSubmissions = allSubmissions.map(sub => {
+      if (sub.uid === sourceUid) {
+        return {
+          ...sub,
+          uid: targetUid,
+          studentName: targetProfile.fullName || sub.studentName,
+          studentNo: targetProfile.studentNo || sub.studentNo,
+          gradeClass: targetProfile.grade && targetProfile.room ? `ม.${targetProfile.grade}/${targetProfile.room}` : sub.gradeClass
+        };
+      }
+      return sub;
+    });
+    this.setItem("mock_submissions", updatedSubmissions);
+
+    // 5. Update mock redemptions
+    const allRedemptions = this.getItem<RedemptionRequest[]>("mock_redemptions", []);
+    const updatedRedemptions = allRedemptions.map(req => {
+      if (req.studentUid === sourceUid) {
+        return {
+          ...req,
+          studentUid: targetUid,
+          studentName: targetProfile.fullName || req.studentName,
+          studentRoom: targetProfile.room || req.studentRoom
+        };
+      }
+      return req;
+    });
+    this.setItem("mock_redemptions", updatedRedemptions);
+
+    // If current logged-in user is the source, sign out/clear session
+    const curr = this.currentUser;
+    if (curr && curr.uid === sourceUid) {
+      this.setItem("mock_current_user", null);
+      this.emit("authChange", null);
+    } else if (curr && curr.uid === targetUid) {
+      const updatedUser: UserProfile = {
+        ...curr,
+        packsCount: targetProfile.packsCount,
+        cardsCollected: targetProfile.cardsCollected,
+        bonusPoints: targetProfile.bonusPoints,
+        totalPacksOpened: targetProfile.totalPacksOpened
+      };
+      this.setItem("mock_current_user", updatedUser);
+      this.emit("authChange", updatedUser);
+    }
+
+    this.emit("change");
+  }
+
+  public deleteStudent(uid: string) {
+    const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
+    
+    // Find email of user
+    let foundEmail = "";
+    Object.keys(profiles).forEach(email => {
+      const mockUid = `mock-student-${email.replace(/[^a-zA-Z0-9]/g, "-")}`;
+      if (mockUid === uid) foundEmail = email;
+    });
+
+    if (uid === "mock-student-somchai") foundEmail = "student.somchai@school.ac.th";
+    if (uid === "mock-student-somsri") foundEmail = "student.somsri@school.ac.th";
+
+    if (foundEmail) {
+      delete profiles[foundEmail];
+      this.setItem("mock_profiles", profiles);
+    }
+
+    // Also remove from custom users if matching username
+    const customUsers = this.getItem<{ [username: string]: any }>("mock_custom_users", {});
+    const username = foundEmail ? foundEmail.split("@")[0] : "";
+    if (username && customUsers[username]) {
+      delete customUsers[username];
+      this.setItem("mock_custom_users", customUsers);
+    }
+
+    this.emit("change");
+  }
+
   // CARDS & GACHA API
   public awardPack(studentUid: string, count: number) {
     const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
@@ -2034,6 +2178,106 @@ export const authService = {
     }
     const userDocRef = doc(db, "users", uid);
     await updateDoc(userDocRef, updates);
+  },
+
+  mergeStudents: async (sourceUid: string, targetUid: string): Promise<void> => {
+    if (isMockMode()) {
+      mockDb.mergeStudents(sourceUid, targetUid);
+      return;
+    }
+
+    const { doc, getDoc, updateDoc, deleteDoc, getDocs, collection, query, where, writeBatch } = await import("firebase/firestore");
+
+    const sourceDocRef = doc(db, "users", sourceUid);
+    const targetDocRef = doc(db, "users", targetUid);
+
+    const [sourceSnap, targetSnap] = await Promise.all([
+      getDoc(sourceDocRef),
+      getDoc(targetDocRef)
+    ]);
+
+    if (!sourceSnap.exists() || !targetSnap.exists()) {
+      throw new Error("ไม่พบข้อมูลนักเรียนบัญชีใดบัญชีหนึ่งในระบบ");
+    }
+
+    const sourceData = sourceSnap.data() as UserProfile;
+    const targetData = targetSnap.data() as UserProfile;
+
+    // 1. Merge cardsCollected
+    const sourceCards: CardCollected[] = sourceData.cardsCollected || [];
+    const targetCards: CardCollected[] = targetData.cardsCollected || [];
+    const mergedCardsMap = new Map<string, CardCollected>();
+
+    targetCards.forEach(c => {
+      mergedCardsMap.set(c.cardId, { ...c });
+    });
+
+    sourceCards.forEach(c => {
+      const existing = mergedCardsMap.get(c.cardId);
+      if (existing) {
+        existing.count = (existing.count || 0) + (c.count || 0);
+        existing.redeemedCount = (existing.redeemedCount || 0) + (c.redeemedCount || 0);
+      } else {
+        mergedCardsMap.set(c.cardId, { ...c });
+      }
+    });
+
+    // Create updates for target user profile
+    const targetUpdates = {
+      cardsCollected: Array.from(mergedCardsMap.values()),
+      packsCount: (targetData.packsCount || 0) + (sourceData.packsCount || 0),
+      bonusPoints: (targetData.bonusPoints || 0) + (sourceData.bonusPoints || 0),
+      totalPacksOpened: (targetData.totalPacksOpened || 0) + (sourceData.totalPacksOpened || 0)
+    };
+
+    // 2. Fetch and prepare updates for all submissions
+    const subQuery = query(collection(db, "submissions"), where("uid", "==", sourceUid));
+    const subSnap = await getDocs(subQuery);
+
+    // 3. Fetch and prepare updates for all redemption requests
+    const redempQuery = query(collection(db, "redemptions"), where("studentUid", "==", sourceUid));
+    const redempSnap = await getDocs(redempQuery);
+
+    // Using Batch for atomic operations
+    const batch = writeBatch(db);
+
+    // Update target profile
+    batch.update(targetDocRef, targetUpdates);
+
+    // Update submissions to target profile details
+    subSnap.forEach(subDoc => {
+      batch.update(subDoc.ref, {
+        uid: targetUid,
+        studentName: targetData.fullName || targetData.displayName || "นักเรียน",
+        studentNo: targetData.studentNo || "",
+        gradeClass: targetData.grade && targetData.room ? `ม.${targetData.grade}/${targetData.room}` : "ทั่วไป"
+      });
+    });
+
+    // Update redemptions to target profile details
+    redempSnap.forEach(redempDoc => {
+      batch.update(redempDoc.ref, {
+        studentUid: targetUid,
+        studentName: targetData.fullName || targetData.displayName || "นักเรียน",
+        studentRoom: targetData.room || ""
+      });
+    });
+
+    // Delete source profile doc
+    batch.delete(sourceDocRef);
+
+    // Commit all updates
+    await batch.commit();
+  },
+
+  deleteStudent: async (uid: string): Promise<void> => {
+    if (isMockMode()) {
+      mockDb.deleteStudent(uid);
+      return;
+    }
+    const { doc, deleteDoc } = await import("firebase/firestore");
+    const userDocRef = doc(db, "users", uid);
+    await deleteDoc(userDocRef);
   }
 };
 
