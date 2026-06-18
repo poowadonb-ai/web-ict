@@ -22,6 +22,7 @@ export default function ManageStudentsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<UserProfile | null>(null);
   const [editName, setEditName] = useState("");
+  const [editGrade, setEditGrade] = useState("");
   const [editRoom, setEditRoom] = useState("");
   const [editNo, setEditNo] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -164,6 +165,7 @@ export default function ManageStudentsPage() {
   const handleOpenEdit = (student: UserProfile) => {
     setEditingStudent(student);
     setEditName(student.fullName || "");
+    setEditGrade(student.grade || "4");
     setEditRoom(student.room || "1");
     setEditNo(student.studentNo || "");
     setShowEditModal(true);
@@ -173,7 +175,7 @@ export default function ManageStudentsPage() {
     e.preventDefault();
     if (!editingStudent) return;
 
-    if (!editName.trim() || !editRoom || !editNo) {
+    if (!editName.trim() || !editGrade || !editRoom || !editNo) {
       alert("กรุณากรอกข้อมูลให้ครบถ้วน");
       return;
     }
@@ -182,6 +184,7 @@ export default function ManageStudentsPage() {
     try {
       await authService.updateStudentProfile(editingStudent.uid, {
         fullName: editName.trim(),
+        grade: editGrade,
         room: editRoom,
         studentNo: editNo
       });
@@ -394,7 +397,17 @@ export default function ManageStudentsPage() {
                 <tr key={student.uid}>
                   <td>ม.{student.grade || "4"}/{student.room}</td>
                   <td>{student.studentNo}</td>
-                  <td className={styles.studentNameCell}>{student.fullName}</td>
+                  <td className={styles.studentNameCell}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      <span>{student.fullName}</span>
+                      {student.isMerged && (
+                        <span className={styles.mergedBadge} title="บัญชีนี้ผ่านการรวมประวัติเนื่องจากการสมัครซ้ำ">
+                          <GitMerge size={12} />
+                          รวมบัญชีแล้ว
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td style={{ color: "var(--accent-purple)", fontWeight: "bold" }}>
                     {student.packsCount || 0} ซอง
                   </td>
@@ -447,9 +460,22 @@ export default function ManageStudentsPage() {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
                 <div className={styles.formGroup}>
-                  <label>ห้อง (ม.{editingStudent?.grade || "4"}/...)</label>
+                  <label>ระดับชั้น</label>
+                  <select
+                    value={editGrade}
+                    onChange={(e) => setEditGrade(e.target.value)}
+                    disabled={isSaving}
+                    required
+                  >
+                    <option value="4">ม.4</option>
+                    <option value="5">ม.5</option>
+                  </select>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>ห้อง</label>
                   <select
                     value={editRoom}
                     onChange={(e) => setEditRoom(e.target.value)}

@@ -49,6 +49,7 @@ export interface UserProfile {
   bonusPoints?: number;
   lastLoginDate?: string;
   totalPacksOpened?: number;
+  isMerged?: boolean;
 }
 
 export interface Announcement {
@@ -1282,7 +1283,7 @@ class MockDbService {
     return students.sort((a, b) => Number(a.studentNo || 0) - Number(b.studentNo || 0));
   }
 
-  public updateStudentProfile(uid: string, updates: { fullName?: string; room?: string; studentNo?: string }) {
+  public updateStudentProfile(uid: string, updates: { fullName?: string; grade?: string; room?: string; studentNo?: string }) {
     const profiles = this.getItem<{ [email: string]: any }>("mock_profiles", {});
     const targetEmail = Object.keys(profiles).find(email => {
       return `mock-student-${email.replace(/[^a-zA-Z0-9]/g, "-")}` === uid;
@@ -1351,6 +1352,7 @@ class MockDbService {
     targetProfile.packsCount = (targetProfile.packsCount || 0) + (sourceProfile.packsCount || 0);
     targetProfile.bonusPoints = (targetProfile.bonusPoints || 0) + (sourceProfile.bonusPoints || 0);
     targetProfile.totalPacksOpened = (targetProfile.totalPacksOpened || 0) + (sourceProfile.totalPacksOpened || 0);
+    targetProfile.isMerged = true;
 
     profiles[targetEmail] = targetProfile;
     // Delete source profile
@@ -2171,7 +2173,7 @@ export const authService = {
     }
   },
 
-  updateStudentProfile: async (uid: string, updates: { fullName?: string; room?: string; studentNo?: string }): Promise<void> => {
+  updateStudentProfile: async (uid: string, updates: { fullName?: string; grade?: string; room?: string; studentNo?: string }): Promise<void> => {
     if (isMockMode()) {
       mockDb.updateStudentProfile(uid, updates);
       return;
@@ -2227,7 +2229,8 @@ export const authService = {
       cardsCollected: Array.from(mergedCardsMap.values()),
       packsCount: (targetData.packsCount || 0) + (sourceData.packsCount || 0),
       bonusPoints: (targetData.bonusPoints || 0) + (sourceData.bonusPoints || 0),
-      totalPacksOpened: (targetData.totalPacksOpened || 0) + (sourceData.totalPacksOpened || 0)
+      totalPacksOpened: (targetData.totalPacksOpened || 0) + (sourceData.totalPacksOpened || 0),
+      isMerged: true
     };
 
     // 2. Fetch and prepare updates for all submissions
