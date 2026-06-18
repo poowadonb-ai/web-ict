@@ -115,8 +115,7 @@ export default function AlbumPage() {
   useEffect(() => {
     if (user?.role === "student") {
       syncCardsFromFirestore().then(() => {
-        authService.getRegisteredStudents().then(students => {
-          const me = students.find(s => s.uid === user.uid) || null;
+        authService.getStudentProfile(user.uid).then(me => {
           setProfile(me);
           setLoading(false);
         }).catch(() => setLoading(false));

@@ -193,12 +193,10 @@ export default function StudentCardsPage() {
     setLoading(true);
     try {
       await syncCardsFromFirestore();
-      const fetchedStudents = await authService.getRegisteredStudents();
-      const me = fetchedStudents.find(s => s.uid === user.uid) || null;
+      const me = await authService.getStudentProfile(user.uid);
       setStudentProfile(me);
 
-      const allRedemptions = await cardService.getRedemptions();
-      const myRedemptions = allRedemptions.filter(r => r.studentUid === user.uid);
+      const myRedemptions = await cardService.getStudentRedemptions(user.uid);
       setRedemptions(myRedemptions);
     } catch (err) {
       console.error("Error loading student cards data:", err);
@@ -264,11 +262,17 @@ export default function StudentCardsPage() {
       const newCards = await openPackPromise;
       setOpenedCards(newCards);
       setIsOpeningPack(false);
-    } catch (err) {
+    } catch (err: any) {
       clearInterval(intervalId);
       console.error("Error opening pack:", err);
       setIsGachaMode(false);
       setIsOpeningPack(false);
+      const errMsg = err?.message || String(err);
+      if (errMsg.includes("Quota exceeded") || errMsg.includes("resource-exhausted")) {
+        alert("⚠️ โควตาการเชื่อมต่อฐานข้อมูล Firebase (Free Tier) เต็มในขณะนี้ กรุณาแจ้งคุณครูเพื่อตรวจสอบ หรือลองใหม่อีกครั้งในภายหลังครับ");
+      } else {
+        alert("เกิดข้อผิดพลาดในการเปิดซองการ์ด: " + errMsg);
+      }
     }
   };
 
@@ -374,7 +378,12 @@ export default function StudentCardsPage() {
     } catch (err: any) {
       clearInterval(intervalId);
       console.error("Error exchanging cards:", err);
-      alert(err.message || "เกิดข้อผิดพลาดในการย่อยการ์ด");
+      const errMsg = err?.message || String(err);
+      if (errMsg.includes("Quota exceeded") || errMsg.includes("resource-exhausted")) {
+        alert("⚠️ โควตาการเชื่อมต่อฐานข้อมูล Firebase (Free Tier) เต็มในขณะนี้ กรุณาแจ้งคุณครูเพื่อตรวจสอบ หรือลองใหม่อีกครั้งในภายหลังครับ");
+      } else {
+        alert(errMsg || "เกิดข้อผิดพลาดในการย่อยการ์ด");
+      }
       setIsExchangeMode(false);
     } finally {
       setIsExchangingPack(false);

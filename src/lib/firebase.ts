@@ -2173,6 +2173,24 @@ export const authService = {
     }
   },
 
+  getStudentProfile: async (uid: string): Promise<UserProfile | null> => {
+    if (isMockMode()) {
+      const students = mockDb.getRegisteredStudents();
+      return students.find(s => s.uid === uid) || null;
+    }
+    try {
+      const userDocRef = doc(db!, "users", uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        return { uid: userSnap.id, ...userSnap.data() } as UserProfile;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching student profile:", error);
+      return null;
+    }
+  },
+
   updateStudentProfile: async (uid: string, updates: { fullName?: string; grade?: string; room?: string; studentNo?: string }): Promise<void> => {
     if (isMockMode()) {
       mockDb.updateStudentProfile(uid, updates);
@@ -2881,6 +2899,29 @@ export const cardService = {
       list.push({ id: doc.id, ...doc.data() } as RedemptionRequest);
     });
     return list;
+  },
+
+  getStudentRedemptions: async (studentUid: string): Promise<RedemptionRequest[]> => {
+    if (isMockMode()) {
+      return mockDb.getRedemptions()
+        .filter(r => r.studentUid === studentUid)
+        .sort((a, b) => b.createdAt - a.createdAt);
+    }
+    try {
+      const q = query(
+        collection(db!, "redemptions"),
+        where("studentUid", "==", studentUid)
+      );
+      const snap = await getDocs(q);
+      const list: RedemptionRequest[] = [];
+      snap.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() } as RedemptionRequest);
+      });
+      return list.sort((a, b) => b.createdAt - a.createdAt);
+    } catch (error) {
+      console.error("Error fetching student redemptions:", error);
+      return [];
+    }
   },
 
   approveRedemption: async (requestId: string): Promise<void> => {
