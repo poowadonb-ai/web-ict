@@ -3264,8 +3264,8 @@ export const authService = {
     sb.authService.onAuthStateChanged(callback),
   signUpWithUsernamePassword: (username: string, password: string, profileData: any) =>
     sb.authService.signUpWithUsernamePassword(username, password, profileData),
-  signInWithUsernamePassword: (username: string, password: string) =>
-    sb.authService.signInWithUsernamePassword(username, password),
+  signInWithUsernamePassword: (username: string, password: string, studentProfile?: UserProfile) =>
+    sb.authService.signInWithUsernamePassword(username, password, studentProfile),
 
   // ── Profile/student data — follows getDatabaseMode() (firebase or supabase) ───────
   getRegisteredStudents: () =>

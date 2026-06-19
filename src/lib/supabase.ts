@@ -174,13 +174,22 @@ export const authService = {
   },
 
   // ── Sign in — calls /api/auth/signin server route ─────────────────────────
-  signInWithUsernamePassword: async (usernameOrUid: string, password: string): Promise<UserProfile> => {
-    const isUid = usernameOrUid.startsWith("user-") || usernameOrUid.startsWith("student-");
+  signInWithUsernamePassword: async (usernameOrUid: string, password: string, studentProfile?: UserProfile): Promise<UserProfile> => {
+    const isUid = usernameOrUid.startsWith("user-") || usernameOrUid.startsWith("student-") || usernameOrUid.length > 20 || !/^[a-zA-Z0-9_]{4,20}$/.test(usernameOrUid);
     const payload: any = { password };
     if (isUid) {
       payload.uid = usernameOrUid;
     } else {
       payload.username = usernameOrUid.trim().toLowerCase();
+    }
+
+    if (studentProfile) {
+      payload.autoRegister = {
+        fullName: studentProfile.fullName || studentProfile.displayName || "",
+        grade: studentProfile.grade || "",
+        room: studentProfile.room || "",
+        studentNo: studentProfile.studentNo || "",
+      };
     }
 
     const res = await fetch("/api/auth/signin", {

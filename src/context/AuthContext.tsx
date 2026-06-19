@@ -14,7 +14,7 @@ interface AuthContextType {
     password: string,
     profileData: { fullName: string; grade: string; room: string; studentNo: string }
   ) => Promise<void>;
-  signInWithUsernamePassword: (username: string, password: string) => Promise<void>;
+  signInWithUsernamePassword: (username: string, password: string, studentProfile?: UserProfile) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,10 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithUsernamePassword = async (username: string, password: string) => {
+  const signInWithUsernamePassword = async (username: string, password: string, studentProfile?: UserProfile) => {
     setLoading(true);
     try {
-      const profile = await authService.signInWithUsernamePassword(username, password);
+      const profile = await authService.signInWithUsernamePassword(username, password, studentProfile);
       setUser(profile);
       router.push("/classroom");
     } catch (error) {

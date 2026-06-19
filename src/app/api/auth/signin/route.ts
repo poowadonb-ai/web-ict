@@ -77,20 +77,73 @@ export async function POST(req: NextRequest) {
       throw new Error(error.message);
     }
 
-    console.log("[signin] userRow found:", userRow ? "YES" : "NO");
+    let activeUser = userRow;
 
-    if (!userRow) {
+    // ── Auto-register student if they exist in Firestore but not yet in Supabase ──
+    if (!activeUser && body.autoRegister) {
+      const { fullName, grade, room, studentNo } = body.autoRegister;
+      const today = new Date().toISOString().split("T")[0];
+      const email = uid 
+        ? `${uid}@ictclassroom.local` 
+        : `${username.trim().toLowerCase()}@ictclassroom.local`;
+      const finalUid = uid || `user-${username.trim().toLowerCase()}`;
+
+      console.log("[signin] Auto-registering student in Supabase on first sign-in:", finalUid);
+      
+      const { error: insertError } = await supabase.from("users").insert({
+        uid: finalUid,
+        email,
+        display_name: fullName,
+        role: "student",
+        is_registered: true,
+        full_name: fullName,
+        grade: grade || "",
+        room: room || "",
+        student_no: studentNo || "",
+        packs_count: 3,
+        last_login_date: today,
+        password_hash: passwordHash,
+      });
+
+      if (insertError) {
+        console.error("[signin] Auto-register DB insert error:", insertError);
+        throw new Error(insertError.message);
+      }
+
+      activeUser = {
+        uid: finalUid,
+        email,
+        display_name: fullName,
+        role: "student",
+        is_registered: true,
+        full_name: fullName,
+        grade: grade || "",
+        room: room || "",
+        student_no: studentNo || "",
+        packs_count: 3,
+        bonus_points: 0,
+        last_login_date: today,
+        total_packs_opened: 0,
+        is_merged: false,
+        cards_collected: [],
+        password_hash: passwordHash
+      };
+    }
+
+    console.log("[signin] activeUser found:", activeUser ? "YES" : "NO");
+
+    if (!activeUser) {
       return NextResponse.json(
-        { error: "ไม่พบชื่อผู้ใช้นี้ในระบบ (สมัครก่อนค่อยครับ)" },
+        { error: "ไม่พบชื่อผู้ใช้นี้ในระบบ" },
         { status: 401 }
       );
     }
 
     // ── Check password ────────────────────────────────────────────────────────
-    console.log("[signin] hasPasswordHash:", !!userRow.password_hash);
-    console.log("[signin] hashMatch:", userRow.password_hash === passwordHash);
+    console.log("[signin] hasPasswordHash:", !!activeUser.password_hash);
+    console.log("[signin] hashMatch:", activeUser.password_hash === passwordHash);
 
-    if (!userRow.password_hash || userRow.password_hash !== passwordHash) {
+    if (!activeUser.password_hash || activeUser.password_hash !== passwordHash) {
       return NextResponse.json(
         { error: "รหัสผ่านไม่ถูกต้อง" },
         { status: 401 }
@@ -99,20 +152,20 @@ export async function POST(req: NextRequest) {
 
     // ── Daily pack reward (if student and new day) ────────────────────────────
     const today = new Date().toISOString().split("T")[0];
-    let packsCount = (userRow.packs_count as number) || 0;
-    let lastLoginDate = userRow.last_login_date as string;
+    let packsCount = (activeUser.packs_count as number) || 0;
+    let lastLoginDate = activeUser.last_login_date as string;
 
-    if (userRow.role === "student" && lastLoginDate !== today) {
+    if (activeUser.role === "student" && lastLoginDate !== today) {
       packsCount += 1;
       lastLoginDate = today;
       await supabase
         .from("users")
         .update({ packs_count: packsCount, last_login_date: today })
-        .eq("uid", userRow.uid);
+        .eq("uid", activeUser.uid);
     }
 
     const profile = mapUserFromDb({
-      ...userRow,
+      ...activeUser,
       packs_count: packsCount,
       last_login_date: lastLoginDate,
     });

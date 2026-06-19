@@ -116,7 +116,11 @@ export default function Home() {
 
     setIsLoggingIn(true);
     try {
-      await signInWithUsernamePassword(loginUsernameOrUid, password.trim());
+      const studentProfile = activeTab === "student"
+        ? allStudents.find((s) => s.uid === selectedStudentUid)
+        : undefined;
+
+      await signInWithUsernamePassword(loginUsernameOrUid, password.trim(), studentProfile);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
       setLoginError(msg);
