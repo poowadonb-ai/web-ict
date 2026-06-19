@@ -30,8 +30,16 @@ import {
   writeBatch,
   increment
 } from "firebase/firestore";
-import * as sb from "./supabase";
-
+import { 
+  supabase,
+  authService as sbAuthService,
+  boardService as sbBoardService,
+  submissionService as sbSubmissionService,
+  cardService as sbCardService,
+  announcementService as sbAnnouncementService,
+  lessonService as sbLessonService,
+  syncCardsFromSupabase
+} from "./supabase";
 import { 
   Card, UserProfile, Lesson, AssignmentBoard, 
   Submission, CardCollected, Announcement, 
@@ -237,7 +245,7 @@ export async function saveCardsToFirestore(): Promise<void> {
 
   if (getDatabaseMode() === "supabase") {
     try {
-      const supabase = sb.supabase;
+      const supabaseClient = supabase;
       const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
       const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
       const dropRates = JSON.parse(localStorage.getItem(DROP_RATES_KEY) || "null");
@@ -304,7 +312,6 @@ export async function syncCardsFromFirestore(): Promise<void> {
 
   if (getDatabaseMode() === "supabase") {
     try {
-      const syncCardsFromSupabase = sb.syncCardsFromSupabase;
       await syncCardsFromSupabase();
     } catch (e) {
       console.error("syncCardsFromSupabase error:", e);
@@ -1895,7 +1902,7 @@ const fbAuthService = {
       // Synchronize missing accounts from Supabase users table (which contains the custom credentials)
       try {
         console.log("[getRegisteredStudents] Fetching registered students from Supabase to sync to Firestore...");
-        const sbStudents = await sb.authService.getRegisteredStudents();
+        const sbStudents = await sbAuthService.getRegisteredStudents();
         for (const sbStud of sbStudents) {
           if (!fbStudentsMap.has(sbStud.uid)) {
             console.log(`[getRegisteredStudents] Account ${sbStud.uid} not in Firestore. Syncing...`);
@@ -1946,7 +1953,7 @@ const fbAuthService = {
 
       // If document does not exist in Firestore, search in Supabase and sync
       console.log(`[getStudentProfile] UID ${uid} not found in Firestore. Checking Supabase...`);
-      const sbProfile = await sb.authService.getStudentProfile(uid);
+      const sbProfile = await sbAuthService.getStudentProfile(uid);
       if (sbProfile) {
         console.log(`[getStudentProfile] Found profile in Supabase for ${uid}. Syncing to Firestore...`);
         const newFbUser: UserProfile = {
@@ -2928,102 +2935,102 @@ const fbAnnouncementService = {
 // ============================================================
 
 export const authService = {
-  // ── Auth methods ALWAYS use sb.authService (localStorage-based, API-route backed) ─────
+  // ── Auth methods ALWAYS use sbAuthService (localStorage-based, API-route backed) ─────
   // This is independent of getDatabaseMode() so data can be in Firebase
   // while auth uses our new custom system.
-  signInWithGoogle: (_role?: string, _email?: string) => sb.authService.signInWithGoogle(),
-  signOut: () => sb.authService.signOut(),
+  signInWithGoogle: (_role?: string, _email?: string) => sbAuthService.signInWithGoogle(),
+  signOut: () => sbAuthService.signOut(),
   onAuthStateChanged: (callback: (user: UserProfile | null) => void) =>
-    sb.authService.onAuthStateChanged(callback),
+    sbAuthService.onAuthStateChanged(callback),
   signUpWithUsernamePassword: (username: string, password: string, profileData: any) =>
-    sb.authService.signUpWithUsernamePassword(username, password, profileData),
+    sbAuthService.signUpWithUsernamePassword(username, password, profileData),
   signInWithUsernamePassword: (username: string, password: string, studentProfile?: UserProfile) =>
-    sb.authService.signInWithUsernamePassword(username, password, studentProfile),
+    sbAuthService.signInWithUsernamePassword(username, password, studentProfile),
 
   // ── Profile/student data — follows getDatabaseMode() (firebase or supabase) ───────
   getRegisteredStudents: () =>
-    getDatabaseMode() === "supabase" ? sb.authService.getRegisteredStudents() : fbAuthService.getRegisteredStudents(),
+    getDatabaseMode() === "supabase" ? sbAuthService.getRegisteredStudents() : fbAuthService.getRegisteredStudents(),
   getStudentProfile: (uid: string) =>
-    getDatabaseMode() === "supabase" ? sb.authService.getStudentProfile(uid) : fbAuthService.getStudentProfile(uid),
+    getDatabaseMode() === "supabase" ? sbAuthService.getStudentProfile(uid) : fbAuthService.getStudentProfile(uid),
   updateStudentProfile: (uid: string, updates: any) =>
-    getDatabaseMode() === "supabase" ? sb.authService.updateStudentProfile(uid, updates) : fbAuthService.updateStudentProfile(uid, updates),
+    getDatabaseMode() === "supabase" ? sbAuthService.updateStudentProfile(uid, updates) : fbAuthService.updateStudentProfile(uid, updates),
   mergeStudents: (sourceUid: string, targetUid: string) =>
-    getDatabaseMode() === "supabase" ? sb.authService.mergeStudents(sourceUid, targetUid) : fbAuthService.mergeStudents(sourceUid, targetUid),
+    getDatabaseMode() === "supabase" ? sbAuthService.mergeStudents(sourceUid, targetUid) : fbAuthService.mergeStudents(sourceUid, targetUid),
   registerProfile: (profileData: any) =>
-    getDatabaseMode() === "supabase" ? sb.authService.registerProfile(profileData) : fbAuthService.registerProfile(profileData),
+    getDatabaseMode() === "supabase" ? sbAuthService.registerProfile(profileData) : fbAuthService.registerProfile(profileData),
   deleteStudent: (uid: string) =>
-    getDatabaseMode() === "supabase" ? sb.authService.deleteStudent(uid) : fbAuthService.deleteStudent(uid),
+    getDatabaseMode() === "supabase" ? sbAuthService.deleteStudent(uid) : fbAuthService.deleteStudent(uid),
 };
 
 export const lessonService = {
   subscribeLessons: (callback: (lessons: Lesson[]) => void) =>
-    getDatabaseMode() === "supabase" ? sb.lessonService.subscribeLessons(callback) : fbLessonService.subscribeLessons(callback),
+    getDatabaseMode() === "supabase" ? sbLessonService.subscribeLessons(callback) : fbLessonService.subscribeLessons(callback),
   addLesson: (title: string, content: string, canvaUrl: string, youtubeUrl: string, hasAssignment?: boolean, assignmentType?: "individual" | "group", assignmentDescription?: string, targetRooms?: string[]) =>
-    getDatabaseMode() === "supabase" ? sb.lessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms) : fbLessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms),
+    getDatabaseMode() === "supabase" ? sbLessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms) : fbLessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms),
   deleteLesson: (id: string) =>
-    getDatabaseMode() === "supabase" ? sb.lessonService.deleteLesson(id) : fbLessonService.deleteLesson(id),
+    getDatabaseMode() === "supabase" ? sbLessonService.deleteLesson(id) : fbLessonService.deleteLesson(id),
   updateLesson: (id: string, title: string, content: string, canvaUrl: string, youtubeUrl: string, hasAssignment?: boolean, assignmentType?: "individual" | "group", assignmentDescription?: string, targetRooms?: string[], existingAssignmentId?: string) =>
-    getDatabaseMode() === "supabase" ? sb.lessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId) : fbLessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId),
+    getDatabaseMode() === "supabase" ? sbLessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId) : fbLessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId),
 };
 
 export const boardService = {
   subscribeBoards: (callback: (boards: AssignmentBoard[]) => void) =>
-    getDatabaseMode() === "supabase" ? sb.boardService.subscribeBoards(callback) : fbBoardService.subscribeBoards(callback),
+    getDatabaseMode() === "supabase" ? sbBoardService.subscribeBoards(callback) : fbBoardService.subscribeBoards(callback),
   addBoard: (title: string, description: string, type?: "individual" | "group", targetRooms?: string[]) =>
-    getDatabaseMode() === "supabase" ? sb.boardService.addBoard(title, description, type, targetRooms) : fbBoardService.addBoard(title, description, type, targetRooms),
+    getDatabaseMode() === "supabase" ? sbBoardService.addBoard(title, description, type, targetRooms) : fbBoardService.addBoard(title, description, type, targetRooms),
   deleteBoard: (id: string) =>
-    getDatabaseMode() === "supabase" ? sb.boardService.deleteBoard(id) : fbBoardService.deleteBoard(id),
+    getDatabaseMode() === "supabase" ? sbBoardService.deleteBoard(id) : fbBoardService.deleteBoard(id),
   toggleLockBoard: (boardId: string, isLocked: boolean) =>
-    getDatabaseMode() === "supabase" ? sb.boardService.toggleLockBoard(boardId, isLocked) : fbBoardService.toggleLockBoard(boardId, isLocked),
+    getDatabaseMode() === "supabase" ? sbBoardService.toggleLockBoard(boardId, isLocked) : fbBoardService.toggleLockBoard(boardId, isLocked),
 };
 
 export const submissionService = {
   subscribeSubmissions: (boardId: string, callback: (submissions: Submission[]) => void) =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.subscribeSubmissions(boardId, callback) : fbSubmissionService.subscribeSubmissions(boardId, callback),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.subscribeSubmissions(boardId, callback) : fbSubmissionService.subscribeSubmissions(boardId, callback),
   addSubmission: (boardId: string, title: string, description: string, linkUrl: string, isGroup?: boolean, members?: any[]) =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.addSubmission(boardId, title, description, linkUrl, isGroup, members) : fbSubmissionService.addSubmission(boardId, title, description, linkUrl, isGroup, members),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.addSubmission(boardId, title, description, linkUrl, isGroup, members) : fbSubmissionService.addSubmission(boardId, title, description, linkUrl, isGroup, members),
   deleteSubmission: (submissionId: string) =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.deleteSubmission(submissionId) : fbSubmissionService.deleteSubmission(submissionId),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.deleteSubmission(submissionId) : fbSubmissionService.deleteSubmission(submissionId),
   toggleLike: (submissionId: string) =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.toggleLike(submissionId) : fbSubmissionService.toggleLike(submissionId),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.toggleLike(submissionId) : fbSubmissionService.toggleLike(submissionId),
   addComment: (submissionId: string, content: string) =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.addComment(submissionId, content) : fbSubmissionService.addComment(submissionId, content),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.addComment(submissionId, content) : fbSubmissionService.addComment(submissionId, content),
   gradeSubmission: (submissionId: string, score: number, maxScore: number, status: "graded" | "resubmit", teacherFeedback: string, awardPack?: boolean) =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack) : fbSubmissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack) : fbSubmissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack),
   subscribeAllSubmissions: (callback: (submissions: Submission[]) => void) =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.subscribeAllSubmissions(callback) : fbSubmissionService.subscribeAllSubmissions(callback),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.subscribeAllSubmissions(callback) : fbSubmissionService.subscribeAllSubmissions(callback),
   getAllSubmissions: () =>
-    getDatabaseMode() === "supabase" ? sb.submissionService.getAllSubmissions() : fbSubmissionService.getAllSubmissions(),
+    getDatabaseMode() === "supabase" ? sbSubmissionService.getAllSubmissions() : fbSubmissionService.getAllSubmissions(),
 };
 
 export const cardService = {
   awardPack: (studentUid: string, count: number) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.awardPack(studentUid, count) : fbCardService.awardPack(studentUid, count),
+    getDatabaseMode() === "supabase" ? sbCardService.awardPack(studentUid, count) : fbCardService.awardPack(studentUid, count),
   getStudentPacks: (studentUid: string) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.getStudentPacks(studentUid) : fbCardService.getStudentPacks(studentUid),
+    getDatabaseMode() === "supabase" ? sbCardService.getStudentPacks(studentUid) : fbCardService.getStudentPacks(studentUid),
   openPack: (studentUid: string) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.openPack(studentUid) : fbCardService.openPack(studentUid),
+    getDatabaseMode() === "supabase" ? sbCardService.openPack(studentUid) : fbCardService.openPack(studentUid),
   requestRedemption: (studentUid: string, cardId: string) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.requestRedemption(studentUid, cardId) : fbCardService.requestRedemption(studentUid, cardId),
+    getDatabaseMode() === "supabase" ? sbCardService.requestRedemption(studentUid, cardId) : fbCardService.requestRedemption(studentUid, cardId),
   getRedemptions: () =>
-    getDatabaseMode() === "supabase" ? sb.cardService.getRedemptions() : fbCardService.getRedemptions(),
+    getDatabaseMode() === "supabase" ? sbCardService.getRedemptions() : fbCardService.getRedemptions(),
   getStudentRedemptions: (studentUid: string) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.getStudentRedemptions(studentUid) : fbCardService.getStudentRedemptions(studentUid),
+    getDatabaseMode() === "supabase" ? sbCardService.getStudentRedemptions(studentUid) : fbCardService.getStudentRedemptions(studentUid),
   approveRedemption: (requestId: string) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.approveRedemption(requestId) : fbCardService.approveRedemption(requestId),
+    getDatabaseMode() === "supabase" ? sbCardService.approveRedemption(requestId) : fbCardService.approveRedemption(requestId),
   rejectRedemption: (requestId: string) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.rejectRedemption(requestId) : fbCardService.rejectRedemption(requestId),
+    getDatabaseMode() === "supabase" ? sbCardService.rejectRedemption(requestId) : fbCardService.rejectRedemption(requestId),
   exchangeCommonCards: (studentUid: string) =>
-    getDatabaseMode() === "supabase" ? sb.cardService.exchangeCommonCards(studentUid) : fbCardService.exchangeCommonCards(studentUid),
+    getDatabaseMode() === "supabase" ? sbCardService.exchangeCommonCards(studentUid) : fbCardService.exchangeCommonCards(studentUid),
 };
 
 export const announcementService = {
   getAnnouncements: () =>
-    getDatabaseMode() === "supabase" ? sb.announcementService.getAnnouncements() : fbAnnouncementService.getAnnouncements(),
+    getDatabaseMode() === "supabase" ? sbAnnouncementService.getAnnouncements() : fbAnnouncementService.getAnnouncements(),
   subscribeAnnouncements: (callback: (list: Announcement[]) => void) =>
-    getDatabaseMode() === "supabase" ? sb.announcementService.subscribeAnnouncements(callback) : fbAnnouncementService.subscribeAnnouncements(callback),
+    getDatabaseMode() === "supabase" ? sbAnnouncementService.subscribeAnnouncements(callback) : fbAnnouncementService.subscribeAnnouncements(callback),
   addAnnouncement: (title: string, content: string, authorName: string, pinned = false) =>
-    getDatabaseMode() === "supabase" ? sb.announcementService.addAnnouncement(title, content, authorName, pinned) : fbAnnouncementService.addAnnouncement(title, content, authorName, pinned),
+    getDatabaseMode() === "supabase" ? sbAnnouncementService.addAnnouncement(title, content, authorName, pinned) : fbAnnouncementService.addAnnouncement(title, content, authorName, pinned),
   deleteAnnouncement: (id: string) =>
-    getDatabaseMode() === "supabase" ? sb.announcementService.deleteAnnouncement(id) : fbAnnouncementService.deleteAnnouncement(id),
+    getDatabaseMode() === "supabase" ? sbAnnouncementService.deleteAnnouncement(id) : fbAnnouncementService.deleteAnnouncement(id),
 };
