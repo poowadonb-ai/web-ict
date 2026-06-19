@@ -83,6 +83,7 @@ export default function MyTasksPage() {
     const sub = submissions.find((s) => {
       if (s.boardId !== board.id) return false;
       if (s.uid === user.uid) return true;
+      if (String(s.studentNo) === String(studentNo) && s.gradeClass && s.gradeClass.includes(studentRoom)) return true;
       if (s.isGroup && s.members) {
         return s.members.some(
           (m) => m.room === studentRoom && String(m.studentNo) === String(studentNo)

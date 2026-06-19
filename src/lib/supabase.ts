@@ -131,11 +131,7 @@ function loadSession(): UserProfile | null {
 }
 
 async function getCurrentUid(): Promise<string | null> {
-  // 1. Try Supabase Auth
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) return user.id;
-
-  // 2. Try LocalStorage Session (sbAuthService uses this)
+  // 1. Try LocalStorage Session (sbAuthService uses this)
   const session = loadSession();
   if (session?.uid) return session.uid;
 
