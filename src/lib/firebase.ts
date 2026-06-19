@@ -218,9 +218,9 @@ export const getDatabaseMode = (): "supabase" | "firebase" | "mock" => {
   return "mock";
 };
 
-let app;
-let auth: any = null;
-let db: any = null;
+export let app: any;
+export let auth: any;
+export let db: any = null;
 let googleProvider: any = null;
 
 if (isFirebaseConfigured) {
