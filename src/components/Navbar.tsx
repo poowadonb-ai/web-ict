@@ -28,8 +28,8 @@ export default function Navbar() {
   useEffect(() => {
     if (!profileOpen) return;
     const close = () => setProfileOpen(false);
-    window.addEventListener("click", close, { capture: true });
-    return () => window.removeEventListener("click", close, { capture: true });
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
   }, [profileOpen]);
 
   if (!user) return null;
