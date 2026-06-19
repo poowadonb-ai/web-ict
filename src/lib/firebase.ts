@@ -2978,7 +2978,7 @@ export const lessonService = {
     getDatabaseMode() === "supabase" ? sbLessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId) : fbLessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId),
 };
 
-export const boardService = {
+const boardServiceObj = {
   subscribeBoards: (callback: (boards: AssignmentBoard[]) => void) =>
     getDatabaseMode() === "supabase" ? sbBoardService.subscribeBoards(callback) : fbBoardService.subscribeBoards(callback),
   addBoard: (title: string, description: string, type?: "individual" | "group", targetRooms?: string[]) =>
@@ -2988,8 +2988,9 @@ export const boardService = {
   toggleLockBoard: (boardId: string, isLocked: boolean) =>
     getDatabaseMode() === "supabase" ? sbBoardService.toggleLockBoard(boardId, isLocked) : fbBoardService.toggleLockBoard(boardId, isLocked),
 };
+export const boardService = boardServiceObj;
 
-export const submissionService = {
+const submissionServiceObj = {
   subscribeSubmissions: (boardId: string, callback: (submissions: Submission[]) => void) =>
     getDatabaseMode() === "supabase" ? sbSubmissionService.subscribeSubmissions(boardId, callback) : fbSubmissionService.subscribeSubmissions(boardId, callback),
   addSubmission: (boardId: string, title: string, description: string, linkUrl: string, isGroup?: boolean, members?: any[]) =>
@@ -3007,6 +3008,8 @@ export const submissionService = {
   getAllSubmissions: () =>
     getDatabaseMode() === "supabase" ? sbSubmissionService.getAllSubmissions() : fbSubmissionService.getAllSubmissions(),
 };
+
+export const submissionService = submissionServiceObj;
 
 export const cardService = {
   awardPack: (studentUid: string, count: number) =>
