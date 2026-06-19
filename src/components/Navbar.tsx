@@ -165,7 +165,11 @@ export default function Navbar() {
                     </div>
                     <div>
                       <div className={styles.dropdownName}>{displayName}</div>
-                      <div className={styles.dropdownEmail}>{user.email || user.username || ""}</div>
+                      <div className={styles.dropdownEmail}>
+                        {user.role === "teacher"
+                          ? (user.email || "")
+                          : (user.grade && user.room ? `ม.${user.grade}/${user.room} เลขที่ ${user.studentNo || ""}` : "")}
+                      </div>
                     </div>
                   </div>
                   <div className={styles.dropdownDivider} />
