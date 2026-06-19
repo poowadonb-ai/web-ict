@@ -24,13 +24,60 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { teacherUid, action, studentUid, newPassword } = body;
 
-    if (!teacherUid || !action || !studentUid) {
+    if (!action || !studentUid) {
       return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
+    }
+
+    // ── Student self password update (does not require teacherUid verification) ──
+    if (action === "student_update_password") {
+      const { currentPassword, newPassword } = body;
+      if (!currentPassword || !newPassword) {
+        return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 });
+      }
+      if (newPassword.length < 6) {
+        return NextResponse.json(
+          { error: "รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร" },
+          { status: 400 }
+        );
+      }
+
+      const supabase = getSupabaseAdmin();
+      const { data: studentUser, error: fetchError } = await supabase
+        .from("users")
+        .select("password_hash")
+        .eq("uid", studentUid)
+        .maybeSingle();
+
+      if (fetchError || !studentUser) {
+        return NextResponse.json({ error: "ไม่พบบัญชีผู้ใช้งาน" }, { status: 404 });
+      }
+
+      const currentHash = hashPassword(currentPassword);
+      if (studentUser.password_hash !== currentHash) {
+        return NextResponse.json({ error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" }, { status: 400 });
+      }
+
+      const newHash = hashPassword(newPassword);
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ password_hash: newHash })
+        .eq("uid", studentUid);
+
+      if (updateError) {
+        console.error("[roster-api] Student self-update password error:", updateError);
+        throw new Error(updateError.message);
+      }
+
+      return NextResponse.json({ message: "เปลี่ยนรหัสผ่านสำเร็จ" }, { status: 200 });
+    }
+
+    // ── Teacher Actions (requires teacherUid verification) ───────────────────
+    if (!teacherUid) {
+      return NextResponse.json({ error: "ไม่มีสิทธิ์ในการทำรายการนี้" }, { status: 403 });
     }
 
     const supabase = getSupabaseAdmin();
 
-    // ── Verify if the request is from a teacher ─────────────────────────────
     const { data: teacherUser, error: authError } = await supabase
       .from("users")
       .select("role")

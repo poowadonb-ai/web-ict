@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
   LogOut, BookOpen, Layers, Award, ClipboardList, Gift,
-  BarChart3, Trophy, Menu, X, User, ChevronDown, Sparkles
+  BarChart3, Trophy, Menu, X, User, ChevronDown, Sparkles, Key
 } from "lucide-react";
 import styles from "./Navbar.module.css";
 
@@ -17,6 +17,55 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // Change Password Modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (newPassword.length < 6) {
+      setErrorMsg("รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("รหัสผ่านใหม่ไม่ตรงกับการยืนยัน");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("/api/auth/roster", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "student_update_password",
+          studentUid: user.uid,
+          currentPassword,
+          newPassword
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+
+      alert("เปลี่ยนรหัสผ่านสำเร็จ!");
+      setShowPasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setErrorMsg(err.message || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -173,6 +222,22 @@ export default function Navbar() {
                     </div>
                   </div>
                   <div className={styles.dropdownDivider} />
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setCurrentPassword("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                      setErrorMsg("");
+                      setShowPasswordModal(true);
+                    }}
+                    className={styles.dropdownSignOut}
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    <Key size={16} />
+                    <span>เปลี่ยนรหัสผ่าน</span>
+                  </button>
+                  <div className={styles.dropdownDivider} />
                   <button onClick={handleSignOut} className={styles.dropdownSignOut}>
                     <LogOut size={16} />
                     <span>ออกจากระบบ</span>
@@ -183,6 +248,78 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowPasswordModal(false)}>
+          <div className={`${styles.modal} glass-container`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className="gradient-text-neon">เปลี่ยนรหัสผ่าน</h3>
+              <button className={styles.closeBtn} onClick={() => setShowPasswordModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            {errorMsg && <div className={styles.errorAlert}>{errorMsg}</div>}
+            
+            <form onSubmit={handlePasswordChange} className={styles.modalForm}>
+              <div className={styles.formGroup}>
+                <label htmlFor="currentPass">รหัสผ่านปัจจุบัน</label>
+                <input
+                  id="currentPass"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="กรอกรหัสผ่านปัจจุบัน"
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="newPass">รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
+                <input
+                  id="newPass"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="กรอกรหัสผ่านใหม่"
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="confirmPass">ยืนยันรหัสผ่านใหม่</label>
+                <input
+                  id="confirmPass"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
+                  required
+                />
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowPasswordModal(false)}
+                  disabled={isSubmitting}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "กำลังบันทึก..." : "บันทึกรหัสผ่านใหม่"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
