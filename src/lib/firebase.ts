@@ -32,13 +32,15 @@ import {
 } from "firebase/firestore";
 import * as sb from "./supabase";
 
-export * from "./types";
 import { 
   Card, UserProfile, Lesson, AssignmentBoard, 
   Submission, CardCollected, Announcement, 
   RedemptionRequest, CardPack, GachaRates, DropRates,
   CARD_POOL, DEFAULT_DROP_RATES 
 } from "./types";
+
+export type { Card, UserProfile, Lesson, AssignmentBoard, Submission, CardCollected, Announcement, RedemptionRequest, CardPack, GachaRates, DropRates };
+export { CARD_POOL, DEFAULT_DROP_RATES };
 
 // -------------------------------------------------------------
 // CARD POOL MANAGEMENT (LocalStorage override for teacher edits)
