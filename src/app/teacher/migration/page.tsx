@@ -134,7 +134,7 @@ export default function MigrationPage() {
           content: l.content || "",
           canva_url: l.canvaUrl || "",
           youtube_url: l.youtubeUrl || "",
-          created_at: new Date(l.createdAt || Date.now()).toISOString(),
+          created_at: new Date(l.createdAt || Date.now()).getTime(),
           author_email: l.authorEmail || "",
           has_assignment: l.hasAssignment || false,
           assignment_id: l.assignmentId || null,
@@ -157,7 +157,7 @@ export default function MigrationPage() {
           lesson_id: b.lessonId || null,
           is_locked: b.isLocked || false,
           target_rooms: b.targetRooms || [],
-          created_at: new Date(b.createdAt || Date.now()).toISOString()
+          created_at: new Date(b.createdAt || Date.now()).getTime(),
         }));
         
         const { error } = await supabase.from('boards').upsert(boardBatch);
@@ -185,7 +185,7 @@ export default function MigrationPage() {
           score: s.score || 0,
           max_score: s.maxScore || 10,
           teacher_feedback: s.teacherFeedback || "",
-          created_at: new Date(s.createdAt || Date.now()).toISOString()
+          created_at: new Date(s.createdAt || Date.now()).getTime(),
         }));
         
         for (let i = 0; i < subBatch.length; i += 50) {
@@ -204,7 +204,7 @@ export default function MigrationPage() {
           content: a.content || "",
           author_name: a.authorName || "",
           pinned: a.pinned || false,
-          created_at: new Date(a.createdAt || Date.now()).toISOString()
+          created_at: new Date(a.createdAt || Date.now()).getTime(),
         }));
         
         const { error } = await supabase.from('announcements').upsert(annBatch);
@@ -225,7 +225,7 @@ export default function MigrationPage() {
           rarity: r.rarity || "common",
           bonus_points: r.bonusPoints || 0,
           status: r.status || "pending",
-          created_at: new Date(r.createdAt || Date.now()).toISOString()
+          created_at: new Date(r.createdAt || Date.now()).getTime(),
         }));
         
         const { error } = await supabase.from('redemptions').upsert(redBatch);
