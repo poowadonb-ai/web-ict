@@ -1584,7 +1584,8 @@ export const isMockMode = () => getDatabaseMode() === "mock";
 let _isSigningUp = false;
 
 const fbAuthService = {
-  signInWithGoogle: async (role: "teacher" | "student" = "student", email?: string): Promise<UserProfile> => {
+  signInWithGoogle: async (role?: "teacher" | "student", email?: string): Promise<UserProfile> => {
+    role = role || "student";
     if (isMockMode()) {
       mockDb.signInMock(role, email);
       return mockDb.currentUser!;
@@ -2269,7 +2270,8 @@ const fbBoardService = {
     });
   },
 
-  addBoard: async (title: string, description: string, type: "individual" | "group" = "individual", targetRooms?: string[]): Promise<void> => {
+  addBoard: async (title: string, description: string, type?: "individual" | "group", targetRooms?: string[]): Promise<void> => {
+    type = type || "individual";
     if (isMockMode()) {
       mockDb.addBoard(title, description, type, targetRooms);
       return;
@@ -2328,9 +2330,11 @@ const fbSubmissionService = {
     title: string, 
     description: string, 
     linkUrl: string, 
-    isGroup: boolean = false, 
-    members: { name: string; room: string; studentNo: string }[] = []
+    isGroup?: boolean, 
+    members?: { name: string; room: string; studentNo: string }[]
   ): Promise<void> => {
+    isGroup = isGroup || false;
+    members = members || [];
     const currentUserProfile = await new Promise<UserProfile | null>((resolve) => {
       const unsub = authService.onAuthStateChanged((user) => {
         unsub();
@@ -2901,7 +2905,8 @@ const fbAnnouncementService = {
     });
   },
 
-  addAnnouncement: async (title: string, content: string, authorName: string, pinned = false): Promise<void> => {
+  addAnnouncement: async (title: string, content: string, authorName: string, pinned?: boolean): Promise<void> => {
+    pinned = pinned || false;
     const newAnn: Announcement = {
       id: "ann-" + Math.random().toString(36).substr(2, 9),
       title: title.trim(),

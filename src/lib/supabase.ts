@@ -594,7 +594,8 @@ export const announcementService = {
     };
   },
 
-  addAnnouncement: async (title: string, content: string, authorName: string, pinned = false): Promise<void> => {
+  addAnnouncement: async (title: string, content: string, authorName: string, pinned?: boolean): Promise<void> => {
+    pinned = pinned || false;
     await supabase.from('announcements').insert({
       id: `ann-${Math.random().toString(36).substr(2, 9)}`,
       title: title.trim(),
@@ -771,7 +772,8 @@ export const boardService = {
     };
   },
 
-  addBoard: async (title: string, description: string, type: "individual" | "group" = "individual", targetRooms?: string[]): Promise<void> => {
+  addBoard: async (title: string, description: string, type?: "individual" | "group", targetRooms?: string[]): Promise<void> => {
+    type = type || "individual";
     await supabase.from('boards').insert({
       id: `board-${Math.random().toString(36).substr(2, 9)}`,
       title,
@@ -827,9 +829,11 @@ export const submissionService = {
     title: string, 
     description: string, 
     linkUrl: string, 
-    isGroup: boolean = false, 
-    members: { name: string; room: string; studentNo: string }[] = []
+    isGroup?: boolean, 
+    members?: { name: string; room: string; studentNo: string }[]
   ): Promise<void> => {
+    isGroup = isGroup || false;
+    members = members || [];
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("No user signed in");
 
