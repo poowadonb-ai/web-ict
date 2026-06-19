@@ -135,17 +135,17 @@ async function getCurrentUid(): Promise<string | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) return user.id;
 
-  // 2. Try Firebase Auth (dynamic import to avoid circular dependency)
+  // 2. Try LocalStorage Session (sbAuthService uses this)
+  const session = loadSession();
+  if (session?.uid) return session.uid;
+
+  // 3. Try Firebase Auth fallback
   try {
     const { auth } = await import('@/lib/firebase');
     if (auth?.currentUser) return auth.currentUser.uid;
   } catch (e) {
     console.warn("Could not load Firebase auth", e);
   }
-
-  // 3. Try LocalStorage Session
-  const session = loadSession();
-  if (session?.uid) return session.uid;
 
   return null;
 }
