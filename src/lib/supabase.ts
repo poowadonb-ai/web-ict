@@ -130,6 +130,26 @@ function loadSession(): UserProfile | null {
   }
 }
 
+async function getCurrentUid(): Promise<string | null> {
+  // 1. Try Supabase Auth
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) return user.id;
+
+  // 2. Try Firebase Auth (dynamic import to avoid circular dependency)
+  try {
+    const { auth } = await import('@/lib/firebase');
+    if (auth?.currentUser) return auth.currentUser.uid;
+  } catch (e) {
+    console.warn("Could not load Firebase auth", e);
+  }
+
+  // 3. Try LocalStorage Session
+  const session = loadSession();
+  if (session?.uid) return session.uid;
+
+  return null;
+}
+
 export const authService = {
   // ── Sign in with Google (disabled — kept for legacy proxy compatibility) ────
   signInWithGoogle: async (): Promise<UserProfile> => {
@@ -275,8 +295,8 @@ export const authService = {
   },
 
   registerProfile: async (profileData: { fullName: string; grade: string; room: string; studentNo: string }): Promise<void> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user signed in");
+    const uid = await getCurrentUid();
+    if (!uid) throw new Error("No user signed in");
 
     await supabase.from('users').update({
       full_name: profileData.fullName,
@@ -286,7 +306,7 @@ export const authService = {
       is_registered: true,
       packs_count: 3,
       last_login_date: new Date().toISOString().split('T')[0]
-    }).eq('uid', user.id);
+    }).eq('uid', uid);
   },
 
   deleteStudent: async (uid: string): Promise<void> => {
@@ -647,8 +667,9 @@ export const lessonService = {
     assignmentDescription?: string,
     targetRooms?: string[]
   ): Promise<void> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user signed in");
+    const uid = await getCurrentUid();
+    if (!uid) throw new Error("No user signed in");
+    const { data: profile } = await supabase.from('users').select('*').eq('uid', uid).single();
 
     let assignmentId = "";
     if (hasAssignment) {
@@ -674,7 +695,7 @@ export const lessonService = {
       canva_url: canvaUrl,
       youtube_url: youtubeUrl,
       created_at: Date.now(),
-      author_email: user.email || "",
+      author_email: profile ? (profile.email || "") : "",
       has_assignment: !!hasAssignment,
       assignment_id: assignmentId,
       assignment_type: assignmentType || "",
@@ -834,17 +855,17 @@ export const submissionService = {
   ): Promise<void> => {
     isGroup = isGroup || false;
     members = members || [];
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user signed in");
+    const uid = await getCurrentUid();
+    if (!uid) throw new Error("No user signed in");
 
-    const { data: profile } = await supabase.from('users').select('*').eq('uid', user.id).single();
+    const { data: profile } = await supabase.from('users').select('*').eq('uid', uid).single();
     if (!profile) throw new Error("No profile found");
 
     const submissionId = `sub-${Math.random().toString(36).substr(2, 9)}`;
     await supabase.from('submissions').insert({
       id: submissionId,
       board_id: boardId,
-      uid: user.id,
+      uid: uid,
       student_name: profile.full_name || profile.display_name || "นักเรียน",
       student_no: profile.student_no || "-",
       grade_class: profile.grade && profile.room ? `ม.${profile.grade}/${profile.room}` : "ทั่วไป",
@@ -880,10 +901,10 @@ export const submissionService = {
       
       const submitterInGroup = members.find(m => String(m.room) === String(profile.room) && String(m.studentNo) === String(profile.studentNo));
       if (!submitterInGroup) {
-         await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', user.id);
+         await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', uid);
       }
     } else {
-      await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', user.id);
+      await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', uid);
     }
   },
 
@@ -892,26 +913,26 @@ export const submissionService = {
   },
 
   toggleLike: async (submissionId: string): Promise<void> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user signed in");
+    const uid = await getCurrentUid();
+    if (!uid) throw new Error("No user signed in");
 
     const { data: sub } = await supabase.from('submissions').select('likes').eq('id', submissionId).single();
     if (!sub) return;
 
     const likesList = (sub.likes || []) as string[];
-    const hasLiked = likesList.includes(user.id);
+    const hasLiked = likesList.includes(uid);
     const newLikes = hasLiked
-      ? likesList.filter(id => id !== user.id)
-      : [...likesList, user.id];
+      ? likesList.filter(id => id !== uid)
+      : [...likesList, uid];
 
     await supabase.from('submissions').update({ likes: newLikes }).eq('id', submissionId);
   },
 
   addComment: async (submissionId: string, content: string): Promise<void> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("No user signed in");
+    const uid = await getCurrentUid();
+    if (!uid) throw new Error("No user signed in");
 
-    const { data: profile } = await supabase.from('users').select('full_name, display_name').eq('uid', user.id).single();
+    const { data: profile } = await supabase.from('users').select('full_name, display_name').eq('uid', uid).single();
     if (!profile) return;
 
     const { data: sub } = await supabase.from('submissions').select('comments').eq('id', submissionId).single();
@@ -919,7 +940,7 @@ export const submissionService = {
 
     const newComment = {
       id: "comment-" + Math.random().toString(36).substr(2, 9),
-      uid: user.id,
+      uid: uid,
       authorName: profile.full_name || profile.display_name || "ผู้ใช้",
       content,
       createdAt: Date.now()
