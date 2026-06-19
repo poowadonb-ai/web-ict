@@ -3,7 +3,7 @@ import {
   UserProfile, Card, CardPack, RedemptionRequest, 
   Announcement, Lesson, AssignmentBoard, Submission,
   CARD_POOL, CardCollected, GachaRates, DEFAULT_DROP_RATES
-} from "./firebase";
+} from "./types";
 
 // Initialize Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-url.supabase.co";
