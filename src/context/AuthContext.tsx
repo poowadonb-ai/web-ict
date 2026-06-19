@@ -7,7 +7,6 @@ import { useRouter, usePathname } from "next/navigation";
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  signIn: (role?: "teacher" | "student", email?: string) => Promise<void>;
   signOut: () => Promise<void>;
   registerProfile: (profileData: { fullName: string; grade: string; room: string; studentNo: string }) => Promise<void>;
   signUpWithUsernamePassword: (
@@ -26,80 +25,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // ── Step 1: Initial session check (runs ONCE on mount) ───────────────────────
+  // Reads from localStorage synchronously via authService.onAuthStateChanged.
+  // Keeping this separate from the redirect effect prevents the "flickering" loop.
   useEffect(() => {
-    // Listen to Firebase Auth state
     const unsubscribe = authService.onAuthStateChanged((profile) => {
       setUser(profile);
       setLoading(false);
-
-      // Handle redirects based on registration status
-      if (profile) {
-        if (profile.role === "student" && !profile.isRegistered) {
-          if (pathname !== "/register") {
-            router.push("/register");
-          }
-        } else if (pathname === "/register" && profile.isRegistered) {
-          router.push("/classroom");
-        } else if (pathname === "/") {
-          router.push("/classroom");
-        }
-      } else {
-        // Not logged in - allow landing page and register page
-        if (pathname !== "/" && pathname !== "" && pathname !== "/register") {
-          router.push("/");
-        }
-      }
     });
-
     return () => {
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
-      }
+      if (typeof unsubscribe === "function") unsubscribe();
     };
-  }, [pathname, router]);
+  }, []); // ← empty deps: only run once on mount
 
-  const signIn = async (role: "teacher" | "student" = "student", email?: string) => {
-    setLoading(true);
-    try {
-      const profile = await authService.signInWithGoogle(role, email);
-      setUser(profile);
-      if (profile.role === "student" && !profile.isRegistered) {
-        router.push("/register");
-      } else {
+  // ── Step 2: Handle page redirects whenever user/loading/pathname changes ─────
+  useEffect(() => {
+    if (loading) return; // Wait until auth is resolved
+
+    if (user) {
+      if (user.role === "student" && !user.isRegistered) {
+        if (pathname !== "/register") router.push("/register");
+      } else if (pathname === "/register" && user.isRegistered) {
+        router.push("/classroom");
+      } else if (pathname === "/" || pathname === "") {
         router.push("/classroom");
       }
-    } catch (error) {
-      console.error("Authentication Error:", error);
-    } finally {
-      setLoading(false);
+    } else {
+      // Not logged in — only allow landing page and register page
+      const publicPaths = ["/", "", "/register"];
+      if (!publicPaths.includes(pathname)) {
+        router.push("/");
+      }
     }
-  };
+  }, [user, loading, pathname, router]);
 
+  // ── Actions ──────────────────────────────────────────────────────────────────
   const signOut = async () => {
-    setLoading(true);
     try {
       await authService.signOut();
       setUser(null);
       router.push("/");
     } catch (error) {
       console.error("Sign Out Error:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const registerProfile = async (profileData: { fullName: string; grade: string; room: string; studentNo: string }) => {
+  const registerProfile = async (profileData: {
+    fullName: string;
+    grade: string;
+    room: string;
+    studentNo: string;
+  }) => {
     setLoading(true);
     try {
       await authService.registerProfile(profileData);
-      // Update user state with registered profile data so redirect logic works
-      setUser(prev => prev ? {
-        ...prev,
-        ...profileData,
-        isRegistered: true,
-        packsCount: prev.packsCount || 3,
-        lastLoginDate: new Date().toISOString().split('T')[0]
-      } : prev);
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...profileData,
+              isRegistered: true,
+              packsCount: prev.packsCount || 3,
+              lastLoginDate: new Date().toISOString().split("T")[0],
+            }
+          : prev
+      );
     } catch (error) {
       console.error("Profile Registration Error:", error);
       throw error;
@@ -115,12 +105,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     setLoading(true);
     try {
-      const profile = await authService.signUpWithUsernamePassword(username, password, profileData);
+      const profile = await authService.signUpWithUsernamePassword(
+        username,
+        password,
+        profileData
+      );
       setUser(profile);
-      // Automatically redirect to classroom on success
       router.push("/classroom");
     } catch (error) {
-      console.error("Profile Sign Up Error:", error);
+      console.error("Sign Up Error:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -134,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(profile);
       router.push("/classroom");
     } catch (error) {
-      console.error("Username Sign In Error:", error);
+      console.error("Sign In Error:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -142,15 +135,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      signIn, 
-      signOut, 
-      registerProfile,
-      signUpWithUsernamePassword,
-      signInWithUsernamePassword
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        signOut,
+        registerProfile,
+        signUpWithUsernamePassword,
+        signInWithUsernamePassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

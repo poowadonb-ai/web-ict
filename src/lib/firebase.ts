@@ -26,6 +26,7 @@ import {
   where,
   getDocs
 } from "firebase/firestore";
+import * as sb from "./supabase";
 
 // Interface definitions for our application data
 export interface CardCollected {
@@ -519,6 +520,23 @@ const hasRealKeys = () => {
 
 const isFirebaseConfigured = hasRealKeys();
 
+export const getDatabaseMode = (): "supabase" | "firebase" | "mock" => {
+  // Allow explicit override via env var (takes priority)
+  const override = process.env.NEXT_PUBLIC_DATABASE_MODE;
+  if (override === "firebase" || override === "supabase" || override === "mock") {
+    return override;
+  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder") && !supabaseUrl.includes("your-") && supabaseUrl !== "") {
+    return "supabase";
+  }
+  if (isFirebaseConfigured) {
+    return "firebase";
+  }
+  return "mock";
+};
+
 let app;
 let auth: any = null;
 let db: any = null;
@@ -542,7 +560,29 @@ if (isFirebaseConfigured) {
 
 /** Sync card pool overrides and custom cards to Firestore if configured. */
 export async function saveCardsToFirestore(): Promise<void> {
-  if (typeof window === "undefined" || !isFirebaseConfigured || !db) return;
+  if (typeof window === "undefined") return;
+
+  if (getDatabaseMode() === "supabase") {
+    try {
+      const { supabase } = await import("./supabase");
+      const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
+      const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
+      const dropRates = JSON.parse(localStorage.getItem(DROP_RATES_KEY) || "null");
+
+      const payload: any = { overrides, custom };
+      if (dropRates) payload.drop_rates = dropRates;
+
+      await supabase
+        .from('settings')
+        .update(payload)
+        .eq('id', 'cards');
+    } catch (e) {
+      console.error("saveCardsToSupabase error:", e);
+    }
+    return;
+  }
+
+  if (!isFirebaseConfigured || !db) return;
   try {
     const { doc, setDoc, deleteDoc, collection, getDocs } = await import("firebase/firestore");
     
@@ -587,7 +627,19 @@ export async function saveCardsToFirestore(): Promise<void> {
 
 /** Sync card pool overrides and custom cards from Firestore to LocalStorage. */
 export async function syncCardsFromFirestore(): Promise<void> {
-  if (typeof window === "undefined" || !isFirebaseConfigured || !db) return;
+  if (typeof window === "undefined") return;
+
+  if (getDatabaseMode() === "supabase") {
+    try {
+      const { syncCardsFromSupabase } = await import("./supabase");
+      await syncCardsFromSupabase();
+    } catch (e) {
+      console.error("syncCardsFromSupabase error:", e);
+    }
+    return;
+  }
+
+  if (!isFirebaseConfigured || !db) return;
   try {
     const { doc, getDoc, collection, getDocs } = await import("firebase/firestore");
     
@@ -1846,12 +1898,12 @@ export const mockDb = new MockDbService();
 // -------------------------------------------------------------
 // UNIFIED DATA SERVICE (Switchable between Real Firebase and Mock)
 // -------------------------------------------------------------
-export const isMockMode = () => !isFirebaseConfigured;
+export const isMockMode = () => getDatabaseMode() === "mock";
 
 // Flag to prevent onAuthStateChanged from racing with signUpWithUsernamePassword
 let _isSigningUp = false;
 
-export const authService = {
+const fbAuthService = {
   signInWithGoogle: async (role: "teacher" | "student" = "student", email?: string): Promise<UserProfile> => {
     if (isMockMode()) {
       mockDb.signInMock(role, email);
@@ -2159,13 +2211,47 @@ export const authService = {
       return mockDb.getRegisteredStudents();
     }
     try {
-      const { getDocs, query, where } = await import("firebase/firestore");
+      const { getDocs, query, where, doc, setDoc } = await import("firebase/firestore");
       const q = query(collection(db, "users"), where("role", "==", "student"), where("isRegistered", "==", true));
       const snapshot = await getDocs(q);
-      const students: UserProfile[] = [];
+      const fbStudentsMap = new Map<string, UserProfile>();
       snapshot.forEach((doc) => {
-        students.push({ uid: doc.id, ...doc.data() } as UserProfile);
+        fbStudentsMap.set(doc.id, { uid: doc.id, ...doc.data() } as UserProfile);
       });
+
+      // Synchronize missing accounts from Supabase users table (which contains the custom credentials)
+      try {
+        console.log("[getRegisteredStudents] Fetching registered students from Supabase to sync to Firestore...");
+        const sbStudents = await sb.authService.getRegisteredStudents();
+        for (const sbStud of sbStudents) {
+          if (!fbStudentsMap.has(sbStud.uid)) {
+            console.log(`[getRegisteredStudents] Account ${sbStud.uid} not in Firestore. Syncing...`);
+            const newFbUser: UserProfile = {
+              uid: sbStud.uid,
+              email: sbStud.email,
+              displayName: sbStud.displayName,
+              role: sbStud.role,
+              isRegistered: sbStud.isRegistered,
+              fullName: sbStud.fullName,
+              grade: sbStud.grade,
+              room: sbStud.room,
+              studentNo: sbStud.studentNo,
+              packsCount: sbStud.packsCount ?? 3,
+              bonusPoints: sbStud.bonusPoints ?? 0,
+              cardsCollected: sbStud.cardsCollected ?? [],
+              lastLoginDate: sbStud.lastLoginDate || new Date().toISOString().split('T')[0],
+              totalPacksOpened: sbStud.totalPacksOpened ?? 0,
+              isMerged: sbStud.isMerged ?? false
+            };
+            await setDoc(doc(db, "users", sbStud.uid), newFbUser);
+            fbStudentsMap.set(sbStud.uid, newFbUser);
+          }
+        }
+      } catch (syncErr) {
+        console.error("Error syncing Supabase students to Firestore:", syncErr);
+      }
+
+      const students = Array.from(fbStudentsMap.values());
       return students.sort((a, b) => Number(a.studentNo || 0) - Number(b.studentNo || 0));
     } catch (error) {
       console.error("Error fetching students:", error);
@@ -2183,6 +2269,32 @@ export const authService = {
       const userSnap = await getDoc(userDocRef);
       if (userSnap.exists()) {
         return { uid: userSnap.id, ...userSnap.data() } as UserProfile;
+      }
+
+      // If document does not exist in Firestore, search in Supabase and sync
+      console.log(`[getStudentProfile] UID ${uid} not found in Firestore. Checking Supabase...`);
+      const sbProfile = await sb.authService.getStudentProfile(uid);
+      if (sbProfile) {
+        console.log(`[getStudentProfile] Found profile in Supabase for ${uid}. Syncing to Firestore...`);
+        const newFbUser: UserProfile = {
+          uid: sbProfile.uid,
+          email: sbProfile.email,
+          displayName: sbProfile.displayName,
+          role: sbProfile.role,
+          isRegistered: sbProfile.isRegistered,
+          fullName: sbProfile.fullName,
+          grade: sbProfile.grade,
+          room: sbProfile.room,
+          studentNo: sbProfile.studentNo,
+          packsCount: sbProfile.packsCount ?? 3,
+          bonusPoints: sbProfile.bonusPoints ?? 0,
+          cardsCollected: sbProfile.cardsCollected ?? [],
+          lastLoginDate: sbProfile.lastLoginDate || new Date().toISOString().split('T')[0],
+          totalPacksOpened: sbProfile.totalPacksOpened ?? 0,
+          isMerged: sbProfile.isMerged ?? false
+        };
+        await setDoc(userDocRef, newFbUser);
+        return newFbUser;
       }
       return null;
     } catch (error) {
@@ -2302,7 +2414,7 @@ export const authService = {
   }
 };
 
-export const lessonService = {
+const fbLessonService = {
   subscribeLessons: (callback: (lessons: Lesson[]) => void) => {
     if (isMockMode()) {
       callback(mockDb.getLessons());
@@ -2458,7 +2570,7 @@ export const lessonService = {
   }
 };
 
-export const boardService = {
+const fbBoardService = {
   subscribeBoards: (callback: (boards: AssignmentBoard[]) => void) => {
     if (isMockMode()) {
       callback(mockDb.getBoards());
@@ -2509,7 +2621,7 @@ export const boardService = {
   }
 };
 
-export const submissionService = {
+const fbSubmissionService = {
   subscribeSubmissions: (boardId: string, callback: (submissions: Submission[]) => void) => {
     if (isMockMode()) {
       callback(mockDb.getSubmissions(boardId));
@@ -2737,7 +2849,7 @@ export const submissionService = {
   }
 };
 
-export const cardService = {
+const fbCardService = {
   awardPack: async (studentUid: string, count: number): Promise<void> => {
     if (isMockMode()) {
       mockDb.awardPack(studentUid, count);
@@ -3072,7 +3184,7 @@ export const cardService = {
 // ANNOUNCEMENT SERVICE
 // ============================================================
 
-export const announcementService = {
+const fbAnnouncementService = {
   getAnnouncements: async (): Promise<Announcement[]> => {
     if (isMockMode()) {
       const data = localStorage.getItem("mock_announcements");
@@ -3136,4 +3248,109 @@ export const announcementService = {
     }
     await deleteDoc(doc(db, "announcements", id));
   }
+};
+
+// ============================================================
+// DYNAMIC SUPABASE/FIREBASE DATABASE PROXY
+// ============================================================
+
+export const authService = {
+  // ── Auth methods ALWAYS use sb.authService (localStorage-based, API-route backed) ─────
+  // This is independent of getDatabaseMode() so data can be in Firebase
+  // while auth uses our new custom system.
+  signInWithGoogle: (_role?: string, _email?: string) => sb.authService.signInWithGoogle(),
+  signOut: () => sb.authService.signOut(),
+  onAuthStateChanged: (callback: (user: UserProfile | null) => void) =>
+    sb.authService.onAuthStateChanged(callback),
+  signUpWithUsernamePassword: (username: string, password: string, profileData: any) =>
+    sb.authService.signUpWithUsernamePassword(username, password, profileData),
+  signInWithUsernamePassword: (username: string, password: string) =>
+    sb.authService.signInWithUsernamePassword(username, password),
+
+  // ── Profile/student data — follows getDatabaseMode() (firebase or supabase) ───────
+  getRegisteredStudents: () =>
+    getDatabaseMode() === "supabase" ? sb.authService.getRegisteredStudents() : fbAuthService.getRegisteredStudents(),
+  getStudentProfile: (uid: string) =>
+    getDatabaseMode() === "supabase" ? sb.authService.getStudentProfile(uid) : fbAuthService.getStudentProfile(uid),
+  updateStudentProfile: (uid: string, updates: any) =>
+    getDatabaseMode() === "supabase" ? sb.authService.updateStudentProfile(uid, updates) : fbAuthService.updateStudentProfile(uid, updates),
+  mergeStudents: (sourceUid: string, targetUid: string) =>
+    getDatabaseMode() === "supabase" ? sb.authService.mergeStudents(sourceUid, targetUid) : fbAuthService.mergeStudents(sourceUid, targetUid),
+  registerProfile: (profileData: any) =>
+    getDatabaseMode() === "supabase" ? sb.authService.registerProfile(profileData) : fbAuthService.registerProfile(profileData),
+  deleteStudent: (uid: string) =>
+    getDatabaseMode() === "supabase" ? sb.authService.deleteStudent(uid) : fbAuthService.deleteStudent(uid),
+};
+
+export const lessonService = {
+  subscribeLessons: (callback: (lessons: Lesson[]) => void) =>
+    getDatabaseMode() === "supabase" ? sb.lessonService.subscribeLessons(callback) : fbLessonService.subscribeLessons(callback),
+  addLesson: (title: string, content: string, canvaUrl: string, youtubeUrl: string, hasAssignment?: boolean, assignmentType?: "individual" | "group", assignmentDescription?: string, targetRooms?: string[]) =>
+    getDatabaseMode() === "supabase" ? sb.lessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms) : fbLessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms),
+  deleteLesson: (id: string) =>
+    getDatabaseMode() === "supabase" ? sb.lessonService.deleteLesson(id) : fbLessonService.deleteLesson(id),
+  updateLesson: (id: string, title: string, content: string, canvaUrl: string, youtubeUrl: string, hasAssignment?: boolean, assignmentType?: "individual" | "group", assignmentDescription?: string, targetRooms?: string[], existingAssignmentId?: string) =>
+    getDatabaseMode() === "supabase" ? sb.lessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId) : fbLessonService.updateLesson(id, title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms, existingAssignmentId),
+};
+
+export const boardService = {
+  subscribeBoards: (callback: (boards: AssignmentBoard[]) => void) =>
+    getDatabaseMode() === "supabase" ? sb.boardService.subscribeBoards(callback) : fbBoardService.subscribeBoards(callback),
+  addBoard: (title: string, description: string, type?: "individual" | "group", targetRooms?: string[]) =>
+    getDatabaseMode() === "supabase" ? sb.boardService.addBoard(title, description, type, targetRooms) : fbBoardService.addBoard(title, description, type, targetRooms),
+  deleteBoard: (id: string) =>
+    getDatabaseMode() === "supabase" ? sb.boardService.deleteBoard(id) : fbBoardService.deleteBoard(id),
+  toggleLockBoard: (boardId: string, isLocked: boolean) =>
+    getDatabaseMode() === "supabase" ? sb.boardService.toggleLockBoard(boardId, isLocked) : fbBoardService.toggleLockBoard(boardId, isLocked),
+};
+
+export const submissionService = {
+  subscribeSubmissions: (boardId: string, callback: (submissions: Submission[]) => void) =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.subscribeSubmissions(boardId, callback) : fbSubmissionService.subscribeSubmissions(boardId, callback),
+  addSubmission: (boardId: string, title: string, description: string, linkUrl: string, isGroup?: boolean, members?: any[]) =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.addSubmission(boardId, title, description, linkUrl, isGroup, members) : fbSubmissionService.addSubmission(boardId, title, description, linkUrl, isGroup, members),
+  deleteSubmission: (submissionId: string) =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.deleteSubmission(submissionId) : fbSubmissionService.deleteSubmission(submissionId),
+  toggleLike: (submissionId: string) =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.toggleLike(submissionId) : fbSubmissionService.toggleLike(submissionId),
+  addComment: (submissionId: string, content: string) =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.addComment(submissionId, content) : fbSubmissionService.addComment(submissionId, content),
+  gradeSubmission: (submissionId: string, score: number, maxScore: number, status: "graded" | "resubmit", teacherFeedback: string, awardPack?: boolean) =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack) : fbSubmissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack),
+  subscribeAllSubmissions: (callback: (submissions: Submission[]) => void) =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.subscribeAllSubmissions(callback) : fbSubmissionService.subscribeAllSubmissions(callback),
+  getAllSubmissions: () =>
+    getDatabaseMode() === "supabase" ? sb.submissionService.getAllSubmissions() : fbSubmissionService.getAllSubmissions(),
+};
+
+export const cardService = {
+  awardPack: (studentUid: string, count: number) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.awardPack(studentUid, count) : fbCardService.awardPack(studentUid, count),
+  getStudentPacks: (studentUid: string) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.getStudentPacks(studentUid) : fbCardService.getStudentPacks(studentUid),
+  openPack: (studentUid: string) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.openPack(studentUid) : fbCardService.openPack(studentUid),
+  requestRedemption: (studentUid: string, cardId: string) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.requestRedemption(studentUid, cardId) : fbCardService.requestRedemption(studentUid, cardId),
+  getRedemptions: () =>
+    getDatabaseMode() === "supabase" ? sb.cardService.getRedemptions() : fbCardService.getRedemptions(),
+  getStudentRedemptions: (studentUid: string) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.getStudentRedemptions(studentUid) : fbCardService.getStudentRedemptions(studentUid),
+  approveRedemption: (requestId: string) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.approveRedemption(requestId) : fbCardService.approveRedemption(requestId),
+  rejectRedemption: (requestId: string) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.rejectRedemption(requestId) : fbCardService.rejectRedemption(requestId),
+  exchangeCommonCards: (studentUid: string) =>
+    getDatabaseMode() === "supabase" ? sb.cardService.exchangeCommonCards(studentUid) : fbCardService.exchangeCommonCards(studentUid),
+};
+
+export const announcementService = {
+  getAnnouncements: () =>
+    getDatabaseMode() === "supabase" ? sb.announcementService.getAnnouncements() : fbAnnouncementService.getAnnouncements(),
+  subscribeAnnouncements: (callback: (list: Announcement[]) => void) =>
+    getDatabaseMode() === "supabase" ? sb.announcementService.subscribeAnnouncements(callback) : fbAnnouncementService.subscribeAnnouncements(callback),
+  addAnnouncement: (title: string, content: string, authorName: string, pinned = false) =>
+    getDatabaseMode() === "supabase" ? sb.announcementService.addAnnouncement(title, content, authorName, pinned) : fbAnnouncementService.addAnnouncement(title, content, authorName, pinned),
+  deleteAnnouncement: (id: string) =>
+    getDatabaseMode() === "supabase" ? sb.announcementService.deleteAnnouncement(id) : fbAnnouncementService.deleteAnnouncement(id),
 };

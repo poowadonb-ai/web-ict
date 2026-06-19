@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { authService, UserProfile } from "@/lib/firebase";
-import { Users, Search, Filter, RefreshCw, Edit3, X, AlertTriangle, GitMerge, Check, Trash2 } from "lucide-react";
+import { Users, Search, Filter, RefreshCw, Edit3, X, AlertTriangle, GitMerge, Check, Trash2, Key, Upload } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function ManageStudentsPage() {
@@ -40,6 +40,25 @@ export default function ManageStudentsPage() {
   const [primaryUid, setPrimaryUid] = useState<string>("");
   const [isMerging, setIsMerging] = useState(false);
   const [isDuplicatesExpanded, setIsDuplicatesExpanded] = useState(false);
+
+  // Roster Import States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importGrade, setImportGrade] = useState("4");
+  const [importRoom, setImportRoom] = useState("2");
+  const [importNamesText, setImportNamesText] = useState("");
+  const [importStartNo, setImportStartNo] = useState("1");
+  const [importPassword, setImportPassword] = useState("123456");
+  const [importError, setImportError] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importTotal, setImportTotal] = useState(0);
+
+  // Student Password Change States
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordStudent, setPasswordStudent] = useState<UserProfile | null>(null);
+  const [newStudentPassword, setNewStudentPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   // Simple Levenshtein distance
   const getLevenshteinDistance = (a: string, b: string): number => {
@@ -143,6 +162,123 @@ export default function ManageStudentsPage() {
     }
   }, [user]);
 
+  const handleOpenPasswordReset = (student: UserProfile) => {
+    setPasswordStudent(student);
+    setNewStudentPassword("");
+    setPasswordError("");
+    setShowPasswordModal(true);
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordStudent || !user) return;
+    if (newStudentPassword.length < 6) {
+      setPasswordError("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordError("");
+    try {
+      const res = await fetch("/api/auth/roster", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teacherUid: user.uid,
+          action: "update_password",
+          studentUid: passwordStudent.uid,
+          newPassword: newStudentPassword
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+
+      alert("เปลี่ยนรหัสผ่านนักเรียนสำเร็จ!");
+      setShowPasswordModal(false);
+      setPasswordStudent(null);
+      setNewStudentPassword("");
+    } catch (err: any) {
+      console.error("Error updating password:", err);
+      setPasswordError(err.message || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleImportRoster = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setImportError("");
+    
+    const names = importNamesText
+      .split("\n")
+      .map(n => n.trim())
+      .filter(n => n.length > 0);
+      
+    if (names.length === 0) {
+      setImportError("กรุณากรอกรายชื่อนักเรียนอย่างน้อย 1 คน");
+      return;
+    }
+    
+    if (importPassword.length < 6) {
+      setImportError("รหัสผ่านเริ่มต้นต้องมีอย่างน้อย 6 ตัวอักษร");
+      return;
+    }
+
+    setIsImporting(true);
+    setImportTotal(names.length);
+    setImportProgress(0);
+
+    let startNo = parseInt(importStartNo) || 1;
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i];
+      const studentNo = String(startNo + i);
+      
+      // Clean names that might have a number prefix (e.g. "1. นายสมชาย" or "1 นายสมชาย")
+      const cleanedName = name.replace(/^\d+[\s\.\,\-\_]*/, "").trim();
+      
+      // Generate standard username: std_4_2_15
+      const username = `std_${importGrade}_${importRoom}_${studentNo}`;
+
+      try {
+        const res = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username,
+            password: importPassword,
+            fullName: cleanedName,
+            grade: importGrade,
+            room: importRoom,
+            studentNo,
+          }),
+        });
+        
+        if (!res.ok) {
+          const data = await res.json();
+          console.error(`Failed to import ${cleanedName}:`, data.error);
+          failCount++;
+        } else {
+          successCount++;
+        }
+      } catch (err) {
+        console.error(`Failed to import ${cleanedName}:`, err);
+        failCount++;
+      }
+      
+      setImportProgress(i + 1);
+    }
+    
+    setIsImporting(false);
+    alert(`นำเข้ารายชื่อเสร็จสิ้น! สำเร็จ ${successCount} คน, ล้มเหลว ${failCount} คน`);
+    setShowImportModal(false);
+    setImportNamesText("");
+    loadData();
+  };
+
   if (authLoading || loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -243,7 +379,27 @@ export default function ManageStudentsPage() {
 
     setIsDeleting(true);
     try {
+      // Delete in Firestore/database mode database
       await authService.deleteStudent(deletingStudent.uid);
+
+      // ALSO delete in Supabase if in firebase mode (since Supabase credentials need cleanup)
+      const isFirebase = process.env.NEXT_PUBLIC_DATABASE_MODE === "firebase";
+      if (isFirebase && user) {
+        try {
+          await fetch("/api/auth/roster", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              teacherUid: user.uid,
+              action: "delete_student",
+              studentUid: deletingStudent.uid
+            })
+          });
+        } catch (supabaseErr) {
+          console.error("Error deleting credentials in Supabase:", supabaseErr);
+        }
+      }
+
       setShowDeleteModal(false);
       setDeletingStudent(null);
       alert("ลบข้อมูลนักเรียนเรียบร้อยแล้ว!");
@@ -268,10 +424,28 @@ export default function ManageStudentsPage() {
           </div>
         </div>
 
-        <button onClick={loadData} className="btn-secondary" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          <RefreshCw size={16} />
-          <span>รีเฟรชข้อมูล</span>
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button 
+            onClick={() => {
+              setImportGrade("4");
+              setImportRoom("2");
+              setImportNamesText("");
+              setImportStartNo("1");
+              setImportPassword("123456");
+              setImportError("");
+              setShowImportModal(true);
+            }} 
+            className="btn-primary" 
+            style={{ display: "flex", gap: "6px", alignItems: "center", background: "linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-blue) 100%)" }}
+          >
+            <Upload size={16} />
+            <span>นำเข้ารายชื่อห้องเรียน</span>
+          </button>
+          <button onClick={loadData} className="btn-secondary" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <RefreshCw size={16} />
+            <span>รีเฟรชข้อมูล</span>
+          </button>
+        </div>
       </header>
 
       {/* Filters Area */}
@@ -387,51 +561,66 @@ export default function ManageStudentsPage() {
                 <th>ห้อง</th>
                 <th>เลขที่</th>
                 <th>ชื่อ - นามสกุล</th>
+                <th>ชื่อผู้ใช้ (Username)</th>
                 <th>ซองการ์ดที่มี</th>
                 <th>การ์ดในคอลเลกชัน</th>
                 <th>จัดการ</th>
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.map(student => (
-                <tr key={student.uid}>
-                  <td>ม.{student.grade || "4"}/{student.room}</td>
-                  <td>{student.studentNo}</td>
-                  <td className={styles.studentNameCell}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                      <span>{student.fullName}</span>
-                      {student.isMerged && (
-                        <span className={styles.mergedBadge} title="บัญชีนี้ผ่านการรวมประวัติเนื่องจากการสมัครซ้ำ">
-                          <GitMerge size={12} />
-                          รวมบัญชีแล้ว
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ color: "var(--accent-purple)", fontWeight: "bold" }}>
-                    {student.packsCount || 0} ซอง
-                  </td>
-                  <td>
-                    {student.cardsCollected ? student.cardsCollected.reduce((acc, c) => acc + (c.count || 0), 0) : 0} ใบ
-                  </td>
-                  <td className={styles.actionCell}>
-                    <button 
-                      onClick={() => handleOpenEdit(student)}
-                      className={styles.editBtn}
-                    >
-                      <Edit3 size={14} />
-                      แก้ไข
-                    </button>
-                    <button 
-                      onClick={() => handleOpenDelete(student)}
-                      className={styles.deleteBtn}
-                    >
-                      <Trash2 size={14} />
-                      ลบ
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredStudents.map(student => {
+                const studentUsername = student.email ? student.email.split("@")[0] : "-";
+                return (
+                  <tr key={student.uid}>
+                    <td>ม.{student.grade || "4"}/{student.room}</td>
+                    <td>{student.studentNo}</td>
+                    <td className={styles.studentNameCell}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span>{student.fullName}</span>
+                        {student.isMerged && (
+                          <span className={styles.mergedBadge} title="บัญชีนี้ผ่านการรวมประวัติเนื่องจากการสมัครซ้ำ">
+                            <GitMerge size={12} />
+                            รวมบัญชีแล้ว
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ fontFamily: "monospace", color: "var(--accent-cyan-light)" }}>
+                      {studentUsername}
+                    </td>
+                    <td style={{ color: "var(--accent-purple)", fontWeight: "bold" }}>
+                      {student.packsCount || 0} ซอง
+                    </td>
+                    <td>
+                      {student.cardsCollected ? student.cardsCollected.reduce((acc, c) => acc + (c.count || 0), 0) : 0} ใบ
+                    </td>
+                    <td className={styles.actionCell}>
+                      <button 
+                        onClick={() => handleOpenEdit(student)}
+                        className={styles.editBtn}
+                      >
+                        <Edit3 size={14} />
+                        แก้ไข
+                      </button>
+                      <button 
+                        onClick={() => handleOpenPasswordReset(student)}
+                        className={styles.editBtn}
+                        style={{ border: "1px solid rgba(168, 85, 247, 0.4)", color: "var(--accent-purple-light)" }}
+                      >
+                        <Key size={14} />
+                        เปลี่ยนรหัส
+                      </button>
+                      <button 
+                        onClick={() => handleOpenDelete(student)}
+                        className={styles.deleteBtn}
+                      >
+                        <Trash2 size={14} />
+                        ลบ
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -751,6 +940,183 @@ export default function ManageStudentsPage() {
                   }}
                 >
                   {isDeleting ? "กำลังลบ..." : "ลบข้อมูลอย่างถาวร"}
+                </button>
+              </footer>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Roster Import Modal */}
+      {showImportModal && (
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modal} glass-container`} style={{ maxWidth: "560px" }}>
+            <header className={styles.modalHeader}>
+              <h3 className="gradient-text">นำเข้ารายชื่อห้องเรียน (Import Roster)</h3>
+              <button onClick={() => !isImporting && setShowImportModal(false)} className={styles.closeBtn}>
+                <X size={20} />
+              </button>
+            </header>
+
+            {isImporting ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "20px 0", alignItems: "center", justifyContent: "center" }}>
+                <div className={styles.spinner} />
+                <p style={{ fontWeight: "bold" }}>กำลังนำเข้ารายชื่อนักเรียน...</p>
+                <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
+                  <div style={{ width: `${(importProgress / importTotal) * 100}%`, height: "100%", background: "linear-gradient(90deg, var(--accent-purple), var(--accent-blue))", transition: "width 0.2s ease" }} />
+                </div>
+                <span style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                  ความคืบหน้า: {importProgress} / {importTotal} คน
+                </span>
+              </div>
+            ) : (
+              <form onSubmit={handleImportRoster} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {importError && (
+                  <div className={styles.mergeWarning} style={{ background: "rgba(239, 68, 68, 0.08)", color: "#ef4444", padding: "10px", borderRadius: "8px", border: "1px solid rgba(239,68,68,0.2)" }}>
+                    {importError}
+                  </div>
+                )}
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className={styles.formGroup}>
+                    <label>ระดับชั้น</label>
+                    <select value={importGrade} onChange={(e) => setImportGrade(e.target.value)} required>
+                      <option value="4">ม.4</option>
+                      <option value="5">ม.5</option>
+                    </select>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>ห้องเรียน</label>
+                    <select value={importRoom} onChange={(e) => setImportRoom(e.target.value)} required>
+                      {importGrade === "4" ? (
+                        ["2","3","4","5","6","12","13"].map((r) => (
+                          <option key={r} value={r}>ม.4/{r}</option>
+                        ))
+                      ) : (
+                        ["2","3"].map((r) => (
+                          <option key={r} value={r}>ม.5/{r}</option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className={styles.formGroup}>
+                    <label>เลขที่เริ่มต้น</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={importStartNo}
+                      onChange={(e) => setImportStartNo(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>รหัสผ่านเริ่มต้นสำหรับทุกคน</label>
+                    <input
+                      type="text"
+                      value={importPassword}
+                      onChange={(e) => setImportPassword(e.target.value)}
+                      placeholder="เช่น 123456"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>รายชื่อนักเรียน (พิมพ์ 1 ชื่อต่อ 1 บรรทัด)</label>
+                  <textarea
+                    value={importNamesText}
+                    onChange={(e) => setImportNamesText(e.target.value)}
+                    placeholder="เช่น:&#10;นายสมชาย ใจดี&#10;เด็กหญิงสมศรี รักเรียน"
+                    rows={8}
+                    required
+                    style={{
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid var(--glass-border)",
+                      borderRadius: "10px",
+                      padding: "12px",
+                      color: "white",
+                      width: "100%",
+                      boxSizing: "border-box",
+                      fontFamily: "inherit"
+                    }}
+                  />
+                  <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                    * สามารถคัดลอกจาก Excel วางลงไปตรงๆ ได้เลย ระบบจะล้างเลขที่นำหน้าให้อัตโนมัติ
+                  </span>
+                </div>
+
+                <footer className={styles.modalFooter}>
+                  <button type="button" onClick={() => setShowImportModal(false)} className="btn-secondary">
+                    ยกเลิก
+                  </button>
+                  <button type="submit" className="btn-primary" style={{ background: "linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-blue) 100%)" }}>
+                    เริ่มนำเข้ารายชื่อ
+                  </button>
+                </footer>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && passwordStudent && (
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modal} glass-container`}>
+            <header className={styles.modalHeader}>
+              <h3 className="gradient-text">เปลี่ยนรหัสผ่านนักเรียน</h3>
+              <button onClick={() => setShowPasswordModal(false)} className={styles.closeBtn}>
+                <X size={20} />
+              </button>
+            </header>
+
+            <form onSubmit={handleUpdatePassword} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
+                <p style={{ margin: "0 0 6px 0", fontSize: "0.85rem", color: "var(--text-secondary)" }}>บัญชีเป้าหมาย:</p>
+                <strong style={{ fontSize: "1.05rem" }}>{passwordStudent.fullName}</strong>
+                <span style={{ display: "block", fontSize: "0.85rem", color: "var(--accent-cyan-light)", marginTop: "2px" }}>
+                  ม.{passwordStudent.grade || "4"}/{passwordStudent.room} เลขที่ {passwordStudent.studentNo} (Username: {passwordStudent.email?.split("@")[0] || "-"})
+                </span>
+              </div>
+
+              {passwordError && (
+                <div className={styles.mergeWarning} style={{ background: "rgba(239, 68, 68, 0.08)", color: "#ef4444", padding: "10px", borderRadius: "8px" }}>
+                  {passwordError}
+                </div>
+              )}
+
+              <div className={styles.formGroup}>
+                <label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
+                <input
+                  type="text"
+                  placeholder="กรอกรหัสผ่านใหม่ที่นี่"
+                  value={newStudentPassword}
+                  onChange={(e) => setNewStudentPassword(e.target.value)}
+                  disabled={isUpdatingPassword}
+                  required
+                />
+              </div>
+
+              <footer className={styles.modalFooter}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowPasswordModal(false)} 
+                  className="btn-secondary"
+                  disabled={isUpdatingPassword}
+                >
+                  ยกเลิก
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? "กำลังเปลี่ยน..." : "บันทึกรหัสใหม่"}
                 </button>
               </footer>
             </form>
