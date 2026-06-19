@@ -6,7 +6,9 @@ import {
   signInWithPopup, 
   signOut as fbSignOut, 
   onAuthStateChanged as fbOnAuthStateChanged,
-  User as FirebaseUser
+  User as FirebaseUser,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
 } from "firebase/auth";
 import { 
   getFirestore, 
@@ -24,7 +26,9 @@ import {
   arrayRemove,
   runTransaction,
   where,
-  getDocs
+  getDocs,
+  writeBatch,
+  increment
 } from "firebase/firestore";
 import * as sb from "./supabase";
 
@@ -564,7 +568,7 @@ export async function saveCardsToFirestore(): Promise<void> {
 
   if (getDatabaseMode() === "supabase") {
     try {
-      const { supabase } = await import("./supabase");
+      const supabase = sb.supabase;
       const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
       const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
       const dropRates = JSON.parse(localStorage.getItem(DROP_RATES_KEY) || "null");
@@ -584,7 +588,7 @@ export async function saveCardsToFirestore(): Promise<void> {
 
   if (!isFirebaseConfigured || !db) return;
   try {
-    const { doc, setDoc, deleteDoc, collection, getDocs } = await import("firebase/firestore");
+
     
     // Save drop rates in settings/cards (and overwrite to clean up old large overrides/custom fields)
     const dropRates = JSON.parse(localStorage.getItem(DROP_RATES_KEY) || "null");
@@ -631,7 +635,7 @@ export async function syncCardsFromFirestore(): Promise<void> {
 
   if (getDatabaseMode() === "supabase") {
     try {
-      const { syncCardsFromSupabase } = await import("./supabase");
+      const syncCardsFromSupabase = sb.syncCardsFromSupabase;
       await syncCardsFromSupabase();
     } catch (e) {
       console.error("syncCardsFromSupabase error:", e);
@@ -641,7 +645,7 @@ export async function syncCardsFromFirestore(): Promise<void> {
 
   if (!isFirebaseConfigured || !db) return;
   try {
-    const { doc, getDoc, collection, getDocs } = await import("firebase/firestore");
+
     
     // 1. Fetch drop rates and check old structure for migration
     const docRef = doc(db, "settings", "cards");
@@ -1963,7 +1967,7 @@ const fbAuthService = {
       return mockDb.signUpMock(username, password, profileData);
     }
 
-    const { createUserWithEmailAndPassword } = await import("firebase/auth");
+
     
     // Check if username already exists in Firestore
     const q = query(collection(db, "users"), where("email", "==", email));
@@ -2039,7 +2043,7 @@ const fbAuthService = {
       return mockDb.signInMockCustom(username, password);
     }
 
-    const { signInWithEmailAndPassword } = await import("firebase/auth");
+
     let credential;
     try {
       credential = await signInWithEmailAndPassword(auth, email, password);
@@ -2211,7 +2215,7 @@ const fbAuthService = {
       return mockDb.getRegisteredStudents();
     }
     try {
-      const { getDocs, query, where, doc, setDoc } = await import("firebase/firestore");
+
       const q = query(collection(db, "users"), where("role", "==", "student"), where("isRegistered", "==", true));
       const snapshot = await getDocs(q);
       const fbStudentsMap = new Map<string, UserProfile>();
@@ -2318,7 +2322,7 @@ const fbAuthService = {
       return;
     }
 
-    const { doc, getDoc, updateDoc, deleteDoc, getDocs, collection, query, where, writeBatch } = await import("firebase/firestore");
+
 
     const sourceDocRef = doc(db, "users", sourceUid);
     const targetDocRef = doc(db, "users", targetUid);
@@ -2408,7 +2412,7 @@ const fbAuthService = {
       mockDb.deleteStudent(uid);
       return;
     }
-    const { doc, deleteDoc } = await import("firebase/firestore");
+
     const userDocRef = doc(db, "users", uid);
     await deleteDoc(userDocRef);
   }
@@ -2684,7 +2688,7 @@ const fbSubmissionService = {
 
     // Reward: 1 Pack for submitting
     // Reward: 1 Pack for submitting
-    const { increment, query, where, getDocs } = await import("firebase/firestore");
+
     
     if (isGroup && members && members.length > 0) {
       const promises = members.map(async (m) => {
@@ -2802,7 +2806,7 @@ const fbSubmissionService = {
       const subSnap = await getDoc(doc(db, "submissions", submissionId));
       if (subSnap.exists()) {
          const sub = subSnap.data() as Submission;
-         const { increment, query, where, getDocs } = await import("firebase/firestore");
+
          if (sub.isGroup && sub.members && sub.members.length > 0) {
             const promises = sub.members.map(async (m) => {
               const q = query(collection(db, "users"), where("room", "==", String(m.room)), where("studentNo", "==", String(m.studentNo)));
@@ -2839,7 +2843,7 @@ const fbSubmissionService = {
     if (isMockMode()) {
       return mockDb.getItem<Submission[]>("mock_submissions", []);
     }
-    const { getDocs } = await import("firebase/firestore");
+
     const snapshot = await getDocs(collection(db, "submissions"));
     const list: Submission[] = [];
     snapshot.forEach((doc) => {
@@ -2855,7 +2859,7 @@ const fbCardService = {
       mockDb.awardPack(studentUid, count);
       return;
     }
-    const { doc, runTransaction } = await import("firebase/firestore");
+
     const docRef = doc(db, "users", studentUid);
     await runTransaction(db, async (transaction) => {
       const snap = await transaction.get(docRef);
@@ -2869,7 +2873,7 @@ const fbCardService = {
     if (isMockMode()) {
       return mockDb.getStudentPacks(studentUid);
     }
-    const { doc, getDoc } = await import("firebase/firestore");
+
     const snap = await getDoc(doc(db, "users", studentUid));
     if (!snap.exists()) return [];
     const count = snap.data().packsCount || 0;
@@ -2892,7 +2896,7 @@ const fbCardService = {
       return mockDb.openPack(studentUid);
     }
 
-    const { doc, runTransaction } = await import("firebase/firestore");
+
     const userRef = doc(db, "users", studentUid);
 
     const rates = getDropRates().pack;
@@ -2958,7 +2962,7 @@ const fbCardService = {
       return mockDb.requestRedemption(studentUid, cardId);
     }
 
-    const { doc, collection, addDoc, runTransaction } = await import("firebase/firestore");
+
     const userRef = doc(db, "users", studentUid);
     const card = getCardPool().find(c => c.id === cardId);
     if (!card) return null;
@@ -3003,7 +3007,7 @@ const fbCardService = {
     if (isMockMode()) {
       return mockDb.getRedemptions();
     }
-    const { getDocs, query, orderBy } = await import("firebase/firestore");
+
     const q = query(collection(db, "redemptions"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
     const list: RedemptionRequest[] = [];
@@ -3041,7 +3045,7 @@ const fbCardService = {
       mockDb.approveRedemption(requestId);
       return;
     }
-    const { doc, runTransaction } = await import("firebase/firestore");
+
     const reqRef = doc(db, "redemptions", requestId);
 
     await runTransaction(db, async (transaction) => {
@@ -3066,7 +3070,7 @@ const fbCardService = {
       mockDb.rejectRedemption(requestId);
       return;
     }
-    const { doc, runTransaction } = await import("firebase/firestore");
+
     const reqRef = doc(db, "redemptions", requestId);
 
     await runTransaction(db, async (transaction) => {
@@ -3097,7 +3101,7 @@ const fbCardService = {
       return res;
     }
 
-    const { doc, runTransaction } = await import("firebase/firestore");
+
     const userRef = doc(db, "users", studentUid);
 
     // Exchange odds — 2x better than normal gacha packs:
@@ -3191,7 +3195,7 @@ const fbAnnouncementService = {
       return data ? JSON.parse(data) : [];
     }
     try {
-      const { getDocs, query, orderBy } = await import("firebase/firestore");
+
       const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
       const results: Announcement[] = [];
