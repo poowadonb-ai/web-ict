@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { authService, UserProfile } from "@/lib/firebase";
-import { Users, Search, Filter, RefreshCw, Edit3, X, AlertTriangle, GitMerge, Check, Trash2, Key, Upload } from "lucide-react";
+import { Users, Search, Filter, RefreshCw, Edit3, X, AlertTriangle, GitMerge, Trash2, Key, Upload } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function ManageStudentsPage() {
@@ -158,8 +158,10 @@ export default function ManageStudentsPage() {
 
   useEffect(() => {
     if (user && user.role === "teacher") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleOpenPasswordReset = (student: UserProfile) => {
@@ -197,9 +199,10 @@ export default function ManageStudentsPage() {
       setShowPasswordModal(false);
       setPasswordStudent(null);
       setNewStudentPassword("");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error updating password:", err);
-      setPasswordError(err.message || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+      const errMsg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+      setPasswordError(errMsg);
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -229,7 +232,7 @@ export default function ManageStudentsPage() {
     setImportTotal(names.length);
     setImportProgress(0);
 
-    let startNo = parseInt(importStartNo) || 1;
+    const startNo = parseInt(importStartNo) || 1;
     let successCount = 0;
     let failCount = 0;
     
@@ -355,9 +358,10 @@ export default function ManageStudentsPage() {
       setMergePair(null);
       alert("รวมบัญชีนักเรียนเรียบร้อยแล้ว!");
       loadData();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Merge error:", err);
-      alert("เกิดข้อผิดพลาดในการรวมบัญชี: " + (err.message || String(err)));
+      const errMsg = err instanceof Error ? err.message : String(err);
+      alert(`เกิดข้อผิดพลาดในการรวมบัญชี: ${errMsg}`);
     } finally {
       setIsMerging(false);
     }
@@ -404,9 +408,10 @@ export default function ManageStudentsPage() {
       setDeletingStudent(null);
       alert("ลบข้อมูลนักเรียนเรียบร้อยแล้ว!");
       loadData();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error deleting student:", err);
-      alert("เกิดข้อผิดพลาดในการลบข้อมูล: " + (err.message || String(err)));
+      const errMsg = err instanceof Error ? err.message : String(err);
+      alert(`เกิดข้อผิดพลาดในการลบข้อมูล: ${errMsg}`);
     } finally {
       setIsDeleting(false);
     }
@@ -731,7 +736,7 @@ export default function ManageStudentsPage() {
 
             <div className={styles.mergeModalContent}>
               <p className={styles.modalDesc}>
-                กรุณาตรวจสอบข้อมูลและเลือก <strong>"บัญชีหลัก (ที่จะเก็บไว้ใช้งาน)"</strong> ระบบจะโอนย้ายการ์ด ซองการ์ด คะแนนโบนัส และงานทั้งหมดไปยังบัญชีหลัก และลบบัญชีรองออก
+                กรุณาตรวจสอบข้อมูลและเลือก <strong>&quot;บัญชีหลัก (ที่จะเก็บไว้ใช้งาน)&quot;</strong> ระบบจะโอนย้ายการ์ด ซองการ์ด คะแนนโบนัส และงานทั้งหมดไปยังบัญชีหลัก และลบบัญชีรองออก
               </p>
 
               <div className={styles.compareGrid}>

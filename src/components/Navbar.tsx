@@ -60,8 +60,9 @@ export default function Navbar() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err: any) {
-      setErrorMsg(err.message || "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน");
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+      setErrorMsg(errMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -118,6 +119,7 @@ export default function Navbar() {
 
   const links = user.role === "teacher" ? teacherLinks : studentLinks;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const avatarUrl = (user as any).photoURL || null;
   const displayName = user.fullName || user.displayName || "User";
   const initials = displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();

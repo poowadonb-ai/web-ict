@@ -1,0 +1,417 @@
+
+> web-ict@0.1.0 lint
+> eslint
+
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/album/page.tsx
+   44:52  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+   62:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/album/page.tsx:62:7
+  60 |   useEffect(() => {
+  61 |     if (!isHovered) {
+> 62 |       setTiltStyle({
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  63 |         transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(${zoomScale})`,
+  64 |         transition: "transform 0.3s ease",
+  65 |       });  react-hooks/set-state-in-effect
+  198:17  warning  'isHolo' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  255:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @next/next/no-img-element
+  352:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @next/next/no-img-element
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/api/resolve-canva/route.ts
+  45:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx
+    47:10  warning  'exchangeLoading' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+    47:27  warning  'setExchangeLoading' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+    57:37  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+    72:21  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:72:21
+  70 |
+  71 |     for (let i = 0; i < count; i++) {
+> 72 |       const angle = Math.random() * Math.PI * 2;
+     |                     ^^^^^^^^^^^^^ Cannot call impure function
+  73 |       let speed = 0;
+  74 |       let size = 0;
+  75 |       let decay = 0;                                                                                                                                                                                              react-hooks/purity
+    82:23  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:82:23
+  80 |
+  81 |       if (type === "spark") {
+> 82 |         speed = 1.5 + Math.random() * 3;
+     |                       ^^^^^^^^^^^^^ Cannot call impure function
+  83 |         size = 1.5 + Math.random() * 2;
+  84 |         decay = 0.02 + Math.random() * 0.03;
+  85 |         gravity = -0.01;                                                                                                                                                            react-hooks/purity
+    83:22  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:83:22
+  81 |       if (type === "spark") {
+  82 |         speed = 1.5 + Math.random() * 3;
+> 83 |         size = 1.5 + Math.random() * 2;
+     |                      ^^^^^^^^^^^^^ Cannot call impure function
+  84 |         decay = 0.02 + Math.random() * 0.03;
+  85 |         gravity = -0.01;
+  86 |         life = 30 + Math.random() * 30;                                                                                                                     react-hooks/purity
+    84:24  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:84:24
+  82 |         speed = 1.5 + Math.random() * 3;
+  83 |         size = 1.5 + Math.random() * 2;
+> 84 |         decay = 0.02 + Math.random() * 0.03;
+     |                        ^^^^^^^^^^^^^ Cannot call impure function
+  85 |         gravity = -0.01;
+  86 |         life = 30 + Math.random() * 30;
+  87 |         color = Math.random() > 0.5 ? "#00f0ff" : "#ff007f";                                                                                    react-hooks/purity
+    86:21  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:86:21
+  84 |         decay = 0.02 + Math.random() * 0.03;
+  85 |         gravity = -0.01;
+> 86 |         life = 30 + Math.random() * 30;
+     |                     ^^^^^^^^^^^^^ Cannot call impure function
+  87 |         color = Math.random() > 0.5 ? "#00f0ff" : "#ff007f";
+  88 |       } else if (type === "blast") {
+  89 |         speed = 3 + Math.random() * 9;                                                                                            react-hooks/purity
+    87:17  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:87:17
+  85 |         gravity = -0.01;
+  86 |         life = 30 + Math.random() * 30;
+> 87 |         color = Math.random() > 0.5 ? "#00f0ff" : "#ff007f";
+     |                 ^^^^^^^^^^^^^ Cannot call impure function
+  88 |       } else if (type === "blast") {
+  89 |         speed = 3 + Math.random() * 9;
+  90 |         size = 2.5 + Math.random() * 4;                                                                                                     react-hooks/purity
+    89:21  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:89:21
+  87 |         color = Math.random() > 0.5 ? "#00f0ff" : "#ff007f";
+  88 |       } else if (type === "blast") {
+> 89 |         speed = 3 + Math.random() * 9;
+     |                     ^^^^^^^^^^^^^ Cannot call impure function
+  90 |         size = 2.5 + Math.random() * 4;
+  91 |         decay = 0.01 + Math.random() * 0.015;
+  92 |         gravity = 0.04;                                                                                            react-hooks/purity
+    90:22  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:90:22
+  88 |       } else if (type === "blast") {
+  89 |         speed = 3 + Math.random() * 9;
+> 90 |         size = 2.5 + Math.random() * 4;
+     |                      ^^^^^^^^^^^^^ Cannot call impure function
+  91 |         decay = 0.01 + Math.random() * 0.015;
+  92 |         gravity = 0.04;
+  93 |         life = 60 + Math.random() * 60;                                                                                                                react-hooks/purity
+    91:24  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:91:24
+  89 |         speed = 3 + Math.random() * 9;
+  90 |         size = 2.5 + Math.random() * 4;
+> 91 |         decay = 0.01 + Math.random() * 0.015;
+     |                        ^^^^^^^^^^^^^ Cannot call impure function
+  92 |         gravity = 0.04;
+  93 |         life = 60 + Math.random() * 60;
+  94 |         const blastColors = ["#00f0ff", "#ff007f", "#a855f7", "#ffffff", "#fbbf24"];                                                              react-hooks/purity
+    93:21  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:93:21
+  91 |         decay = 0.01 + Math.random() * 0.015;
+  92 |         gravity = 0.04;
+> 93 |         life = 60 + Math.random() * 60;
+     |                     ^^^^^^^^^^^^^ Cannot call impure function
+  94 |         const blastColors = ["#00f0ff", "#ff007f", "#a855f7", "#ffffff", "#fbbf24"];
+  95 |         color = blastColors[Math.floor(Math.random() * blastColors.length)];
+  96 |         sparkle = Math.random() > 0.6;                            react-hooks/purity
+    95:40  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:95:40
+  93 |         life = 60 + Math.random() * 60;
+  94 |         const blastColors = ["#00f0ff", "#ff007f", "#a855f7", "#ffffff", "#fbbf24"];
+> 95 |         color = blastColors[Math.floor(Math.random() * blastColors.length)];
+     |                                        ^^^^^^^^^^^^^ Cannot call impure function
+  96 |         sparkle = Math.random() > 0.6;
+  97 |       } else if (type === "rarity") {
+  98 |         speed = 2 + Math.random() * 7;  react-hooks/purity
+    96:19  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:96:19
+  94 |         const blastColors = ["#00f0ff", "#ff007f", "#a855f7", "#ffffff", "#fbbf24"];
+  95 |         color = blastColors[Math.floor(Math.random() * blastColors.length)];
+> 96 |         sparkle = Math.random() > 0.6;
+     |                   ^^^^^^^^^^^^^ Cannot call impure function
+  97 |       } else if (type === "rarity") {
+  98 |         speed = 2 + Math.random() * 7;
+  99 |         size = 2 + Math.random() * 3.5;                       react-hooks/purity
+    98:21  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:98:21
+   96 |         sparkle = Math.random() > 0.6;
+   97 |       } else if (type === "rarity") {
+>  98 |         speed = 2 + Math.random() * 7;
+      |                     ^^^^^^^^^^^^^ Cannot call impure function
+   99 |         size = 2 + Math.random() * 3.5;
+  100 |         decay = 0.012 + Math.random() * 0.02;
+  101 |         gravity = 0.02;                                                                                                          react-hooks/purity
+    99:20  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:99:20
+   97 |       } else if (type === "rarity") {
+   98 |         speed = 2 + Math.random() * 7;
+>  99 |         size = 2 + Math.random() * 3.5;
+      |                    ^^^^^^^^^^^^^ Cannot call impure function
+  100 |         decay = 0.012 + Math.random() * 0.02;
+  101 |         gravity = 0.02;
+  102 |         life = 40 + Math.random() * 50;                                                                                                          react-hooks/purity
+   100:25  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:100:25
+   98 |         speed = 2 + Math.random() * 7;
+   99 |         size = 2 + Math.random() * 3.5;
+> 100 |         decay = 0.012 + Math.random() * 0.02;
+      |                         ^^^^^^^^^^^^^ Cannot call impure function
+  101 |         gravity = 0.02;
+  102 |         life = 40 + Math.random() * 50;
+  103 |         sparkle = true;                                                                                                                  react-hooks/purity
+   102:21  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:102:21
+  100 |         decay = 0.012 + Math.random() * 0.02;
+  101 |         gravity = 0.02;
+> 102 |         life = 40 + Math.random() * 50;
+      |                     ^^^^^^^^^^^^^ Cannot call impure function
+  103 |         sparkle = true;
+  104 |         if (rarityColor === "holographic") {
+  105 |           const holoColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#fbbf24"];                                                                  react-hooks/purity
+   106:41  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/cards/page.tsx:106:41
+  104 |         if (rarityColor === "holographic") {
+  105 |           const holoColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#fbbf24"];
+> 106 |           color = holoColors[Math.floor(Math.random() * holoColors.length)];
+      |                                         ^^^^^^^^^^^^^ Cannot call impure function
+  107 |         }
+  108 |       }
+  109 |                                                                                     react-hooks/purity
+   213:6   warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+   265:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+   378:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+   669:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @next/next/no-img-element
+   793:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @next/next/no-img-element
+  1002:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @next/next/no-img-element
+  1083:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @next/next/no-img-element
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/leaderboard/page.tsx
+   6:25  warning  'Star' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+  74:21  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/leaderboard/page.tsx:74:21
+  72 |   };
+  73 |
+> 74 |   useEffect(() => { loadData(); }, []);
+     |                     ^^^^^^^^ Avoid calling setState() directly within an effect
+  75 |
+  76 |   if (loading) {
+  77 |     return (  react-hooks/set-state-in-effect
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/page.tsx
+   6:35  warning  'Users' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  81:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/page.tsx:81:5
+  79 |   // Reset student selection when grade or room changes
+  80 |   useEffect(() => {
+> 81 |     setSelectedStudentUid("");
+     |     ^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  82 |   }, [selectedGrade, selectedRoom]);
+  83 |
+  84 |   useEffect(() => {  react-hooks/set-state-in-effect
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/cards/page.tsx
+  158:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/cards/page.tsx:158:7
+  156 |   useEffect(() => {
+  157 |     if (activeTab === "manage") {
+> 158 |       setCardPool(getCardPool());
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  159 |     }
+  160 |   }, [activeTab]);
+  161 |                           react-hooks/set-state-in-effect
+  163:35  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/cards/page.tsx:163:35
+  161 |
+  162 |   useEffect(() => {
+> 163 |     if (user?.role === "teacher") loadData();
+      |                                   ^^^^^^^^ Avoid calling setState() directly within an effect
+  164 |   }, [user]);
+  165 |
+  166 |   if (authLoading || loading) {  react-hooks/set-state-in-effect
+  240:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  417:19  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  430:19  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  445:19  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  503:19  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+  515:19  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-explicit-any
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/dashboard/page.tsx
+   44:35  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/dashboard/page.tsx:44:35
+  42 |
+  43 |   useEffect(() => {
+> 44 |     if (user?.role === "teacher") loadData();
+     |                                   ^^^^^^^^ Avoid calling setState() directly within an effect
+  45 |   }, [user]);
+  46 |
+  47 |   if (authLoading || loading) {  react-hooks/set-state-in-effect
+  202:69  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react/no-unescaped-entities
+  202:84  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                react/no-unescaped-entities
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/migration/page.tsx
+   20:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   21:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   22:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   23:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   24:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   25:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   26:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   46:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   58:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  152:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  170:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  201:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  217:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  242:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/students/page.tsx
+    7:79  warning  'Check' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  161:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/app/teacher/students/page.tsx:161:7
+  159 |   useEffect(() => {
+  160 |     if (user && user.role === "teacher") {
+> 161 |       loadData();
+      |       ^^^^^^^^ Avoid calling setState() directly within an effect
+  162 |     }
+  163 |   }, [user]);
+  164 |  react-hooks/set-state-in-effect
+  163:6   warning  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-hooks/exhaustive-deps
+  200:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  232:9   error    'startNo' is never reassigned. Use 'const' instead                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            prefer-const
+  358:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  407:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  734:52  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react/no-unescaped-entities
+  734:83  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react/no-unescaped-entities
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/components/Navbar.tsx
+   63:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  121:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/lib/audioSynth.ts
+  11:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/kruspoowadon/Desktop/krus-ai/ictbmp/web-ict/src/lib/supabase.ts
+   17:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   37:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   53:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   66:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   89:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  245:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  385:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  415:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  480:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  528:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  551:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  553:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  945:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 93 problems (79 errors, 14 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

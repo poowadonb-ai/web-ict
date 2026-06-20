@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService, getCardPool, syncCardsFromFirestore, UserProfile } from "@/lib/firebase";
+import { authService, getCardPool, syncCardsFromFirestore, UserProfile, Card } from "@/lib/firebase";
 import { BookOpen, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import styles from "./page.module.css";
 
@@ -41,7 +41,7 @@ export default function AlbumPage() {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   // 3D Card Viewer states
-  const [selectedCard, setSelectedCard] = useState<any | null>(null);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [zoomScale, setZoomScale] = useState(1.0);
   const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({});
   const [shimmerStyle, setShimmerStyle] = useState<React.CSSProperties>({});
@@ -59,6 +59,7 @@ export default function AlbumPage() {
 
   useEffect(() => {
     if (!isHovered) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTiltStyle({
         transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(${zoomScale})`,
         transition: "transform 0.3s ease",
@@ -195,7 +196,6 @@ export default function AlbumPage() {
           const count = getCount(card.id);
           const hasCard = count > 0;
           const cfg = RARITY_CONFIG[card.rarity];
-          const isHolo = card.rarity === "holographic";
 
           let rarityClass = styles.rarityCommon;
           if (card.rarity === "rare") rarityClass = styles.rarityRare;
@@ -252,6 +252,7 @@ export default function AlbumPage() {
                       <div className={styles.cyberHoloSymbol}>✨</div>
                     </div>
                   ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img 
                       src={card.imageUrl} 
                       alt={card.name} 
@@ -349,6 +350,7 @@ export default function AlbumPage() {
                           <div className={styles.cyberHoloSymbol}>✨</div>
                         </div>
                       ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img 
                           src={selectedCard.imageUrl} 
                           alt={selectedCard.name} 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { authService, UserProfile } from "@/lib/firebase";
-import { BookOpen, Layers, Award, Users, Zap, ShieldAlert } from "lucide-react";
+import { BookOpen, Layers, Award, Zap, ShieldAlert } from "lucide-react";
 import styles from "./page.module.css";
 
 /* ── Animated counter hook ── */
@@ -78,6 +78,7 @@ export default function Home() {
 
   // Reset student selection when grade or room changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedStudentUid("");
   }, [selectedGrade, selectedRoom]);
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -55,9 +56,10 @@ export default function MigrationPage() {
       setData(extracted as any);
       addLog("Successfully extracted all data from Firebase!");
       alert("ดึงข้อมูลจาก Firebase สำเร็จ!");
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      addLog(`Error fetching Firebase: ${error.message}`);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      addLog(`Error fetching Firebase: ${errMsg}`);
       alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
     } finally {
       setIsFetching(false);
@@ -239,9 +241,10 @@ export default function MigrationPage() {
       localStorage.setItem("db_mode", "supabase");
       addLog("Database mode set to Supabase.");
 
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      addLog(`MIGRATION ERROR: ${error.message}`);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      addLog(`MIGRATION ERROR: ${errMsg}`);
       alert("เกิดข้อผิดพลาดในการย้ายข้อมูล ดูรายละเอียดที่ Log");
     } finally {
       setIsMigrating(false);

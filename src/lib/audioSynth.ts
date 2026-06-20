@@ -8,6 +8,7 @@ class AudioSynthService {
   private initCtx(): AudioContext {
     if (!this.ctx) {
       // Fallback for WebkitAudioContext in older Safari browsers
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       this.ctx = new AudioCtx();
     }

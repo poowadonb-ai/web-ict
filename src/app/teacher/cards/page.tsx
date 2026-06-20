@@ -155,12 +155,16 @@ export default function TeacherCardsPage() {
   // Refresh card pool whenever manage tab is opened
   useEffect(() => {
     if (activeTab === "manage") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCardPool(getCardPool());
     }
   }, [activeTab]);
 
   useEffect(() => {
-    if (user?.role === "teacher") loadData();
+    if (user?.role === "teacher") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadData();
+    }
   }, [user]);
 
   if (authLoading || loading) {
@@ -237,10 +241,11 @@ export default function TeacherCardsPage() {
         try {
           await cardService.approveRedemption(req.id);
           successCount++;
-        } catch (err: any) {
+        } catch (err) {
           console.error(`Error approving request ${req.id}:`, err);
           failCount++;
-          errors.push(`${req.studentName} (${req.cardName}): ${err?.message || err}`);
+          const errMsg = err instanceof Error ? err.message : String(err);
+          errors.push(`${req.studentName} (${req.cardName}): ${errMsg}`);
         }
       }
 
@@ -414,9 +419,10 @@ export default function TeacherCardsPage() {
         setSaveMsg("");
         closeEditModal();
       }, 1500);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setSaveMsg(`❌ บันทึกไม่สำเร็จ: ${err.message || "ไม่สามารถเชื่อมต่อฐานข้อมูลได้"}`);
+      const errMsg = err instanceof Error ? err.message : "ไม่สามารถเชื่อมต่อฐานข้อมูลได้";
+      setSaveMsg(`❌ บันทึกไม่สำเร็จ: ${errMsg}`);
     }
   };
 
@@ -427,9 +433,10 @@ export default function TeacherCardsPage() {
       await removeCustomCard(cardId);
       setCardPool(getCardPool());
       if (editingCard?.id === cardId) closeEditModal();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(`❌ ลบการ์ดไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+      const errMsg = err instanceof Error ? err.message : "ไม่มีสิทธิ์ในการแก้ไขระบบ";
+      alert(`❌ ลบการ์ดไม่สำเร็จ: ${errMsg}`);
     } finally {
       setLoading(false);
     }
@@ -442,9 +449,10 @@ export default function TeacherCardsPage() {
       await resetCardInPool(cardId);
       setCardPool(getCardPool());
       if (editingCard?.id === cardId) closeEditModal();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(`❌ รีเซ็ตการ์ดไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+      const errMsg = err instanceof Error ? err.message : "ไม่มีสิทธิ์ในการแก้ไขระบบ";
+      alert(`❌ รีเซ็ตการ์ดไม่สำเร็จ: ${errMsg}`);
     } finally {
       setLoading(false);
     }
@@ -500,9 +508,10 @@ export default function TeacherCardsPage() {
       setTimeout(() => {
         closeRatesModal();
       }, 1500);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setRatesMsg(`❌ บันทึกไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+      const errMsg = err instanceof Error ? err.message : "ไม่มีสิทธิ์ในการแก้ไขระบบ";
+      setRatesMsg(`❌ บันทึกไม่สำเร็จ: ${errMsg}`);
     }
   };
 
@@ -512,9 +521,10 @@ export default function TeacherCardsPage() {
       setLoading(true);
       await resetCardInPool();
       setCardPool(getCardPool());
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(`❌ รีเซ็ตทั้งหมดไม่สำเร็จ: ${err.message || "ไม่มีสิทธิ์ในการแก้ไขระบบ"}`);
+      const errMsg = err instanceof Error ? err.message : "ไม่มีสิทธิ์ในการแก้ไขระบบ";
+      alert(`❌ รีเซ็ตทั้งหมดไม่สำเร็จ: ${errMsg}`);
     } finally {
       setLoading(false);
     }

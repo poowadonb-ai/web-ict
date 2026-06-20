@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { authService, getCardPool, syncCardsFromFirestore, UserProfile } from "@/lib/firebase";
-import { Trophy, Medal, Star, Crown, RefreshCw, Filter } from "lucide-react";
+import { Trophy, Medal, Crown, RefreshCw, Filter } from "lucide-react";
 import styles from "./page.module.css";
 
 interface LeaderboardEntry {
@@ -71,7 +71,10 @@ export default function LeaderboardPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, []);
 
   if (loading) {
     return (

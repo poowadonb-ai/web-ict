@@ -8,6 +8,20 @@ import { Sparkles, Gift, Award, CheckCircle, RefreshCw, X, ShieldAlert } from "l
 import { audioSynth } from "@/lib/audioSynth";
 import styles from "./page.module.css";
 
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  alpha: number;
+  decay: number;
+  gravity: number;
+  life: number;
+  sparkle: boolean;
+}
+
 const renderStars = (rarity: string) => {
   let count = 2;
   let color = "var(--text-muted)";
@@ -21,6 +35,80 @@ const renderStars = (rarity: string) => {
       {"★".repeat(count)}
     </div>
   );
+};
+
+const addParticles = (
+  x: number,
+  y: number,
+  count: number,
+  type: "spark" | "blast" | "rarity",
+  particlesRef: React.MutableRefObject<Particle[]>,
+  rarityColor?: string
+) => {
+  const particles = particlesRef.current;
+  const colors = {
+    common: "#94a3b8",
+    rare: "#3b82f6",
+    epic: "#a855f7",
+    legendary: "#fbbf24",
+    holographic: "#ec4899"
+  };
+
+  const baseColor = rarityColor || colors.common;
+
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    let speed = 0;
+    let size = 0;
+    let decay = 0;
+    let gravity = 0;
+    let life = 0;
+    let color = baseColor;
+    let sparkle = false;
+
+    if (type === "spark") {
+      speed = 1.5 + Math.random() * 3;
+      size = 1.5 + Math.random() * 2;
+      decay = 0.02 + Math.random() * 0.03;
+      gravity = -0.01;
+      life = 30 + Math.random() * 30;
+      color = Math.random() > 0.5 ? "#00f0ff" : "#ff007f";
+    } else if (type === "blast") {
+      speed = 3 + Math.random() * 9;
+      size = 2.5 + Math.random() * 4;
+      decay = 0.01 + Math.random() * 0.015;
+      gravity = 0.04;
+      life = 60 + Math.random() * 60;
+      const blastColors = ["#00f0ff", "#ff007f", "#a855f7", "#ffffff", "#fbbf24"];
+      color = blastColors[Math.floor(Math.random() * blastColors.length)];
+      sparkle = Math.random() > 0.6;
+    } else if (type === "rarity") {
+      speed = 2 + Math.random() * 7;
+      size = 2 + Math.random() * 3.5;
+      decay = 0.012 + Math.random() * 0.02;
+      gravity = 0.02;
+      life = 40 + Math.random() * 50;
+      sparkle = true;
+      if (rarityColor === "holographic") {
+        const holoColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#fbbf24"];
+        color = holoColors[Math.floor(Math.random() * holoColors.length)];
+      }
+    }
+
+    particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size,
+      color,
+      alpha: 1,
+      decay,
+      gravity,
+      life,
+      sparkle
+    });
+  }
 };
 
 export default function StudentCardsPage() {
@@ -44,7 +132,6 @@ export default function StudentCardsPage() {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [successRedeemMsg, setSuccessRedeemMsg] = useState("");
   const [redeemLoading, setRedeemLoading] = useState(false);
-  const [exchangeLoading, setExchangeLoading] = useState(false);
 
   // Exchange Gacha states
   const [isExchangeMode, setIsExchangeMode] = useState(false);
@@ -54,74 +141,7 @@ export default function StudentCardsPage() {
 
   // Canvas refs and particle logic
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
-  const particlesRef = React.useRef<any[]>([]);
-
-  const addParticles = (x: number, y: number, count: number, type: "spark" | "blast" | "rarity", rarityColor?: string) => {
-    const particles = particlesRef.current;
-    const colors = {
-      common: "#94a3b8",
-      rare: "#3b82f6",
-      epic: "#a855f7",
-      legendary: "#fbbf24",
-      holographic: "#ec4899"
-    };
-
-    const baseColor = rarityColor || colors.common;
-
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      let speed = 0;
-      let size = 0;
-      let decay = 0;
-      let gravity = 0;
-      let life = 0;
-      let color = baseColor;
-      let sparkle = false;
-
-      if (type === "spark") {
-        speed = 1.5 + Math.random() * 3;
-        size = 1.5 + Math.random() * 2;
-        decay = 0.02 + Math.random() * 0.03;
-        gravity = -0.01;
-        life = 30 + Math.random() * 30;
-        color = Math.random() > 0.5 ? "#00f0ff" : "#ff007f";
-      } else if (type === "blast") {
-        speed = 3 + Math.random() * 9;
-        size = 2.5 + Math.random() * 4;
-        decay = 0.01 + Math.random() * 0.015;
-        gravity = 0.04;
-        life = 60 + Math.random() * 60;
-        const blastColors = ["#00f0ff", "#ff007f", "#a855f7", "#ffffff", "#fbbf24"];
-        color = blastColors[Math.floor(Math.random() * blastColors.length)];
-        sparkle = Math.random() > 0.6;
-      } else if (type === "rarity") {
-        speed = 2 + Math.random() * 7;
-        size = 2 + Math.random() * 3.5;
-        decay = 0.012 + Math.random() * 0.02;
-        gravity = 0.02;
-        life = 40 + Math.random() * 50;
-        sparkle = true;
-        if (rarityColor === "holographic") {
-          const holoColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#fbbf24"];
-          color = holoColors[Math.floor(Math.random() * holoColors.length)];
-        }
-      }
-
-      particles.push({
-        x,
-        y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        size,
-        color,
-        alpha: 1,
-        decay,
-        gravity,
-        life,
-        sparkle
-      });
-    }
-  };
+  const particlesRef = React.useRef<Particle[]>([]);
 
   useEffect(() => {
     if (!isGachaMode && !isExchangeMode) {
@@ -210,6 +230,7 @@ export default function StudentCardsPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   if (authLoading || loading) {
@@ -240,7 +261,7 @@ export default function StudentCardsPage() {
       audioSynth.playShake();
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight * 0.45;
-      addParticles(centerX + (Math.random() * 40 - 20), centerY + (Math.random() * 40 - 20), 8, "spark");
+      addParticles(centerX + (Math.random() * 40 - 20), centerY + (Math.random() * 40 - 20), 8, "spark", particlesRef);
     }, 180);
 
     try {
@@ -257,17 +278,17 @@ export default function StudentCardsPage() {
       await new Promise(resolve => setTimeout(resolve, 450));
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight * 0.45;
-      addParticles(centerX, centerY, 150, "blast");
+      addParticles(centerX, centerY, 150, "blast", particlesRef);
       
       const newCards = await openPackPromise;
       setOpenedCards(newCards);
       setIsOpeningPack(false);
-    } catch (err: any) {
+    } catch (err) {
       clearInterval(intervalId);
       console.error("Error opening pack:", err);
       setIsGachaMode(false);
       setIsOpeningPack(false);
-      const errMsg = err?.message || String(err);
+      const errMsg = err instanceof Error ? err.message : String(err);
       if (errMsg.includes("Quota exceeded") || errMsg.includes("resource-exhausted")) {
         alert("⚠️ โควตาการเชื่อมต่อฐานข้อมูล Firebase (Free Tier) เต็มในขณะนี้ กรุณาแจ้งคุณครูเพื่อตรวจสอบ หรือลองใหม่อีกครั้งในภายหลังครับ");
       } else {
@@ -302,9 +323,9 @@ export default function StudentCardsPage() {
       };
 
       setTimeout(() => {
-        addParticles(x, y, 45, "rarity", colors[card.rarity]);
+        addParticles(x, y, 45, "rarity", particlesRef, colors[card.rarity]);
         if (card.rarity === "legendary" || card.rarity === "holographic") {
-          addParticles(x, y, 40, "blast");
+          addParticles(x, y, 40, "blast", particlesRef);
         }
       }, 350);
     }
@@ -349,7 +370,7 @@ export default function StudentCardsPage() {
       audioSynth.playShake();
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight * 0.45;
-      addParticles(centerX, centerY, 12, "spark");
+      addParticles(centerX, centerY, 12, "spark", particlesRef);
     }, 180);
 
     try {
@@ -364,7 +385,7 @@ export default function StudentCardsPage() {
       await new Promise(resolve => setTimeout(resolve, 200));
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight * 0.45;
-      addParticles(centerX, centerY, 160, "blast");
+      addParticles(centerX, centerY, 160, "blast", particlesRef);
       
       const newCards = await exchangePromise;
       if (newCards && newCards.length > 0) {
@@ -375,10 +396,10 @@ export default function StudentCardsPage() {
       } else {
         setIsExchangeMode(false);
       }
-    } catch (err: any) {
+    } catch (err) {
       clearInterval(intervalId);
       console.error("Error exchanging cards:", err);
-      const errMsg = err?.message || String(err);
+      const errMsg = err instanceof Error ? err.message : String(err);
       if (errMsg.includes("Quota exceeded") || errMsg.includes("resource-exhausted")) {
         alert("⚠️ โควตาการเชื่อมต่อฐานข้อมูล Firebase (Free Tier) เต็มในขณะนี้ กรุณาแจ้งคุณครูเพื่อตรวจสอบ หรือลองใหม่อีกครั้งในภายหลังครับ");
       } else {
@@ -416,9 +437,9 @@ export default function StudentCardsPage() {
       };
 
       setTimeout(() => {
-        addParticles(x, y, 45, "rarity", colors[card.rarity]);
+        addParticles(x, y, 45, "rarity", particlesRef, colors[card.rarity]);
         if (card.rarity === "legendary" || card.rarity === "holographic") {
-          addParticles(x, y, 40, "blast");
+          addParticles(x, y, 40, "blast", particlesRef);
         }
       }, 350);
     }
@@ -666,6 +687,7 @@ export default function StudentCardsPage() {
                               <div className={styles.cyberHoloSymbol}>✨</div>
                             </div>
                           ) : (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={card.imageUrl}
                               alt={card.name}
@@ -790,6 +812,7 @@ export default function StudentCardsPage() {
                               <div className={styles.cyberHoloSymbol}>✨</div>
                             </div>
                           ) : (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={card.imageUrl}
                               alt={card.name}
@@ -999,6 +1022,7 @@ export default function StudentCardsPage() {
                         <div className={styles.cyberHoloSymbol}>✨</div>
                       </div>
                     ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img 
                         src={card.imageUrl} 
                         alt={card.name} 
@@ -1080,6 +1104,7 @@ export default function StudentCardsPage() {
                         <div className={styles.cyberHoloSymbol} style={{ fontSize: '3.6rem' }}>✨</div>
                       </div>
                     ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img 
                         src={selectedCard.imageUrl} 
                         alt={selectedCard.name} 

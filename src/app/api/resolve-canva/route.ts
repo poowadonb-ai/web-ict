@@ -42,8 +42,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ resolvedUrl: currentUrl });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error resolving URL:", error);
-    return NextResponse.json({ error: error.message || "Failed to resolve URL" }, { status: 500 });
+    const msg = error instanceof Error ? error.message : "Failed to resolve URL";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

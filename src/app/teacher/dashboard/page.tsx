@@ -41,7 +41,10 @@ export default function TeacherDashboardPage() {
   };
 
   useEffect(() => {
-    if (user?.role === "teacher") loadData();
+    if (user?.role === "teacher") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadData();
+    }
   }, [user]);
 
   if (authLoading || loading) {
@@ -199,7 +202,7 @@ export default function TeacherDashboardPage() {
         <div className={`${styles.section} glass-container`} style={{ borderColor: "rgba(239, 68, 68, 0.3)" }}>
           <h2 className={styles.sectionTitle}>🔴 บัญชีที่ข้อมูลไม่ครบ ({notRegistered.length} บัญชี)</h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", marginBottom: "12px" }}>
-            บัญชีเหล่านี้ขาดชื่อ, ห้อง, หรือเลขที่ — ควรแก้ไขในหน้า "จัดการนักเรียน"
+            บัญชีเหล่านี้ขาดชื่อ, ห้อง, หรือเลขที่ — ควรแก้ไขในหน้า &quot;จัดการนักเรียน&quot;
           </p>
           <div className={styles.studentChipGrid}>
             {notRegistered.map(s => (
