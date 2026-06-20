@@ -43,21 +43,55 @@ export default function MyTasksPage() {
   useEffect(() => {
     if (!user || user.role !== "student") return;
 
-    // Subscribe to all boards
+    let isMounted = true;
+
+    const fetchSubs = async () => {
+      if (!isMounted) return;
+      const data = await submissionService.getAllSubmissions();
+      if (isMounted) setSubmissions(data);
+    };
+
+    // Subscribe to all boards (realtime)
     const unsubBoards = boardService.subscribeBoards((data) => {
-      setBoards(data);
+      if (isMounted) setBoards(data);
     });
 
-    // Subscribe to all submissions
+    // Subscribe to all submissions (realtime)
     const unsubSubs = submissionService.subscribeAllSubmissions((data) => {
-      setSubmissions(data);
+      if (isMounted) setSubmissions(data);
     });
+
+    // Polling fallback every 10 seconds in case Realtime doesn't fire
+    const pollInterval = setInterval(() => {
+      void fetchSubs();
+    }, 10000);
+
+    // Refetch when user returns to this tab (e.g. after submitting on padlet)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void fetchSubs();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Refetch when window gets focus
+    const handleFocus = () => { void fetchSubs(); };
+    window.addEventListener("focus", handleFocus);
+
+    // Initial one-time fetch for guaranteed fresh data
+    void fetchSubs();
 
     return () => {
+      isMounted = false;
       if (typeof unsubBoards === "function") unsubBoards();
       if (typeof unsubSubs === "function") unsubSubs();
+      clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [user]);
+
+
 
   if (authLoading || !user || user.role !== "student") {
     return (
