@@ -178,6 +178,7 @@ export default function PadletBoardPage() {
       setSubLink("");
       setEditingSubId("");
       setShowSubmitModal(false);
+      window.location.reload();
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการส่งงาน";
       setError(errMsg);
@@ -190,6 +191,7 @@ export default function PadletBoardPage() {
     if (confirm("คุณต้องการลบงานนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) {
       try {
         await submissionService.deleteSubmission(subId);
+        window.location.reload();
       } catch {
         alert("เกิดข้อผิดพลาดในการลบงาน");
       }
@@ -257,6 +259,7 @@ export default function PadletBoardPage() {
         awardPack
       );
       setShowGradeModal(false);
+      window.location.reload();
     } catch {
       alert("เกิดข้อผิดพลาดในการบันทึกการประเมิน");
     } finally {
