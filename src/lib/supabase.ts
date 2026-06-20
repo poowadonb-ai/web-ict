@@ -600,7 +600,7 @@ export const announcementService = {
     fetchList();
 
     const channel = supabase
-      .channel('public:announcements')
+      .channel(`public:announcements:${Math.random().toString(36).substr(2, 6)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
         fetchList();
       })
@@ -643,7 +643,7 @@ export const lessonService = {
     fetchList();
 
     const channel = supabase
-      .channel('public:lessons')
+      .channel(`public:lessons:${Math.random().toString(36).substr(2, 6)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, () => {
         fetchList();
       })
@@ -779,7 +779,7 @@ export const boardService = {
     fetchList();
 
     const channel = supabase
-      .channel('public:boards')
+      .channel(`public:boards:${Math.random().toString(36).substr(2, 6)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'boards' }, () => {
         fetchList();
       })
@@ -1003,7 +1003,7 @@ export const submissionService = {
     fetchList();
 
     const channel = supabase
-      .channel('public:submissions:all')
+      .channel(`public:submissions:all:${Math.random().toString(36).substr(2, 6)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions' }, () => {
         fetchList();
       })
