@@ -5,11 +5,13 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   lessonService, 
   boardService, 
-  submissionService, 
+  submissionService 
+} from "@/lib/supabase";
+import { 
   Lesson, 
   AssignmentBoard, 
   Submission 
-} from "@/lib/firebase";
+} from "@/lib/types";
 import { getYouTubeEmbedUrl, getCanvaEmbedUrl, resolveCanvaUrlIfNeeded } from "@/lib/utils";
 import { 
   Plus, Trash2, Calendar, FileText, Video, ExternalLink, X, BookOpen, 

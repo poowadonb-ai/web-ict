@@ -49,11 +49,6 @@ export default function MyTasksPage() {
     const fetchSubs = async () => {
       if (!isMounted) return;
       const data = await submissionService.getAllSubmissions();
-      console.log("[my-tasks DEBUG] getAllSubmissions returned:", data.length, "submissions");
-      console.log("[my-tasks DEBUG] user.uid:", user?.uid);
-      if (data.length > 0) {
-        console.log("[my-tasks DEBUG] first submission uid:", data[0].uid, "boardId:", data[0].boardId);
-      }
       if (isMounted) setSubmissions(data);
     };
 

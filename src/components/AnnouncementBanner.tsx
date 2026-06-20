@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { announcementService, Announcement } from "@/lib/firebase";
+import { announcementService } from "@/lib/supabase";
+import { Announcement } from "@/lib/types";
 import { Megaphone, X, Pin, Plus, Trash2 } from "lucide-react";
 import styles from "./AnnouncementBanner.module.css";
 

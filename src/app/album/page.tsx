@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService, getCardPool, syncCardsFromFirestore, UserProfile, Card } from "@/lib/firebase";
+import { authService, getCardPool, syncCardsFromFirestore } from "@/lib/supabase";
+import { UserProfile, Card } from "@/lib/types";
 import { BookOpen, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import styles from "./page.module.css";
 

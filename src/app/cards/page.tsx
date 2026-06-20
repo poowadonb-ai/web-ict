@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService, cardService, getCardPool, syncCardsFromFirestore, Card, UserProfile, RedemptionRequest } from "@/lib/firebase";
+import { authService, cardService, getCardPool, syncCardsFromFirestore } from "@/lib/supabase";
+import { Card, UserProfile, RedemptionRequest } from "@/lib/types";
 import { Sparkles, Gift, Award, CheckCircle, RefreshCw, X, ShieldAlert } from "lucide-react";
 import { audioSynth } from "@/lib/audioSynth";
 import styles from "./page.module.css";

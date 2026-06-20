@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { boardService, AssignmentBoard } from "@/lib/firebase";
+import { boardService } from "@/lib/supabase";
+import { AssignmentBoard } from "@/lib/types";
 import { Plus, Trash2, Calendar, ClipboardList, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import styles from "./page.module.css";

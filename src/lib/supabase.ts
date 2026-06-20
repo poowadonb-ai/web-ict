@@ -1041,3 +1041,123 @@ export async function syncCardsFromSupabase(): Promise<void> {
     console.error("syncCardsFromSupabase error:", e);
   }
 }
+
+const CARD_POOL_STORAGE_KEY = "mock_card_pool_overrides";
+const CUSTOM_CARDS_KEY = "mock_custom_cards";
+const DROP_RATES_KEY = "mock_drop_rates";
+
+export async function saveCardsToSupabase(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const overrides = JSON.parse(localStorage.getItem(CARD_POOL_STORAGE_KEY) || "{}");
+    const custom = JSON.parse(localStorage.getItem(CUSTOM_CARDS_KEY) || "[]");
+    const dropRates = JSON.parse(localStorage.getItem(DROP_RATES_KEY) || "null");
+
+    const payload: any = { overrides, custom };
+    if (dropRates) payload.drop_rates = dropRates;
+
+    await supabase
+      .from('settings')
+      .update(payload)
+      .eq('id', 'cards');
+  } catch (e) {
+    console.error("saveCardsToSupabase error:", e);
+  }
+}
+
+export async function updateCardInPool(cardId: string, updates: Partial<Card>): Promise<void> {
+  if (typeof window === "undefined") return;
+  const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+  const overrides: Record<string, Partial<Card>> = stored ? JSON.parse(stored) : {};
+  overrides[cardId] = { ...(overrides[cardId] || {}), ...updates };
+  localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+  await saveCardsToSupabase();
+}
+
+export async function resetCardInPool(cardId?: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!cardId) {
+    localStorage.removeItem(CARD_POOL_STORAGE_KEY);
+  } else {
+    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+    if (stored) {
+      const overrides: Record<string, Partial<Card>> = JSON.parse(stored);
+      delete overrides[cardId];
+      localStorage.setItem(CARD_POOL_STORAGE_KEY, JSON.stringify(overrides));
+    }
+  }
+  await saveCardsToSupabase();
+}
+
+export function getCustomCards(): Card[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(CUSTOM_CARDS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getCardPool(): Card[] {
+  if (typeof window === "undefined") return CARD_POOL;
+  try {
+    const stored = localStorage.getItem(CARD_POOL_STORAGE_KEY);
+    const overrides: Record<string, Partial<Card>> = stored ? JSON.parse(stored) : {};
+    const base = CARD_POOL.map(card => ({ ...card, ...(overrides[card.id] || {}) }));
+    const custom = getCustomCards();
+    return [...base, ...custom];
+  } catch {
+    return CARD_POOL;
+  }
+}
+
+export async function addCustomCard(card: Card): Promise<void> {
+  if (typeof window === "undefined") return;
+  const existing = getCustomCards();
+  if (existing.find(c => c.id === card.id)) return;
+  existing.push(card);
+  localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  await saveCardsToSupabase();
+}
+
+export async function updateCustomCard(cardId: string, updates: Partial<Card>): Promise<void> {
+  if (typeof window === "undefined") return;
+  const existing = getCustomCards();
+  const idx = existing.findIndex(c => c.id === cardId);
+  if (idx === -1) return;
+  existing[idx] = { ...existing[idx], ...updates };
+  localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  await saveCardsToSupabase();
+}
+
+export async function removeCustomCard(cardId: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  const existing = getCustomCards().filter(c => c.id !== cardId);
+  localStorage.setItem(CUSTOM_CARDS_KEY, JSON.stringify(existing));
+  await saveCardsToSupabase();
+}
+
+export function generateCustomCardId(): string {
+  return `custom-${Date.now()}`;
+}
+
+export function getDropRates(): GachaRates {
+  if (typeof window === "undefined") return DEFAULT_DROP_RATES;
+  try {
+    const stored = localStorage.getItem(DROP_RATES_KEY);
+    return stored ? JSON.parse(stored) : DEFAULT_DROP_RATES;
+  } catch {
+    return DEFAULT_DROP_RATES;
+  }
+}
+
+export async function saveDropRates(rates: GachaRates): Promise<void> {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(DROP_RATES_KEY, JSON.stringify(rates));
+  await saveCardsToSupabase();
+}
+
+// Alias for pages expecting the old name
+export const syncCardsFromFirestore = syncCardsFromSupabase;
+

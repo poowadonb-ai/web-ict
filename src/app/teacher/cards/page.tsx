@@ -4,11 +4,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  authService, cardService, UserProfile, RedemptionRequest,
-  Card, getCardPool, updateCardInPool, resetCardInPool, CARD_POOL,
+  authService, cardService, getCardPool, updateCardInPool, resetCardInPool,
   addCustomCard, updateCustomCard, removeCustomCard, generateCustomCardId,
-  getDropRates, saveDropRates, GachaRates, DEFAULT_DROP_RATES
-} from "@/lib/firebase";
+  getDropRates, saveDropRates
+} from "@/lib/supabase";
+import {
+  UserProfile, RedemptionRequest, Card, CARD_POOL, GachaRates, DEFAULT_DROP_RATES
+} from "@/lib/types";
 import {
   Gift, Award, Check, X, Users, RefreshCw, Filter, Search, ShieldCheck,
   Pencil, RotateCcw, Upload, Image as ImageIcon, Layers, TriangleAlert, Plus, Trash2
