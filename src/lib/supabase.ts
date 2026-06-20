@@ -132,20 +132,12 @@ function loadSession(): UserProfile | null {
 }
 
 async function getCurrentUid(): Promise<string | null> {
-  // 1. Try LocalStorage Session (sbAuthService uses this)
+  // Read from localStorage session (sbAuthService uses this)
   const session = loadSession();
   if (session?.uid) return session.uid;
-
-  // 3. Try Firebase Auth fallback
-  try {
-    const { auth } = await import('@/lib/firebase');
-    if (auth?.currentUser) return auth.currentUser.uid;
-  } catch (e) {
-    console.warn("Could not load Firebase auth", e);
-  }
-
   return null;
 }
+
 
 export const authService = {
   // ── Sign in with Google (disabled — kept for legacy proxy compatibility) ────
