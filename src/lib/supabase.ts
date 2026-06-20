@@ -80,7 +80,7 @@ function mapSubmissionFromDb(row: any): Submission {
     createdAt: Number(row.created_at),
     isGroup: row.is_group,
     members: row.members || [],
-    status: row.status as "pending" | "graded" | "resubmit",
+    status: row.status as "pending" | "graded" | "resubmit" | "deleted",
     score: row.score,
     maxScore: row.max_score,
     teacherFeedback: row.teacher_feedback,
@@ -814,6 +814,7 @@ export const submissionService = {
         .from('submissions')
         .select('*')
         .eq('board_id', boardId)
+        .neq('status', 'deleted')
         .order('created_at', { ascending: false });
       if (data) {
         callback(data.map(mapSubmissionFromDb));
@@ -869,36 +870,59 @@ export const submissionService = {
       status: "pending"
     });
 
+    // Fetch all existing submissions for this board (including deleted/soft-deleted ones)
+    // except the current one we just created
+    const { data: existingSubs } = await supabase
+      .from('submissions')
+      .select('uid, members')
+      .eq('board_id', boardId)
+      .neq('id', submissionId);
+
+    const hasBeenRewarded = (checkUid: string, checkRoom: string, checkStudentNo: string) => {
+      if (!existingSubs) return false;
+      return existingSubs.some(sub => {
+        if (sub.uid === checkUid) return true;
+        const subMembers = (sub.members || []) as { room: string; studentNo: string }[];
+        return subMembers.some(m => String(m.room) === String(checkRoom) && String(m.studentNo) === String(checkStudentNo));
+      });
+    };
+
     // Reward: 1 Pack for submitting (awarded to all group members)
     if (isGroup && members && members.length > 0) {
       for (const m of members) {
         const { data: mProfiles } = await supabase
           .from('users')
-          .select('uid, packs_count')
+          .select('uid, room, student_no, packs_count')
           .eq('room', String(m.room))
           .eq('student_no', String(m.studentNo));
         
         if (mProfiles) {
           for (const mp of mProfiles) {
-            await supabase
-              .from('users')
-              .update({ packs_count: (mp.packs_count || 0) + 1 })
-              .eq('uid', mp.uid);
+            if (!hasBeenRewarded(mp.uid, mp.room || "", mp.student_no || "")) {
+              await supabase
+                .from('users')
+                .update({ packs_count: (mp.packs_count || 0) + 1 })
+                .eq('uid', mp.uid);
+            }
           }
         }
       }
       
       const submitterInGroup = members.find(m => String(m.room) === String(profile.room) && String(m.studentNo) === String(profile.studentNo));
       if (!submitterInGroup) {
-         await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', uid);
+        if (!hasBeenRewarded(uid, profile.room || "", profile.student_no || "")) {
+          await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', uid);
+        }
       }
     } else {
-      await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', uid);
+      if (!hasBeenRewarded(uid, profile.room || "", profile.student_no || "")) {
+        await supabase.from('users').update({ packs_count: (profile.packs_count || 0) + 1 }).eq('uid', uid);
+      }
     }
   },
 
   deleteSubmission: async (submissionId: string): Promise<void> => {
-    await supabase.from('submissions').delete().eq('id', submissionId);
+    await supabase.from('submissions').update({ status: 'deleted' }).eq('id', submissionId);
   },
 
   toggleLike: async (submissionId: string): Promise<void> => {
@@ -986,7 +1010,7 @@ export const submissionService = {
 
   subscribeAllSubmissions: (callback: (submissions: Submission[]) => void) => {
     const fetchList = async () => {
-      const { data } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('submissions').select('*').neq('status', 'deleted').order('created_at', { ascending: false });
       if (data) {
         callback(data.map(mapSubmissionFromDb));
       }
@@ -1007,7 +1031,7 @@ export const submissionService = {
   },
 
   getAllSubmissions: async (): Promise<Submission[]> => {
-    const { data, error } = await supabase.from('submissions').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('submissions').select('*').neq('status', 'deleted').order('created_at', { ascending: false });
     if (error) return [];
     return data.map(mapSubmissionFromDb);
   }

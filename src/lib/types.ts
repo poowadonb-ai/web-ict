@@ -78,7 +78,7 @@ export interface Submission {
   createdAt: number;
   isGroup?: boolean;
   members?: { name: string; room: string; studentNo: string }[];
-  status?: "pending" | "graded" | "resubmit";
+  status?: "pending" | "graded" | "resubmit" | "deleted";
   score?: number;
   maxScore?: number;
   teacherFeedback?: string;
