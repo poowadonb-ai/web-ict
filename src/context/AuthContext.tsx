@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { authService, UserProfile } from "@/lib/firebase";
+import { authService } from "@/lib/supabase";
+import { UserProfile } from "@/lib/types";
 import { useRouter, usePathname } from "next/navigation";
 
 interface AuthContextType {

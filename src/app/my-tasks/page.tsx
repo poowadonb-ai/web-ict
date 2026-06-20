@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { boardService, submissionService, AssignmentBoard, Submission } from "@/lib/firebase";
+import { boardService, submissionService } from "@/lib/supabase";
+import { AssignmentBoard, Submission } from "@/lib/types";
 import { 
   ClipboardList, ExternalLink, 
   CornerDownRight, ArrowRight, HelpCircle

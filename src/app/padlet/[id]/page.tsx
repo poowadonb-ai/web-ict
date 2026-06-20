@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { boardService, submissionService, AssignmentBoard, Submission } from "@/lib/firebase";
+import { boardService, submissionService } from "@/lib/supabase";
+import { AssignmentBoard, Submission } from "@/lib/types";
 import { getCanvaEmbedUrl, getYouTubeEmbedUrl, resolveCanvaUrlIfNeeded } from "@/lib/utils";
 import { 
   ArrowLeft, Plus, Heart, MessageSquare, Send, Trash2, 
