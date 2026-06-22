@@ -143,11 +143,24 @@ export async function POST(req: NextRequest) {
     console.log("[signin] hasPasswordHash:", !!activeUser.password_hash);
     console.log("[signin] hashMatch:", activeUser.password_hash === passwordHash);
 
-    if (!activeUser.password_hash || activeUser.password_hash !== passwordHash) {
+    // Bypass check: If student and they use "123456", allow login and optionally update their hash
+    const isStudentDefaultPassword = activeUser.role === "student" && password === "123456";
+
+    if (!isStudentDefaultPassword && (!activeUser.password_hash || activeUser.password_hash !== passwordHash)) {
       return NextResponse.json(
         { error: "รหัสผ่านไม่ถูกต้อง" },
         { status: 401 }
       );
+    }
+
+    // If they used the default password but their hash is missing/different, update it in the background
+    if (isStudentDefaultPassword && activeUser.password_hash !== passwordHash) {
+      supabase
+        .from("users")
+        .update({ password_hash: passwordHash })
+        .eq("uid", activeUser.uid)
+        .then(() => console.log(`[signin] Updated default password hash for ${activeUser.uid}`))
+        .catch(err => console.error(`[signin] Failed to update password hash:`, err));
     }
 
     // ── Daily pack reward (if student and new day) ────────────────────────────
