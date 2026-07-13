@@ -43,8 +43,18 @@ export default function PadletBoardPage() {
   const [gradeMaxScore, setGradeMaxScore] = useState("10");
   const [gradeStatus, setGradeStatus] = useState<"graded" | "resubmit">("graded");
   const [gradeFeedback, setGradeFeedback] = useState("");
-  const [awardPack, setAwardPack] = useState(false);
+  const [awardPack, setAwardPack] = useState(true);
   const [isGradingSubmitting, setIsGradingSubmitting] = useState(false);
+
+  // Bulk Grading Modal State
+  const [showBulkGradeModal, setShowBulkGradeModal] = useState(false);
+  const [bulkGradeScope, setBulkGradeScope] = useState<"pending" | "all">("pending");
+  const [bulkGradeScore, setBulkGradeScore] = useState("");
+  const [bulkGradeMaxScore, setBulkGradeMaxScore] = useState("10");
+  const [bulkGradeStatus, setBulkGradeStatus] = useState<"graded" | "resubmit">("graded");
+  const [bulkGradeFeedback, setBulkGradeFeedback] = useState("");
+  const [bulkAwardPack, setBulkAwardPack] = useState(true);
+  const [isBulkGradingSubmitting, setIsBulkGradingSubmitting] = useState(false);
 
   // Filters State
   const [selectedRoom, setSelectedRoom] = useState("all");
@@ -259,7 +269,7 @@ export default function PadletBoardPage() {
     setGradeMaxScore(sub.maxScore !== undefined ? String(sub.maxScore) : "10");
     setGradeStatus(sub.status === "resubmit" ? "resubmit" : "graded");
     setGradeFeedback(sub.teacherFeedback || "");
-    setAwardPack(false);
+    setAwardPack(true);
     setShowGradeModal(true);
   };
 
@@ -295,6 +305,43 @@ export default function PadletBoardPage() {
       alert("เกิดข้อผิดพลาดในการบันทึกการประเมิน");
     } finally {
       setIsGradingSubmitting(false);
+    }
+  };
+
+  const handleSaveBulkGrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!boardId) return;
+
+    const scoreNum = Number(bulkGradeScore);
+    const maxScoreNum = Number(bulkGradeMaxScore);
+
+    if (isNaN(scoreNum) || scoreNum < 0) {
+      alert("กรุณากรอกคะแนนที่ถูกต้อง");
+      return;
+    }
+    if (isNaN(maxScoreNum) || maxScoreNum <= 0 || scoreNum > maxScoreNum) {
+      alert("กรุณากรอกคะแนนเต็มให้ถูกต้อง และคะแนนที่ได้ต้องไม่เกินคะแนนเต็ม");
+      return;
+    }
+
+    setIsBulkGradingSubmitting(true);
+    try {
+      await submissionService.gradeAllSubmissions(
+        boardId,
+        scoreNum,
+        maxScoreNum,
+        bulkGradeStatus,
+        bulkGradeFeedback.trim(),
+        bulkAwardPack,
+        bulkGradeScope === "pending"
+      );
+      setShowBulkGradeModal(false);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาดในการบันทึกการประเมินทั้งหมด");
+    } finally {
+      setIsBulkGradingSubmitting(false);
     }
   };
 
@@ -424,22 +471,39 @@ export default function PadletBoardPage() {
 
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               {isTeacher && (
-                <button 
-                  onClick={handleToggleLock} 
-                  className={`${styles.lockBtn} ${isLocked ? styles.btnLocked : styles.btnUnlocked}`}
-                >
-                  {isLocked ? (
-                    <>
-                      <Lock size={16} />
-                      <span>ปิดรับส่งงานอยู่ (คลิกเปิดบอร์ด)</span>
-                    </>
-                  ) : (
-                    <>
-                      <Unlock size={16} />
-                      <span>เปิดรับส่งงานอยู่ (คลิกปิดบอร์ด)</span>
-                    </>
-                  )}
-                </button>
+                <>
+                  <button 
+                    onClick={handleToggleLock} 
+                    className={`${styles.lockBtn} ${isLocked ? styles.btnLocked : styles.btnUnlocked}`}
+                  >
+                    {isLocked ? (
+                      <>
+                        <Lock size={16} />
+                        <span>ปิดรับส่งงานอยู่ (คลิกเปิดบอร์ด)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Unlock size={16} />
+                        <span>เปิดรับส่งงานอยู่ (คลิกปิดบอร์ด)</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setBulkGradeScore("");
+                      setBulkGradeMaxScore("10");
+                      setBulkGradeStatus("graded");
+                      setBulkGradeFeedback("");
+                      setBulkAwardPack(true);
+                      setBulkGradeScope("pending");
+                      setShowBulkGradeModal(true);
+                    }}
+                    className={styles.bulkGradeBtn}
+                  >
+                    <Edit3 size={16} />
+                    <span>ตรวจให้คะแนนทั้งหมด</span>
+                  </button>
+                </>
               )}
 
               {/* Submitting button logic */}
@@ -1032,6 +1096,134 @@ export default function PadletBoardPage() {
                   disabled={isGradingSubmitting}
                 >
                   {isGradingSubmitting ? "กำลังบันทึก..." : "บันทึกผล"}
+                </button>
+              </footer>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Teacher Bulk Grading Modal */}
+      {showBulkGradeModal && (
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.modal} glass-container`}>
+            <header className={styles.modalHeader}>
+              <h3>ประเมินและให้คะแนนงานทั้งหมดพร้อมกัน</h3>
+              <button onClick={() => setShowBulkGradeModal(false)} className={styles.closeBtn}>
+                <X size={20} />
+              </button>
+            </header>
+
+            <form onSubmit={handleSaveBulkGrade} className={styles.modalForm}>
+              <div className={styles.formGroup}>
+                <label>เลือกขอบเขตการตรวจ</label>
+                <div className={styles.radioGroup}>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="bulkScope"
+                      value="pending"
+                      checked={bulkGradeScope === "pending"}
+                      onChange={() => setBulkGradeScope("pending")}
+                      disabled={isBulkGradingSubmitting}
+                    />
+                    <span>เฉพาะงานที่ยังไม่ตรวจ / รอตรวจ ({submissions.filter(s => s.status === "pending" || !s.status).length} งาน)</span>
+                  </label>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="bulkScope"
+                      value="all"
+                      checked={bulkGradeScope === "all"}
+                      onChange={() => setBulkGradeScope("all")}
+                      disabled={isBulkGradingSubmitting}
+                    />
+                    <span>งานทั้งหมดในบอร์ดชิ้นนี้ ({submissions.length} งาน - จะเขียนทับงานที่เคยตรวจแล้ว)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div className={styles.formGroup}>
+                  <label>คะแนนที่ได้</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    placeholder="เช่น 10"
+                    value={bulkGradeScore}
+                    onChange={(e) => setBulkGradeScore(e.target.value)}
+                    required
+                    disabled={isBulkGradingSubmitting}
+                  />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label>คะแนนเต็ม</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="เช่น 10"
+                    value={bulkGradeMaxScore}
+                    onChange={(e) => setBulkGradeMaxScore(e.target.value)}
+                    required
+                    disabled={isBulkGradingSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>สถานะประเมิน</label>
+                <select
+                  value={bulkGradeStatus}
+                  onChange={(e) => setBulkGradeStatus(e.target.value as "graded" | "resubmit")}
+                  disabled={isBulkGradingSubmitting}
+                  className={styles.modalSelect}
+                >
+                  <option value="graded">ตรวจแล้ว (สมบูรณ์)</option>
+                  <option value="resubmit">ส่งกลับแก้ไข (มีจุดต้องปรับปรุง)</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>คำแนะนำ / ข้อเสนอแนะจากครู (ส่งให้ทุกคนเหมือนกัน)</label>
+                <textarea
+                  placeholder="ตัวอย่าง: ตรวจแล้วผ่านเกณฑ์ / ชิ้นงานสวยงาม..."
+                  value={bulkGradeFeedback}
+                  onChange={(e) => setBulkGradeFeedback(e.target.value)}
+                  rows={2}
+                  disabled={isBulkGradingSubmitting}
+                />
+              </div>
+
+              <div className={styles.formGroup} style={{ flexDirection: "row", alignItems: "center", gap: "10px", marginTop: "8px", background: "rgba(16, 185, 129, 0.1)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
+                <input
+                  type="checkbox"
+                  id="bulkAwardPackCheck"
+                  checked={bulkAwardPack}
+                  onChange={(e) => setBulkAwardPack(e.target.checked)}
+                  disabled={isBulkGradingSubmitting}
+                  style={{ width: "20px", height: "20px", cursor: "pointer" }}
+                />
+                <label htmlFor="bulkAwardPackCheck" style={{ marginBottom: 0, cursor: "pointer", color: "#34d399", fontWeight: "bold" }}>
+                  🎁 มอบรางวัลพิเศษ 1 ซอง แก่ทุกคนที่ได้รับการตรวจในรอบนี้ (ค่าเริ่มต้น: เลือก)
+                </label>
+              </div>
+
+              <footer className={styles.modalFooter}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowBulkGradeModal(false)} 
+                  className="btn-secondary"
+                  disabled={isBulkGradingSubmitting}
+                >
+                  ยกเลิก
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isBulkGradingSubmitting}
+                >
+                  {isBulkGradingSubmitting ? "กำลังบันทึกคะแนน..." : "บันทึกผลคะแนนทั้งหมด"}
                 </button>
               </footer>
             </form>

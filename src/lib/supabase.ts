@@ -1008,6 +1008,61 @@ export const submissionService = {
     }
   },
 
+  gradeAllSubmissions: async (
+    boardId: string,
+    score: number,
+    maxScore: number,
+    status: "graded" | "resubmit",
+    teacherFeedback: string,
+    awardPack?: boolean,
+    onlyPending?: boolean
+  ): Promise<void> => {
+    let query = supabase.from('submissions').select('*').eq('board_id', boardId).neq('status', 'deleted');
+    if (onlyPending) {
+      query = query.eq('status', 'pending');
+    }
+    const { data: subs, error } = await query;
+    if (error) throw error;
+    if (!subs || subs.length === 0) return;
+
+    const subIds = subs.map(s => s.id);
+    const { error: updateError } = await supabase.from('submissions').update({
+      score,
+      max_score: maxScore,
+      status,
+      teacher_feedback: teacherFeedback
+    }).in('id', subIds);
+    if (updateError) throw updateError;
+
+    if (awardPack) {
+      for (const sub of subs) {
+        if (sub.is_group && sub.members && sub.members.length > 0) {
+          for (const m of sub.members) {
+            const { data: mProfiles } = await supabase
+              .from('users')
+              .select('uid, packs_count')
+              .eq('room', String(m.room))
+              .eq('student_no', String(m.studentNo));
+            
+            if (mProfiles) {
+              for (const mp of mProfiles) {
+                await supabase
+                  .from('users')
+                  .update({ packs_count: (mp.packs_count || 0) + 1 })
+                  .eq('uid', mp.uid);
+              }
+            }
+          }
+        } else {
+          const { data: u } = await supabase.from('users').select('packs_count').eq('uid', sub.uid).single();
+          if (u) {
+            await supabase.from('users').update({ packs_count: (u.packs_count || 0) + 1 }).eq('uid', sub.uid);
+          }
+        }
+      }
+    }
+  },
+
   subscribeAllSubmissions: (callback: (submissions: Submission[]) => void) => {
     const fetchList = async () => {
       const { data } = await supabase.from('submissions').select('*').neq('status', 'deleted').order('created_at', { ascending: false });
