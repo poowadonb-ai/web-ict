@@ -8,7 +8,8 @@ import { AssignmentBoard, Submission } from "@/lib/types";
 import { getCanvaEmbedUrl, getYouTubeEmbedUrl, resolveCanvaUrlIfNeeded } from "@/lib/utils";
 import { 
   ArrowLeft, Plus, Heart, MessageSquare, Send, Trash2, 
-  ExternalLink, User, FileText, Video, X, Lock, Unlock, Edit3, UserPlus, Users
+  ExternalLink, User, FileText, Video, X, Lock, Unlock, Edit3, UserPlus, Users,
+  Filter, Clock, CheckCircle2, AlertTriangle, RefreshCw
 } from "lucide-react";
 import styles from "./page.module.css";
 
@@ -44,6 +45,36 @@ export default function PadletBoardPage() {
   const [gradeFeedback, setGradeFeedback] = useState("");
   const [awardPack, setAwardPack] = useState(false);
   const [isGradingSubmitting, setIsGradingSubmitting] = useState(false);
+
+  // Filters State
+  const [selectedRoom, setSelectedRoom] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+
+  // Extract room number from gradeClass (e.g. "ม.4/3" -> "3")
+  const getRoomFromGradeClass = (gradeClass: string): string => {
+    if (!gradeClass) return "";
+    const parts = gradeClass.split("/");
+    if (parts.length > 1) {
+      return parts[1];
+    }
+    return "";
+  };
+
+  // Get all unique room numbers from a submission (including group members)
+  const getSubmissionRooms = (sub: Submission): string[] => {
+    const rooms: string[] = [];
+    const primaryRoom = getRoomFromGradeClass(sub.gradeClass);
+    if (primaryRoom) rooms.push(primaryRoom);
+    
+    if (sub.isGroup && sub.members) {
+      sub.members.forEach(m => {
+        if (m.room && !rooms.includes(String(m.room))) {
+          rooms.push(String(m.room));
+        }
+      });
+    }
+    return rooms;
+  };
 
   useEffect(() => {
     if (!user || !boardId) return;
@@ -267,6 +298,50 @@ export default function PadletBoardPage() {
     }
   };
 
+  // Dynamically extract unique rooms from submissions
+  const roomsInSubmissions = Array.from(
+    new Set(
+      submissions.flatMap(getSubmissionRooms)
+    )
+  ).filter(Boolean);
+
+  // Combine targetRooms and rooms present in submissions
+  const availableRooms = Array.from(
+    new Set([
+      ...(board?.targetRooms || []),
+      ...roomsInSubmissions
+    ])
+  ).sort((a, b) => Number(a) - Number(b));
+
+  // Filter submissions based on user selection
+  const filteredSubmissions = submissions.filter(sub => {
+    // 1. Room filter
+    let matchesRoom = true;
+    if (selectedRoom !== "all") {
+      const subRoom = getRoomFromGradeClass(sub.gradeClass);
+      if (sub.isGroup && sub.members) {
+        const memberRooms = sub.members.map(m => String(m.room));
+        matchesRoom = subRoom === selectedRoom || memberRooms.includes(selectedRoom);
+      } else {
+        matchesRoom = subRoom === selectedRoom;
+      }
+    }
+
+    // 2. Status filter
+    let matchesStatus = true;
+    if (selectedStatus !== "all") {
+      if (selectedStatus === "graded") {
+        matchesStatus = sub.status === "graded";
+      } else if (selectedStatus === "pending") {
+        matchesStatus = sub.status === "pending" || !sub.status;
+      } else if (selectedStatus === "resubmit") {
+        matchesStatus = sub.status === "resubmit";
+      }
+    }
+
+    return matchesRoom && matchesStatus;
+  });
+
   const isTeacher = user?.role === "teacher";
   const isLocked = board?.isLocked;
 
@@ -397,15 +472,99 @@ export default function PadletBoardPage() {
         )}
       </header>
 
+      {/* Filter Bar */}
+      {submissions.length > 0 && (
+        <div className={`${styles.filterBar} glass-container`}>
+          <div className={styles.filterSection}>
+            {/* Room Filter Dropdown */}
+            <div className={styles.filterGroup}>
+              <div className={styles.filterLabelArea}>
+                <Filter size={16} className={styles.filterIcon} />
+                <span className={styles.filterLabel}>ห้องเรียน</span>
+              </div>
+              <select
+                value={selectedRoom}
+                onChange={(e) => setSelectedRoom(e.target.value)}
+                className={styles.filterSelect}
+              >
+                <option value="all">ทุกห้องเรียน</option>
+                {availableRooms.map(room => (
+                  <option key={room} value={room}>
+                    ห้อง ม.4/{room}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter Buttons */}
+            <div className={styles.filterGroup}>
+              <div className={styles.filterLabelArea}>
+                <span className={styles.filterLabel}>สถานะตรวจงาน</span>
+              </div>
+              <div className={styles.statusFilters}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedStatus("all")}
+                  className={`${styles.filterBtn} ${selectedStatus === "all" ? styles.filterBtnActive : ""}`}
+                >
+                  ทั้งหมด ({submissions.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedStatus("pending")}
+                  className={`${styles.filterBtn} ${selectedStatus === "pending" ? styles.filterBtnActive : ""} ${styles.statusPendingBtn}`}
+                >
+                  <Clock size={14} />
+                  <span>ยังไม่ตรวจ ({submissions.filter(s => s.status === "pending" || !s.status).length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedStatus("graded")}
+                  className={`${styles.filterBtn} ${selectedStatus === "graded" ? styles.filterBtnActive : ""} ${styles.statusGradedBtn}`}
+                >
+                  <CheckCircle2 size={14} />
+                  <span>ตรวจแล้ว ({submissions.filter(s => s.status === "graded").length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedStatus("resubmit")}
+                  className={`${styles.filterBtn} ${selectedStatus === "resubmit" ? styles.filterBtnActive : ""} ${styles.statusResubmitBtn}`}
+                >
+                  <AlertTriangle size={14} />
+                  <span>ส่งกลับแก้ไข ({submissions.filter(s => s.status === "resubmit").length})</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className={styles.filterSummary}>
+            พบ {filteredSubmissions.length} งาน จากทั้งหมด {submissions.length} งาน
+          </div>
+        </div>
+      )}
+
       {/* Grid of Submissions */}
       {submissions.length === 0 ? (
         <div className={`${styles.emptyState} glass-container`}>
           <p>ยังไม่มีการส่งชิ้นงานในกระดานนี้</p>
           <p className={styles.emptySub}>เป็นคนแรกที่ส่งชิ้นงานโดยคลิกที่ปุ่มส่งงานด้านบน</p>
         </div>
+      ) : filteredSubmissions.length === 0 ? (
+        <div className={`${styles.emptyState} glass-container`}>
+          <p>ไม่พบชิ้นงานที่ตรงกับตัวกรองห้องเรียน หรือสถานะการตรวจที่เลือก</p>
+          <p className={styles.emptySub}>ลองปรับเปลี่ยนหรือรีเซ็ตตัวกรองเพื่อเรียกดูข้อมูลอื่น</p>
+          <button 
+            onClick={() => { setSelectedRoom("all"); setSelectedStatus("all"); }} 
+            className="btn-secondary"
+            style={{ alignSelf: "center", marginTop: "12px", display: "flex", gap: "6px", alignItems: "center" }}
+          >
+            <RefreshCw size={14} />
+            <span>รีเซ็ตตัวกรอง</span>
+          </button>
+        </div>
       ) : (
         <div className={styles.padletGrid}>
-          {submissions.map((sub) => {
+          {filteredSubmissions.map((sub) => {
             const hasLiked = user ? sub.likes.includes(user.uid) : false;
             const canvaEmbed = getCanvaEmbedUrl(sub.linkUrl);
             const ytEmbed = getYouTubeEmbedUrl(sub.linkUrl);

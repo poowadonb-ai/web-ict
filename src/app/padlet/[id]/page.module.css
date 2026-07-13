@@ -872,5 +872,155 @@
   box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
 }
 
+/* Filter Bar */
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  transition: var(--transition-smooth);
+}
+
+.filterSection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.filterGroup:first-child {
+  flex: 0 1 auto;
+  min-width: 180px;
+}
+
+.filterLabelArea {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.filterLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.filterIcon {
+  color: var(--accent-purple-light);
+}
+
+.filterSelect {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: white;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  width: 100%;
+}
+
+.filterSelect:focus {
+  border-color: var(--accent-purple);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.statusFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  transition: var(--transition-smooth);
+}
+
+.filterBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.filterBtnActive {
+  background: rgba(168, 85, 247, 0.15) !important;
+  border-color: var(--accent-purple) !important;
+  color: white !important;
+  font-weight: 500;
+  box-shadow: 0 0 10px var(--accent-purple-glow);
+}
+
+/* Custom Active Status Colors */
+.statusPendingBtn.filterBtnActive {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 0 10px var(--accent-gold-glow);
+  color: #fbbf24 !important;
+}
+
+.statusGradedBtn.filterBtnActive {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: var(--accent-green) !important;
+  box-shadow: 0 0 10px var(--accent-green-glow);
+  color: #34d399 !important;
+}
+
+.statusResubmitBtn.filterBtnActive {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  color: #f87171 !important;
+}
+
+.filterSummary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .filterSection {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .filterGroup {
+    width: 100%;
+    min-width: unset;
+  }
+  .statusFilters {
+    width: 100%;
+  }
+  .filterBtn {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+  }
+}
+
 
 
