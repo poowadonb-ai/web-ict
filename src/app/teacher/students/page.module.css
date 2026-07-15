@@ -37,7 +37,7 @@
 
 /* Panel Content */
 .panel {
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.7);
   border-radius: 18px;
   padding: 30px;
   display: flex;
@@ -56,8 +56,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(124, 58, 237, 0.12);
   border-radius: 10px;
   padding: 8px 14px;
 }
@@ -73,7 +73,7 @@
 }
 
 .filterGroup select option {
-  background: #111827;
+  background: white;
   color: var(--text-primary);
 }
 
@@ -100,7 +100,7 @@
 }
 
 .table th {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(124, 58, 237, 0.04);
   padding: 16px 20px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -120,7 +120,7 @@
 }
 
 .table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(124, 58, 237, 0.04);
 }
 
 .studentNameCell {
@@ -188,7 +188,7 @@
 }
 
 .modal {
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.98);
   border-radius: 20px;
   padding: 30px;
   width: 100%;
@@ -232,17 +232,17 @@
 }
 
 .formGroup input, .formGroup select {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
+  background: rgba(124, 58, 237, 0.04);
+  border: 1px solid rgba(124, 58, 237, 0.15);
   border-radius: 10px;
   padding: 12px 16px;
-  color: white;
+  color: var(--text-primary);
   font-size: 1rem;
 }
 
 .formGroup select option {
-  background: #111827;
-  color: white;
+  background: white;
+  color: var(--text-primary);
 }
 
 .modalFooter {
@@ -266,9 +266,9 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(124, 58, 237, 0.15);
   border-radius: 50%;
-  border-top-color: var(--accent-cyan);
+  border-top-color: var(--accent-purple);
   animation: spin 1s linear infinite;
 }
 
@@ -356,8 +356,8 @@
 }
 
 .duplicateCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(245, 158, 11, 0.15);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -367,8 +367,8 @@
 }
 
 .duplicateCard:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(245, 158, 11, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
 .duplicateGrid {
@@ -403,7 +403,7 @@
 
 .studentEmail {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-family: monospace;
 }
 
@@ -412,11 +412,11 @@
   justify-content: center;
   align-items: center;
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(124, 58, 237, 0.06);
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(124, 58, 237, 0.12);
 }
 
 .mergeIcon {
@@ -427,7 +427,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(124, 58, 237, 0.08);
   padding-top: 12px;
   flex-wrap: wrap;
   gap: 12px;
@@ -465,11 +465,11 @@
 
 /* Compare and Merge Modal */
 .mergeModal {
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.98);
   border-radius: 20px;
   padding: 30px;
   width: 100%;
-  max-width: 800px; /* Wider modal for side-by-side comparison */
+  max-width: 800px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -497,8 +497,8 @@
 }
 
 .compareCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(124, 58, 237, 0.1);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
@@ -510,8 +510,8 @@
 }
 
 .compareCard:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(124, 58, 237, 0.25);
 }
 
 .compareCardSelected {
@@ -556,7 +556,7 @@
   justify-content: space-between;
   align-items: center;
   font-size: 0.9rem;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+  border-bottom: 1px dashed rgba(124, 58, 237, 0.08);
   padding-bottom: 8px;
 }
 
@@ -623,7 +623,7 @@
 }
 
 .duplicateListContainer::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(124, 58, 237, 0.04);
   border-radius: 4px;
 }
 

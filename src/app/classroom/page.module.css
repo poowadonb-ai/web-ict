@@ -70,7 +70,7 @@
   flex-direction: column;
   gap: 16px;
   align-items: center;
-  border: 1px dashed rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(124, 58, 237, 0.15);
   border-radius: var(--radius-lg);
 }
 

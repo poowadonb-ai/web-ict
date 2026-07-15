@@ -45,17 +45,17 @@
 }
 
 .filterSelect {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(124, 58, 237, 0.15);
   border-radius: 8px;
   padding: 8px 12px;
-  color: white;
+  color: var(--text-primary);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-.filterSelect option { background: #111827; }
+.filterSelect option { background: white; color: var(--text-primary); }
 
 .myRankBadge {
   margin-left: auto;

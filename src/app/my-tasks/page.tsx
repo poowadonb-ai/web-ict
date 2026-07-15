@@ -118,7 +118,13 @@ export default function MyTasksPage() {
     const sub = submissions.find((s) => {
       if (s.boardId !== board.id) return false;
       if (s.uid === user.uid) return true;
-      if (String(s.studentNo) === String(studentNo) && s.gradeClass && s.gradeClass.includes(studentRoom)) return true;
+      // Exact room match: compare gradeClass exactly against known formats
+      const sGradeClass = (s.gradeClass ?? "").trim();
+      const roomMatches =
+        sGradeClass === studentRoom ||
+        sGradeClass === `ม.4/${studentRoom}` ||
+        sGradeClass === `ม.${studentRoom}`;
+      if (String(s.studentNo) === String(studentNo) && roomMatches) return true;
       if (s.isGroup && s.members) {
         return s.members.some(
           (m) => m.room === studentRoom && String(m.studentNo) === String(studentNo)

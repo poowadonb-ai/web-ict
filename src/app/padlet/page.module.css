@@ -97,7 +97,7 @@
   min-height: 220px;
   justify-content: space-between;
   cursor: pointer;
-  background: rgba(20, 12, 45, 0.4);
+  background: rgba(255, 255, 255, 0.7);
   min-width: 0;
 }
 
@@ -136,7 +136,7 @@
 
 .boardTitle {
   font-size: 1.25rem;
-  color: white;
+  color: var(--text-primary);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -159,7 +159,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(124, 58, 237, 0.1);
   padding-top: 12px;
   color: var(--accent-cyan);
   font-size: 0.9rem;
@@ -193,8 +193,8 @@
 .modal {
   width: 100%;
   max-width: 550px;
-  background: var(--bg-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(124, 58, 237, 0.12);
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -229,8 +229,8 @@
 }
 
 .closeBtn:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent-purple);
+  background: rgba(124, 58, 237, 0.06);
 }
 
 .modalError {
@@ -262,11 +262,11 @@
 
 .formGroup input,
 .formGroup textarea {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--glass-border);
+  background: rgba(124, 58, 237, 0.04);
+  border: 1px solid rgba(124, 58, 237, 0.15);
   border-radius: var(--radius-sm);
   padding: 12px 16px;
-  color: white;
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 0.95rem;
   outline: none;
@@ -277,8 +277,8 @@
 .formGroup input:focus,
 .formGroup textarea:focus {
   border-color: var(--accent-purple);
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 0 10px var(--accent-purple-glow);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.1);
 }
 
 .modalFooter {
@@ -286,7 +286,7 @@
   justify-content: flex-end;
   gap: 12px;
   margin-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(124, 58, 237, 0.08);
   padding-top: 20px;
 }
 
@@ -356,7 +356,7 @@
 .roomBadge {
   font-size: 0.75rem;
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(124, 58, 237, 0.06);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
 }

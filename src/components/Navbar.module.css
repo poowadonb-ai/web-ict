@@ -3,10 +3,10 @@
   top: 0;
   z-index: 100;
   width: 100%;
-  background: rgba(6, 3, 17, 0.65);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.1);
   padding: 0 24px;
   height: 66px;
   display: flex;
@@ -16,9 +16,9 @@
 
 /* scrolled state */
 .scrolled {
-  background: rgba(6, 3, 17, 0.92) !important;
-  border-color: rgba(255, 255, 255, 0.09) !important;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(124, 58, 237, 0.15) !important;
+  box-shadow: 0 4px 32px rgba(100, 80, 200, 0.1);
 }
 
 /* Top gradient accent line */
@@ -76,14 +76,14 @@
 .menuToggle {
   display: none;
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid rgba(124, 58, 237, 0.15);
   color: var(--text-primary);
   cursor: pointer;
   padding: 7px;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
-.menuToggle:hover { background: rgba(255,255,255,0.06); }
+.menuToggle:hover { background: rgba(124, 58, 237, 0.08); }
 
 /* ── NAV WRAPPER ── */
 .navWrapper {
@@ -117,13 +117,13 @@
 }
 
 .navLink:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent-purple);
+  background: rgba(124, 58, 237, 0.07);
 }
 
 .active {
-  color: #ffffff !important;
-  background: rgba(168, 85, 247, 0.12) !important;
+  color: var(--accent-purple) !important;
+  background: rgba(124, 58, 237, 0.1) !important;
   font-weight: 700;
 }
 
@@ -161,8 +161,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(124, 58, 237, 0.12);
   padding: 5px 12px 5px 5px;
   border-radius: 40px;
   cursor: pointer;
@@ -171,9 +171,9 @@
 }
 
 .profileBtn:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(168, 85, 247, 0.3);
-  box-shadow: 0 0 16px rgba(168, 85, 247, 0.1);
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.1);
 }
 
 /* ── AVATAR ── */
@@ -239,10 +239,10 @@
   top: calc(100% + 10px);
   right: 0;
   min-width: 240px;
-  background: rgba(13, 7, 34, 0.97);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(124, 58, 237, 0.12);
   border-radius: var(--radius-md);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(168, 85, 247, 0.15);
+  box-shadow: 0 20px 50px rgba(100, 80, 200, 0.15), 0 0 0 1px rgba(124, 58, 237, 0.08);
   backdrop-filter: blur(20px);
   animation: dropdownAppear 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
   overflow: hidden;
@@ -259,7 +259,7 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: rgba(168, 85, 247, 0.06);
+  background: rgba(124, 58, 237, 0.05);
 }
 
 .dropdownAvatar {
@@ -289,7 +289,7 @@
 
 .dropdownDivider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(124, 58, 237, 0.08);
 }
 
 .dropdownSignOut {
@@ -322,7 +322,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(6, 3, 17, 0.97);
+    background: rgba(240, 244, 255, 0.97);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
     flex-direction: column;
@@ -333,7 +333,7 @@
     opacity: 0;
     pointer-events: none;
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(124, 58, 237, 0.08);
     z-index: 100;
     justify-content: flex-start;
   }
@@ -355,15 +355,15 @@
     padding: 13px 18px;
     font-size: 1rem;
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(124, 58, 237, 0.04);
+    border: 1px solid rgba(124, 58, 237, 0.08);
   }
 
   .activeIndicator { display: none; }
 
   .profileArea {
     width: 100%;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(124, 58, 237, 0.08);
     padding-top: 20px;
     margin-top: auto;
   }
@@ -398,7 +398,7 @@
 }
 
 .modal {
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.98);
   border-radius: 20px;
   padding: 30px;
   width: 100%;
@@ -453,11 +453,11 @@
 }
 
 .formGroup input {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(124, 58, 237, 0.04);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
   padding: 10px 14px;
-  color: white;
+  color: var(--text-primary);
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s;
