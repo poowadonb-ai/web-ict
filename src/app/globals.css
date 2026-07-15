@@ -5,40 +5,40 @@
   --font-thai: var(--font-prompt), 'Inter', sans-serif;
   --font-eng: var(--font-outfit), 'Inter', sans-serif;
 
-  /* Color Palette (Light Airy) */
-  --bg-primary: #f0f4ff;
-  --bg-secondary: #e8eeff;
-  --bg-tertiary: #dde5ff;
-  --text-primary: #1a1f3c;
-  --text-secondary: #4a5580;
-  --text-muted: #8892b0;
+  /* Color Palette (Dark) */
+  --bg-primary: #0a0b1a;
+  --bg-secondary: #0f1128;
+  --bg-tertiary: #151830;
+  --text-primary: #e8eeff;
+  --text-secondary: #a0aac8;
+  --text-muted: #5a6480;
 
   /* Accent Colors */
-  --accent-purple: #7c3aed;
-  --accent-purple-light: #9f67fa;
-  --accent-purple-glow: rgba(124, 58, 237, 0.3);
-  --accent-cyan: #0891b2;
-  --accent-cyan-light: #06b6d4;
-  --accent-cyan-glow: rgba(8, 145, 178, 0.3);
-  --accent-pink: #db2777;
-  --accent-pink-glow: rgba(219, 39, 119, 0.3);
-  --accent-gold: #d97706;
-  --accent-gold-glow: rgba(217, 119, 6, 0.3);
-  --accent-green: #059669;
-  --accent-green-glow: rgba(5, 150, 105, 0.3);
+  --accent-purple: #a855f7;
+  --accent-purple-light: #c084fc;
+  --accent-purple-glow: rgba(168, 85, 247, 0.4);
+  --accent-cyan: #22d3ee;
+  --accent-cyan-light: #67e8f9;
+  --accent-cyan-glow: rgba(34, 211, 238, 0.35);
+  --accent-pink: #f472b6;
+  --accent-pink-glow: rgba(244, 114, 182, 0.35);
+  --accent-gold: #fbbf24;
+  --accent-gold-glow: rgba(251, 191, 36, 0.35);
+  --accent-green: #34d399;
+  --accent-green-glow: rgba(52, 211, 153, 0.35);
 
-  /* Glassmorphism (Light) */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-bg-hover: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(124, 58, 237, 0.12);
-  --glass-border-hover: rgba(124, 58, 237, 0.28);
-  --glass-shadow: 0 8px 40px 0 rgba(100, 80, 200, 0.1);
+  /* Glassmorphism (Dark) */
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(168, 85, 247, 0.18);
+  --glass-border-hover: rgba(168, 85, 247, 0.4);
+  --glass-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.5);
   --glass-blur: blur(16px);
 
-  /* Soft Glows */
-  --neon-glow: 0 0 20px rgba(124, 58, 237, 0.15), 0 4px 20px rgba(124, 58, 237, 0.08);
-  --neon-glow-cyan: 0 0 20px rgba(8, 145, 178, 0.15), 0 4px 20px rgba(8, 145, 178, 0.08);
-  --neon-glow-pink: 0 0 20px rgba(219, 39, 119, 0.15), 0 4px 20px rgba(219, 39, 119, 0.08);
+  /* Neon Glows */
+  --neon-glow: 0 0 20px rgba(168, 85, 247, 0.3), 0 4px 20px rgba(168, 85, 247, 0.15);
+  --neon-glow-cyan: 0 0 20px rgba(34, 211, 238, 0.3), 0 4px 20px rgba(34, 211, 238, 0.15);
+  --neon-glow-pink: 0 0 20px rgba(244, 114, 182, 0.3), 0 4px 20px rgba(244, 114, 182, 0.15);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -60,13 +60,13 @@ html, body {
   width: 100%;
   min-height: 100vh;
   background-color: var(--bg-primary);
-  /* Light airy layered background */
+  /* Dark deep-space layered background */
   background-image:
-    radial-gradient(ellipse at 15% 0%, rgba(124, 58, 237, 0.08) 0px, transparent 50%),
-    radial-gradient(ellipse at 85% 5%, rgba(8, 145, 178, 0.07) 0px, transparent 45%),
-    radial-gradient(ellipse at 50% 100%, rgba(219, 39, 119, 0.05) 0px, transparent 50%),
-    radial-gradient(ellipse at 0% 60%, rgba(5, 150, 105, 0.04) 0px, transparent 40%),
-    radial-gradient(ellipse at 100% 50%, rgba(217, 119, 6, 0.04) 0px, transparent 35%);
+    radial-gradient(ellipse at 15% 0%, rgba(168, 85, 247, 0.18) 0px, transparent 50%),
+    radial-gradient(ellipse at 85% 5%, rgba(34, 211, 238, 0.12) 0px, transparent 45%),
+    radial-gradient(ellipse at 50% 100%, rgba(244, 114, 182, 0.10) 0px, transparent 50%),
+    radial-gradient(ellipse at 0% 60%, rgba(52, 211, 153, 0.07) 0px, transparent 40%),
+    radial-gradient(ellipse at 100% 50%, rgba(251, 191, 36, 0.07) 0px, transparent 35%);
   background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-thai);
@@ -101,7 +101,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Selection */
 ::selection {
-  background: rgba(124, 58, 237, 0.2);
+  background: rgba(168, 85, 247, 0.35);
   color: var(--text-primary);
 }
 
@@ -120,7 +120,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
@@ -129,10 +129,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--glass-border-hover);
   transform: translateY(-5px);
-  box-shadow: 0 16px 40px rgba(100, 80, 200, 0.12), var(--neon-glow);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), var(--neon-glow);
 }
 
 /* Gradient Text */
@@ -206,7 +206,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-primary);
   border: 1px solid var(--glass-border);
   padding: 11px 22px;
@@ -219,10 +219,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.12);
   border-color: var(--glass-border-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(100, 80, 200, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), var(--neon-glow);
 }
 
 .btn-danger {
@@ -288,9 +288,9 @@ h1, h2, h3, h4, h5, h6 {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(124, 58, 237, 0.06) 25%,
-    rgba(124, 58, 237, 0.12) 50%,
-    rgba(124, 58, 237, 0.06) 75%
+    rgba(168, 85, 247, 0.08) 25%,
+    rgba(168, 85, 247, 0.18) 50%,
+    rgba(168, 85, 247, 0.08) 75%
   );
   background-size: 200% 100%;
   animation: skeleton-wave 1.8s ease-in-out infinite;
