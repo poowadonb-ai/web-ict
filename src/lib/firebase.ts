@@ -2921,10 +2921,26 @@ export const authService = {
     sbAuthService.signInWithUsernamePassword(username, password, studentProfile),
 
   // ── Profile/student data — follows getDatabaseMode() (firebase or supabase) ───────
-  getRegisteredStudents: () =>
-    getDatabaseMode() === "supabase" ? sbAuthService.getRegisteredStudents() : fbAuthService.getRegisteredStudents(),
-  getStudentProfile: (uid: string) =>
-    getDatabaseMode() === "supabase" ? sbAuthService.getStudentProfile(uid) : fbAuthService.getStudentProfile(uid),
+  getRegisteredStudents: async (): Promise<UserProfile[]> => {
+    if (getDatabaseMode() === "supabase") {
+      try {
+        const list = await sbAuthService.getRegisteredStudents();
+        if (list && list.length > 0) return list;
+      } catch (err) {
+        console.warn("Supabase getRegisteredStudents failed, falling back to Firestore", err);
+      }
+    }
+    return fbAuthService.getRegisteredStudents();
+  },
+  getStudentProfile: async (uid: string): Promise<UserProfile | null> => {
+    if (getDatabaseMode() === "supabase") {
+      try {
+        const profile = await sbAuthService.getStudentProfile(uid);
+        if (profile) return profile;
+      } catch {}
+    }
+    return fbAuthService.getStudentProfile(uid);
+  },
   updateStudentProfile: (uid: string, updates: any) =>
     getDatabaseMode() === "supabase" ? sbAuthService.updateStudentProfile(uid, updates) : fbAuthService.updateStudentProfile(uid, updates),
   mergeStudents: (sourceUid: string, targetUid: string) =>
@@ -2936,8 +2952,15 @@ export const authService = {
 };
 
 export const lessonService = {
-  subscribeLessons: (callback: (lessons: Lesson[]) => void) =>
-    getDatabaseMode() === "supabase" ? sbLessonService.subscribeLessons(callback) : fbLessonService.subscribeLessons(callback),
+  subscribeLessons: (callback: (lessons: Lesson[]) => void) => {
+    if (getDatabaseMode() === "supabase") {
+      return sbLessonService.subscribeLessons((list) => {
+        if (list && list.length > 0) callback(list);
+        else fbLessonService.subscribeLessons(callback);
+      });
+    }
+    return fbLessonService.subscribeLessons(callback);
+  },
   addLesson: (title: string, content: string, canvaUrl: string, youtubeUrl: string, hasAssignment?: boolean, assignmentType?: "individual" | "group", assignmentDescription?: string, targetRooms?: string[]) =>
     getDatabaseMode() === "supabase" ? sbLessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms) : fbLessonService.addLesson(title, content, canvaUrl, youtubeUrl, hasAssignment, assignmentType, assignmentDescription, targetRooms),
   deleteLesson: (id: string) =>
@@ -2947,8 +2970,15 @@ export const lessonService = {
 };
 
 const boardServiceObj = {
-  subscribeBoards: (callback: (boards: AssignmentBoard[]) => void) =>
-    getDatabaseMode() === "supabase" ? sbBoardService.subscribeBoards(callback) : fbBoardService.subscribeBoards(callback),
+  subscribeBoards: (callback: (boards: AssignmentBoard[]) => void) => {
+    if (getDatabaseMode() === "supabase") {
+      return sbBoardService.subscribeBoards((list) => {
+        if (list && list.length > 0) callback(list);
+        else fbBoardService.subscribeBoards(callback);
+      });
+    }
+    return fbBoardService.subscribeBoards(callback);
+  },
   addBoard: (title: string, description: string, type?: "individual" | "group", targetRooms?: string[]) =>
     getDatabaseMode() === "supabase" ? sbBoardService.addBoard(title, description, type, targetRooms) : fbBoardService.addBoard(title, description, type, targetRooms),
   deleteBoard: (id: string) =>
@@ -2971,10 +3001,24 @@ const submissionServiceObj = {
     getDatabaseMode() === "supabase" ? sbSubmissionService.addComment(submissionId, content) : fbSubmissionService.addComment(submissionId, content),
   gradeSubmission: (submissionId: string, score: number, maxScore: number, status: "graded" | "resubmit", teacherFeedback: string, awardPack?: boolean) =>
     getDatabaseMode() === "supabase" ? sbSubmissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack) : fbSubmissionService.gradeSubmission(submissionId, score, maxScore, status, teacherFeedback, awardPack),
-  subscribeAllSubmissions: (callback: (submissions: Submission[]) => void) =>
-    getDatabaseMode() === "supabase" ? sbSubmissionService.subscribeAllSubmissions(callback) : fbSubmissionService.subscribeAllSubmissions(callback),
-  getAllSubmissions: () =>
-    getDatabaseMode() === "supabase" ? sbSubmissionService.getAllSubmissions() : fbSubmissionService.getAllSubmissions(),
+  subscribeAllSubmissions: (callback: (submissions: Submission[]) => void) => {
+    if (getDatabaseMode() === "supabase") {
+      return sbSubmissionService.subscribeAllSubmissions((list) => {
+        if (list && list.length > 0) callback(list);
+        else fbSubmissionService.subscribeAllSubmissions(callback);
+      });
+    }
+    return fbSubmissionService.subscribeAllSubmissions(callback);
+  },
+  getAllSubmissions: async () => {
+    if (getDatabaseMode() === "supabase") {
+      try {
+        const list = await sbSubmissionService.getAllSubmissions();
+        if (list && list.length > 0) return list;
+      } catch {}
+    }
+    return fbSubmissionService.getAllSubmissions();
+  },
 };
 
 export const submissionService = submissionServiceObj;
