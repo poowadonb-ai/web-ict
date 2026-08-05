@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { authService } from "@/lib/supabase";
+import { authService } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 import { BookOpen, Layers, Award, Zap, ShieldAlert } from "lucide-react";
 import styles from "./page.module.css";
