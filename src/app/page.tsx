@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { authService } from "@/lib/firebase";
+// authService no longer needed here — students fetched via /api/students server route
 import { UserProfile } from "@/lib/types";
 import { BookOpen, Layers, Award, Zap, ShieldAlert } from "lucide-react";
 import styles from "./page.module.css";
@@ -64,12 +64,15 @@ export default function Home() {
   };
   const roomOptions = ROOMS_BY_GRADE[selectedGrade] || ROOMS_BY_GRADE["4"];
 
-  // Load students for dropdown on mount
+  // Load students for dropdown via server-side API (bypasses Firestore/Supabase auth issues)
   useEffect(() => {
     const loadStudents = async () => {
       try {
-        const students = await authService.getRegisteredStudents();
-        setAllStudents(students);
+        const res = await fetch("/api/students");
+        const json = await res.json();
+        if (json.students && json.students.length > 0) {
+          setAllStudents(json.students);
+        }
       } catch (err) {
         console.error("Error loading students for login dropdown:", err);
       }
