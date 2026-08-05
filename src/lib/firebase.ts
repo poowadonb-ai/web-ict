@@ -2922,27 +2922,13 @@ export const authService = {
   signInWithUsernamePassword: (username: string, password: string, studentProfile?: UserProfile) =>
     sbAuthService.signInWithUsernamePassword(username, password, studentProfile),
 
-  // ── Profile/student data — ดึงจาก Firestore เสมอ (ข้อมูลนักเรียนอยู่ใน Firebase) ─────
-  getRegisteredStudents: async (): Promise<UserProfile[]> => {
-    return fbAuthService.getRegisteredStudents();
-  },
-  getStudentProfile: async (uid: string): Promise<UserProfile | null> => {
-    if (getDatabaseMode() === "supabase") {
-      try {
-        const profile = await sbAuthService.getStudentProfile(uid);
-        if (profile) return profile;
-      } catch {}
-    }
-    return fbAuthService.getStudentProfile(uid);
-  },
-  updateStudentProfile: (uid: string, updates: any) =>
-    getDatabaseMode() === "supabase" ? sbAuthService.updateStudentProfile(uid, updates) : fbAuthService.updateStudentProfile(uid, updates),
-  mergeStudents: (sourceUid: string, targetUid: string) =>
-    getDatabaseMode() === "supabase" ? sbAuthService.mergeStudents(sourceUid, targetUid) : fbAuthService.mergeStudents(sourceUid, targetUid),
-  registerProfile: (profileData: any) =>
-    getDatabaseMode() === "supabase" ? sbAuthService.registerProfile(profileData) : fbAuthService.registerProfile(profileData),
-  deleteStudent: (uid: string) =>
-    getDatabaseMode() === "supabase" ? sbAuthService.deleteStudent(uid) : fbAuthService.deleteStudent(uid),
+  // ── ข้อมูลนักเรียนและ profile — ใช้ Supabase เสมอ (Firestore ไม่ใช้แล้ว) ─────────────
+  getRegisteredStudents: () => sbAuthService.getRegisteredStudents(),
+  getStudentProfile: (uid: string) => sbAuthService.getStudentProfile(uid),
+  updateStudentProfile: (uid: string, updates: any) => sbAuthService.updateStudentProfile(uid, updates),
+  mergeStudents: (sourceUid: string, targetUid: string) => sbAuthService.mergeStudents(sourceUid, targetUid),
+  registerProfile: (profileData: any) => sbAuthService.registerProfile(profileData),
+  deleteStudent: (uid: string) => sbAuthService.deleteStudent(uid),
 };
 
 export const lessonService = {

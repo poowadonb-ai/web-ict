@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService } from "@/lib/firebase";
-import { boardService, submissionService } from "@/lib/supabase";
+import { authService, boardService, submissionService } from "@/lib/supabase";
 import { UserProfile, AssignmentBoard, Submission } from "@/lib/types";
 import { ClipboardList, Download, Search, Filter, RefreshCw, Award, Users, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { authService } from "@/lib/firebase";
+import { authService } from "@/lib/supabase";
 import { UserProfile } from "@/lib/types";
 import { Users, Search, Filter, RefreshCw, Edit3, X, AlertTriangle, GitMerge, Trash2, Key, Upload } from "lucide-react";
 import styles from "./page.module.css";
