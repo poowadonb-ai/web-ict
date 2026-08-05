@@ -191,13 +191,13 @@ export const authService = {
     if (cleanPassword === "0205" || cleanPassword === "Admin1234" || cleanUsername === "krupoowadon") {
       if (cleanPassword === "0205" || cleanPassword === "Admin1234") {
         const teacherUser: UserProfile = {
-          uid: "teacher-krupoowadon",
+          uid: "Ezp21oM4a4VJSMtEUq1joTvuTq63",
           email: "poowadon.b@gmail.com",
-          displayName: "คุณครูภูวดล",
+          displayName: "นาย poowadon b",
           fullName: "คุณครูภูวดล",
           role: "teacher",
           isRegistered: true,
-          packsCount: 0,
+          packsCount: 1,
           bonusPoints: 0,
           totalPacksOpened: 0,
           isMerged: false,
@@ -238,13 +238,13 @@ export const authService = {
       // Fallback if API route / fetch fails
       if (cleanPassword === "0205" || cleanPassword === "Admin1234") {
         const teacherUser: UserProfile = {
-          uid: "teacher-krupoowadon",
+          uid: "Ezp21oM4a4VJSMtEUq1joTvuTq63",
           email: "poowadon.b@gmail.com",
-          displayName: "คุณครูภูวดล",
+          displayName: "นาย poowadon b",
           fullName: "คุณครูภูวดล",
           role: "teacher",
           isRegistered: true,
-          packsCount: 0,
+          packsCount: 1,
           bonusPoints: 0,
           totalPacksOpened: 0,
           isMerged: false,

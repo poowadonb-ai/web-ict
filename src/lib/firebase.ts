@@ -207,13 +207,13 @@ export const getDatabaseMode = (): "supabase" | "firebase" | "mock" => {
   if (override === "firebase" || override === "supabase" || override === "mock") {
     return override;
   }
+  if (isFirebaseConfigured) {
+    return "firebase";
+  }
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder") && !supabaseUrl.includes("your-") && supabaseUrl !== "") {
     return "supabase";
-  }
-  if (isFirebaseConfigured) {
-    return "firebase";
   }
   return "mock";
 };
