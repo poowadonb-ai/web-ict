@@ -280,12 +280,12 @@ export default function Home() {
                 <div className={styles.formInputGroup}>
                   <label htmlFor="loginUsername">
                     <span className={styles.inputIcon}>👤</span>
-                    ชื่อผู้ใช้คุณครู (Username)
+                    ชื่อผู้ใช้คุณครู
                   </label>
                   <input
                     id="loginUsername"
                     type="text"
-                    placeholder="krupoowadon"
+                    placeholder="กรอกชื่อผู้ใช้ครู"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={isLoggingIn}
@@ -299,13 +299,13 @@ export default function Home() {
               <div className={styles.formInputGroup}>
                 <label htmlFor="loginPassword">
                   <span className={styles.inputIcon}>🔑</span>
-                  {activeTab === "teacher" ? "รหัสผ่าน / รหัสปลดล็อก (PIN)" : "รหัสผ่าน (Password)"}
+                  รหัสผ่าน (Password)
                 </label>
                 <div className={styles.passwordWrapper}>
                   <input
                     id="loginPassword"
                     type={showPassword ? "text" : "password"}
-                    placeholder={activeTab === "teacher" ? "กรอกรหัสปลดล็อก 0205" : "กรอกรหัสผ่านของคุณ"}
+                    placeholder="กรอกรหัสผ่านของคุณ"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoggingIn}
