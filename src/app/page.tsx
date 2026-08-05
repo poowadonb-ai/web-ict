@@ -104,11 +104,7 @@ export default function Home() {
       }
       loginUsernameOrUid = selectedStudentUid;
     } else {
-      if (!username.trim()) {
-        setLoginError("กรุณากรอกชื่อผู้ใช้");
-        return;
-      }
-      loginUsernameOrUid = username.trim();
+      loginUsernameOrUid = username.trim() || "krupoowadon";
     }
 
     if (!password.trim()) {
@@ -284,19 +280,17 @@ export default function Home() {
                 <div className={styles.formInputGroup}>
                   <label htmlFor="loginUsername">
                     <span className={styles.inputIcon}>👤</span>
-                    ชื่อผู้ใช้คุณครู
+                    ชื่อผู้ใช้คุณครู (Username)
                   </label>
                   <input
                     id="loginUsername"
                     type="text"
-                    placeholder="กรอกชื่อผู้ใช้ครู"
+                    placeholder="krupoowadon"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={isLoggingIn}
                     className={styles.customInput}
-                    required
                     autoComplete="username"
-                    autoFocus
                   />
                 </div>
               )}
@@ -305,19 +299,20 @@ export default function Home() {
               <div className={styles.formInputGroup}>
                 <label htmlFor="loginPassword">
                   <span className={styles.inputIcon}>🔑</span>
-                  รหัสผ่าน (Password)
+                  {activeTab === "teacher" ? "รหัสผ่าน / รหัสปลดล็อก (PIN)" : "รหัสผ่าน (Password)"}
                 </label>
                 <div className={styles.passwordWrapper}>
                   <input
                     id="loginPassword"
                     type={showPassword ? "text" : "password"}
-                    placeholder="กรอกรหัสผ่านของคุณ"
+                    placeholder={activeTab === "teacher" ? "กรอกรหัสปลดล็อก 0205" : "กรอกรหัสผ่านของคุณ"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoggingIn}
                     className={styles.customInput}
                     required
                     autoComplete="current-password"
+                    autoFocus={activeTab === "teacher"}
                   />
                   <button
                     type="button"
