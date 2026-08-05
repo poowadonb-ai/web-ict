@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { authService, getCardPool, syncCardsFromFirestore } from "@/lib/supabase";
+import { authService, getCardPool, syncCardsFromFirestore } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 import { Trophy, Medal, Crown, RefreshCw, Filter } from "lucide-react";
 import styles from "./page.module.css";
