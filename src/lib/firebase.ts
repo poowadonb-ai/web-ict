@@ -202,11 +202,12 @@ const hasRealKeys = () => {
 const isFirebaseConfigured = hasRealKeys();
 
 export const getDatabaseMode = (): "supabase" | "firebase" | "mock" => {
-  // Allow explicit override via env var (takes priority)
+  // Allow explicit override via env var
   const override = process.env.NEXT_PUBLIC_DATABASE_MODE;
-  if (override === "firebase" || override === "supabase" || override === "mock") {
+  if (override === "supabase" || override === "mock") {
     return override;
   }
+  // Firebase takes priority whenever it is configured (this covers Vercel production)
   if (isFirebaseConfigured) {
     return "firebase";
   }
@@ -217,6 +218,7 @@ export const getDatabaseMode = (): "supabase" | "firebase" | "mock" => {
   }
   return "mock";
 };
+
 
 export let app: any;
 export let auth: any;
