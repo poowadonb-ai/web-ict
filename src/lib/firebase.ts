@@ -1892,47 +1892,15 @@ const fbAuthService = {
       return mockDb.getRegisteredStudents();
     }
     try {
-
-      const q = query(collection(db, "users"), where("role", "==", "student"), where("isRegistered", "==", true));
-      const snapshot = await getDocs(q);
-      const fbStudentsMap = new Map<string, UserProfile>();
+      const snapshot = await getDocs(collection(db, "users"));
+      const students: UserProfile[] = [];
       snapshot.forEach((doc) => {
-        fbStudentsMap.set(doc.id, { uid: doc.id, ...doc.data() } as UserProfile);
+        const data = doc.data() as any;
+        if (data.role === "teacher") return;
+        if (data.isMerged) return;
+        students.push({ uid: doc.id, ...data } as UserProfile);
       });
 
-      // Synchronize missing accounts from Supabase users table (which contains the custom credentials)
-      try {
-        console.log("[getRegisteredStudents] Fetching registered students from Supabase to sync to Firestore...");
-        const sbStudents = await sbAuthService.getRegisteredStudents();
-        for (const sbStud of sbStudents) {
-          if (!fbStudentsMap.has(sbStud.uid)) {
-            console.log(`[getRegisteredStudents] Account ${sbStud.uid} not in Firestore. Syncing...`);
-            const newFbUser: UserProfile = {
-              uid: sbStud.uid,
-              email: sbStud.email,
-              displayName: sbStud.displayName,
-              role: sbStud.role,
-              isRegistered: sbStud.isRegistered,
-              fullName: sbStud.fullName,
-              grade: sbStud.grade,
-              room: sbStud.room,
-              studentNo: sbStud.studentNo,
-              packsCount: sbStud.packsCount ?? 3,
-              bonusPoints: sbStud.bonusPoints ?? 0,
-              cardsCollected: sbStud.cardsCollected ?? [],
-              lastLoginDate: sbStud.lastLoginDate || new Date().toISOString().split('T')[0],
-              totalPacksOpened: sbStud.totalPacksOpened ?? 0,
-              isMerged: sbStud.isMerged ?? false
-            };
-            await setDoc(doc(db, "users", sbStud.uid), newFbUser);
-            fbStudentsMap.set(sbStud.uid, newFbUser);
-          }
-        }
-      } catch (syncErr) {
-        console.error("Error syncing Supabase students to Firestore:", syncErr);
-      }
-
-      const students = Array.from(fbStudentsMap.values());
       return students.sort((a, b) => Number(a.studentNo || 0) - Number(b.studentNo || 0));
     } catch (error) {
       console.error("Error fetching students:", error);
