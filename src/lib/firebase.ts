@@ -2922,15 +2922,15 @@ export const authService = {
   signInWithUsernamePassword: (username: string, password: string, studentProfile?: UserProfile) =>
     sbAuthService.signInWithUsernamePassword(username, password, studentProfile),
 
-  // ── Profile/student data — follows getDatabaseMode() (firebase or supabase) ───────
+  // ── Profile/student data — Supabase is the primary student store ───────────
+  // Students always register via the Supabase-backed API route, so we ALWAYS
+  // try Supabase first regardless of getDatabaseMode(), then fall back to Firestore.
   getRegisteredStudents: async (): Promise<UserProfile[]> => {
-    if (getDatabaseMode() === "supabase") {
-      try {
-        const list = await sbAuthService.getRegisteredStudents();
-        if (list && list.length > 0) return list;
-      } catch (err) {
-        console.warn("Supabase getRegisteredStudents failed, falling back to Firestore", err);
-      }
+    try {
+      const list = await sbAuthService.getRegisteredStudents();
+      if (list && list.length > 0) return list;
+    } catch (err) {
+      console.warn("Supabase getRegisteredStudents failed, falling back to Firestore", err);
     }
     return fbAuthService.getRegisteredStudents();
   },
