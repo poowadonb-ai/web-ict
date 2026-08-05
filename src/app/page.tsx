@@ -128,8 +128,11 @@ export default function Home() {
   };
 
   const filteredStudents = allStudents.filter(
-    (s) => s.grade === selectedGrade && s.room === selectedRoom
+    (s) =>
+      String(s.grade ?? "").trim() === String(selectedGrade).trim() &&
+      String(s.room ?? "").trim() === String(selectedRoom).trim()
   );
+
 
   return (
     <div className={styles.container}>
